@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>캐릭터 보기</title>
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-view.css">
+
+
+
+
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+
+            <!-- 🔒 상단 고정: 뒤로가기 -->
+            <div id="chrome-root"></div>
+
+            <main class="page-body">
+                <!-- 🔥 스크롤 영역 -->
+                <div class="scroll-area">
+
+                    <!-- 캐릭터 이미지 -->
+                    <div class="char-image-box clickable" id="charImageBox">
+                        <img id="charImage" src="/images/base/base_01.png">
+
+                        <!-- 교체 아이콘 -->
+                        <div class="image-edit-icon" id="imageEditIcon">
+                            <svg viewBox="0 0 24 24" class="stroke-icon">
+                                <path d="M4 20h4l10-10-4-4L4 16z" />
+                                <path d="M14 6l4 4" />
+                            </svg>
+                        </div>
+
+                        <div class="char-name-overlay" id="charName">(이름)</div>
+                    </div>
+
+                    <!-- 사각형 정보 -->
+                    <div id="charIntroBox" class="info-box">
+                        (정보 불러오는 중...)
+                    </div>
+
+                    <!-- 탭 -->
+                    <div class="tab-bar">
+                        <button class="tab-btn active" id="tabStory">스토리</button>
+                        <button class="tab-btn" id="tabSkill">스킬</button>
+                        <button class="tab-btn" id="tabBattle">전투 기록</button>
+                    </div>
+
+                    <!-- 탭 내용 -->
+                    <div class="content-box" id="content">(불러오는 중...)</div>
+
+                    <!-- 전투 기록 페이지네이션 -->
+                    <div class="pager" id="battlePager" style="display:none;">
+                        <button class="pager-btn" id="btnPrevPage">&lt;</button>
+                        <div class="pager-pages" id="battlePageNumbers"></div>
+                        <button class="pager-btn" id="btnNextPage">&gt;</button>
+                    </div>
+
+                </div>
+            </main>
+
+
+
+
+
+            <script type="module">
+                fetch("/base/common/chrome.html")
+                    .then(r => r.text())
+                    .then(html => {
+                        document.getElementById("chrome-root").innerHTML = html;
+                        return import("/base/common/chrome.js");
+                    })
+                    .then(m => {
+                        m.initChrome({
+                            mode: "back+resource",
+                            onBack: () => {
+                                // character-view.ui.js 쪽 back 처리 위임
+                                window.__characterViewBack?.();
+                            }
+                        });
+                    });
+
+            </script>
+            <!-- 페이지 로직 엔트리 -->
+            <script type="module" src="/base/character-view.view.js"></script>
+
+
+
+
+        </div>
+
+    </div>
+    <dialog id="detailDialog" class="plain-dialog">
+
+        <!-- ✅ dialog 전용 topbar (chrome.css 레이아웃 그대로 사용) -->
+        <div class="top-bar dialog-topbar">
+            <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
+                <svg class="stroke-icon" viewBox="0 0 24 24">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+            </button>
+            <div class="top-spacer"></div>
+        </div>
+
+        <div class="dlg">
+            <div class="dlg-body story-box text-flow" id="detailBody"></div>
+        </div>
+
+    </dialog>
+
+
+
+    <!-- 🔥 여기 추가 -->
+    <script type="module">
+        import { initOverscrollBounce } from "/base/common/overscroll-bounce.js";
+        initOverscrollBounce(".scroll-area");
+        initOverscrollBounce(".dlg-body");
+    </script>
+
+</body>
+</html>
+

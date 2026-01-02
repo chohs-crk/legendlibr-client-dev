@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>전투 준비</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/battle/battle-common.css">
+    <link rel="stylesheet" href="/stylesheet/battle/battle-prepare.css">
+
+
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div class="bar"></div>
+
+            <!-- 여정 화면으로 돌아가기 -->
+            <button class="back-btn" id="btnBack">← 여정으로</button>
+
+            <div class="content">
+                <h2 style="margin-bottom: 16px;">전투 준비</h2>
+                <p class="muted" style="margin-bottom: 16px;">
+                    전투에 사용할 내 캐릭터를 고르고, 점수가 비슷한 상대를 매칭한 뒤 전투를 시작할 수 있습니다.
+                </p>
+
+                <!-- 내 캐릭터 영역 -->
+                <section style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 8px;">내 캐릭터 선택 / 변경</h3>
+                    <label class="muted" for="myCharSelect">내 캐릭터</label>
+                    <select id="myCharSelect" class="box" style="width:100%; margin-bottom: 8px;">
+                        <!-- JS에서 채움 -->
+                    </select>
+                    <div id="myCharName" class="muted" style="margin-bottom: 8px;">
+                        (선택된 캐릭터 없음)
+                    </div>
+
+                    <button id="btnViewMy" class="btn" style="width:100%;" disabled>
+                        내 캐릭터 정보 보기
+                    </button>
+                </section>
+
+                <hr style="margin: 16px 0; opacity: 0.3;" />
+
+                <!-- 매칭 + 상대 정보 -->
+                <section style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 8px;">상대 캐릭터</h3>
+                    <!-- 상대 캐릭터 -->
+                    <section style="margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 8px;">상대 캐릭터</h3>
+                        <div id="enemyName" class="box" style="margin-bottom: 8px;">
+                            ( 매칭 대기 중...)
+                        </div>
+                        <button id="btnViewEnemy" class="btn" style="width:100%;" disabled>
+                            상대 정보 보기
+                        </button>
+                    </section>
+
+
+
+                    <!-- 전투 시작: 여기서는 “다음 단계로 넘어가기” 역할만 -->
+                    <button id="btnStartBattle" class="btn-create" style="margin-top: 8px; width:100%;" disabled>
+                        전투 시작
+                    </button>
+
+
+            </div>
+
+            <div class="bar"></div>
+        </div>
+
+        <!-- Firebase 초기화 (index.html과 같은 설정) -->
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+            import {
+                getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut
+            } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+            import {
+                getFirestore,
+                collection, doc,
+                getDoc, getDocs, updateDoc,
+                onSnapshot, query, where, orderBy,
+                serverTimestamp
+            } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyBOdqBFXQRg_jdRhYUjuusjOznqt6v7pkQ",
+                authDomain: "legendlibr.firebaseapp.com",
+                projectId: "legendlibr",
+                storageBucket: "legendlibr.firebasestorage.app",
+                messagingSenderId: "368559609215",
+                appId: "1:368559609215:web:9434f0e39b82a927e5364a",
+                measurementId: "G-N896X6SGD4"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            // index.html과 비슷하게 window._fb로 노출해서 battle.js에서 사용
+            window._fb = {
+                app, auth, db,
+                onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut,
+                collection, doc,
+                getDoc, getDocs, updateDoc,
+                onSnapshot, query, where, orderBy,
+                serverTimestamp
+            };
+        </script>
+
+        <!-- 전투 준비 전용 스크립트 -->
+        <script type="module" src="battle1.js"></script>
+
+    </div>   <!-- /.bg-root -->
+</body>
+</html>

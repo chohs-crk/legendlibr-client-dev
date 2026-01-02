@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>레이드 전투</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-battle.css">
+
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <!-- 상단 바 -->
+            <div class="bar"></div>
+
+            <!-- 메인 컨텐츠 -->
+            <div class="content">
+
+                <!-- 상단: 보스 / 전투 정보 -->
+                <div class="boss-detail-wrapper">
+                    <div class="boss-detail-name" id="bossName">
+                        <!-- JS에서 "보스명 vs 캐릭터명"으로 채워짐 -->
+                    </div>
+                    <div class="boss-detail-season" id="raidInfo">
+                        레이드 전투 진행 중…
+                    </div>
+                    <div class="boss-detail-desc">
+                        선택한 스킬로 보스를 공략하세요.
+                        각 선택은 누적되어 턴이 끝날 때 한꺼번에 피해를 줍니다.
+                    </div>
+                </div>
+
+                <!-- 전투 로그 박스 -->
+                <div id="storyBox" class="story-box"></div>
+
+                <!-- 홈으로 가기 -->
+                <div id="homeButtonContainer" style="margin-top: 16px;"></div>
+
+                <div id="choiceContainer" style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                    <button class="choice-btn btn" data-index="0"></button>
+                    <button class="choice-btn btn" data-index="1"></button>
+                    <button class="choice-btn btn" data-index="2"></button>
+                </div>
+
+                <button id="btnGiveUp" class="btn" style="margin-top:14px; width:100%; background:#d9534f;">
+                    레이드 포기
+                </button>
+
+
+            </div>
+
+            <!-- 하단 바 -->
+            <div class="bar"></div>
+        </div>
+
+        <!-- 레이드 전투 컨트롤러 -->
+        <script type="module" src="raid-controller.js"></script>
+    </div>
+</body>
+</html>

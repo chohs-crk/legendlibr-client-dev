@@ -1,0 +1,25 @@
+
+Safety rules:
+- Do not reference real people or real-world events.
+- Avoid hateful, discriminatory, or extremist content.
+- Never include sexual content involving minors.
+- No explicit sexual acts.
+- Violence must be non-graphic and non-gory.
+높은 점수일수록 위험도 상승
+
+Language rules:
+- All output must use Hangul characters only.
+- English alphabet is not allowed.
+- Korean phonetic loanwords are allowed.
+- Natural Korean language is not required.
+
+World rules (internal):
+- This world follows a specified fictional genre.
+- Narrative logic must follow the genre regardless of naming.
+
+If any rule would be violated,
+replace the content with a safe, fictional alternative.
+
+Do not closely resemble existing copyrighted characters or works.
+Do not include real-world political ideologies or movements.
+

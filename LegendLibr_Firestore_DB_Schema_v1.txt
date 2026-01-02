@@ -1,0 +1,265 @@
+🔥 1. Collections Overview
+battles
+characters
+raidBosses
+raids
+regionsDefault
+users
+
+
+각 컬렉션은 아래처럼 정의됨.
+
+📁 2. battles / {battleId}
+■ 용도
+
+1 vs 1 전투의 모든 로그, 턴 진행, AI 계산 결과 저장
+
+AI INIT → 턴 진행 → 종료까지의 전체 상태 기록
+
+■ 주요 필드 구조
+uid: string                  // 전투 소유자
+enemyId: string              // 상대 캐릭터 ID
+enemyName: string
+enemyScore: number
+
+myId: string                 // 내 캐릭터 ID
+myName: string
+
+currentTurn: number
+finished: boolean
+battleId: string
+
+hpA: number                  // 내 HP
+hpB: number                  // 상대 HP
+
+aiReady: boolean
+aiFinishedAt: timestamp
+
+prologue: string             // 전투 도입 스토리
+
+baseData: {
+    choices: number[]
+    effects: [...]
+    pnTable: [...]
+}
+
+activeEffects: {
+    A: [ { effect 구조 } ]
+    B: [ ... ]
+    C: [ ... ]  // 3인일 경우
+}
+
+skillScores: { index: number }
+
+skillChoices: [
+    {
+        turn: number,
+        skillA: number,
+        skillB: number
+    }
+]
+
+logs: [
+   {
+      turn: number,
+      narration: string,
+      hpA_before: number,
+      hpA_after: number,
+      hpB_before: number,
+      hpB_after: number,
+      skillAName: string,
+      skillBName: string,
+      totalDmgA: number,
+      totalDmgB: number,
+      createdAt: number
+   }
+]
+
+createdAt: timestamp
+updatedAt: timestamp
+
+■ 특징
+
+매우 방대한 전투 기록을 저장하는 구조
+
+로그가 많아질 수 있음 (AI 스토리 포함)
+
+📁 3. characters / {charId}
+■ 용도
+
+유저가 생성한 캐릭터 전체 스토리·스킬·세계관 저장
+
+■ 필드 구조
+uid: string                     // 캐릭터 주인
+createdAt: timestamp
+
+displayRawName: string
+name: string
+
+origin: string
+originDesc: string
+
+region: string
+regionDetail: string
+
+promptRaw: string
+promptRefined: string
+
+finalStory: string
+
+features: string[]
+
+scores: {
+    combatScore: number 전투에 적합한가
+    dominateScore: number 상대의 특징을 무시하는가
+    metaScore: number trpg 세계가 허구임을 인식하는가
+    narrativeScore: number 서술이 매력적인가
+    ruleBreakScore: number 규칙을 파괴하는가
+    supportScore: number 보조에 적합한가
+    worldScore: number origin, region과 잘 어울리는가
+}
+
+skills: [
+    {
+        name: string
+        shortDesc: string
+        longDesc: string
+        power: number
+    },
+    ...
+]
+
+storyScore: number
+storyTheme: string
+
+battleCount: number
+battleScore: number
+
+■ 특징
+
+캐릭터 생성 과정에서 AI가 만들어낸 모든 결과 기록
+
+지역(origin/region), 스토리, 스킬, 점수가 모두 포함된 캐릭터 프로필 파일
+
+📁 4. raidBosses / {bossId}
+■ 용도
+
+레이드 보스 정보를 저장하는 관리자(admin) 전용 DB
+
+■ 필드 구조
+id: string
+name: string
+desc: string
+hp: number
+limit: number         // 보스당 파티 최대 인원
+stage: string         // 난이도 or 페이즈
+
+traits: string[]      // 보스 특징 (중독, 극독 등)
+skills: [
+    {
+        name: string
+        desc: string
+        class: string    // 단일/광역/회복 등
+        pow: number
+    }
+]
+
+isSeason: boolean
+unlocked: boolean
+createdAt: timestamp
+
+📁 5. raids / {raidId}
+■ 용도
+
+레이드 전투 진행 상태 저장
+
+파티 구성, 스킬 선택, 보스 HP, 로그 등 포함
+
+■ 필드 구조
+uid: string
+bossId: string
+limit: number              // 파티 최대 인원
+engagementCount: number    // 턴 진행 횟수
+
+aiready: boolean
+initStarted: boolean
+battlestart: boolean
+battlefinished: boolean
+
+bossHp: number
+
+partyStatus: [
+    {
+        charId: string
+        currentHp: number
+        maxHp: number
+    }
+]
+
+effects: [
+    {
+        charIndex: number
+        effect: {
+            name: string
+            target: "A"|"B"
+            benefitTo: string
+        }
+        turns: number
+        turnWeights: number[]
+        skillIndex: number
+    }
+]
+
+pnTable: [
+    {
+        charIndex: number
+        pn: string
+        skillIndex: number
+    }
+]
+
+selectedSkillsByChar: {
+    <charId>: [ index1, index2, index3 ]
+}
+
+result: "win"|"lose"
+logs: string[]              // 전투 로그 텍스트
+
+createdAt: timestamp
+updatedAt: timestamp
+
+■ 특징
+
+raids는 4캐릭 or 3캐릭 레이드 모두 대응
+
+보스 전투 전체 관리 문서
+
+📁 6. regionsDefault / {regionId}
+■ 용도
+
+origin마다 기본 제공되는 지역
+
+유저는 읽기만 가능
+
+admin이 관리
+
+■ 필드 구조
+id: string
+name: string
+originId: string
+detail: string
+createdAt: timestamp
+
+📁 7. users / {uid}
+■ 용도
+
+유저 개인 설정, 유저가 만든 region 저장
+
+■ users/{uid} 내부 구조
+users/{uid}/regions/{regionId}
+
+■ region 문서 구조
+name: string
+originId: string
+detail: string
+createdAt: timestamp

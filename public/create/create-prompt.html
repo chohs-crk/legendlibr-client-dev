@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>캐릭터 정보 입력</title>
+
+    <!-- 상단: 기존 chrome + base css 그대로 -->
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
+</head>
+
+<body class="page-fade">
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div id="chrome-root"></div>
+
+            <div class="content">
+                <div class="scroll-area">
+
+                    <!-- ===========================
+                     선택 정보 표시 영역
+                ============================ -->
+                    <div class="selected-info-box">
+                        <div class="origin-display">
+                            기원: <span id="originName"></span>
+                        </div>
+                        <div class="region-display">
+                            지역: <span id="regionName"></span>
+                        </div>
+                    </div>
+
+                    <!-- ===========================
+                     입력 폼
+                ============================ -->
+                    <div class="prompt-input-wrap">
+
+                        <label class="input-label">캐릭터 이름 (1~20자)</label>
+                        <input id="nameInput" maxlength="20" class="text-input" placeholder="이름 입력" />
+
+                        <label class="input-label mt-20">프롬프트 (1~700자)</label>
+                        <textarea id="promptInput" maxlength="700" class="text-area" placeholder="캐릭터 성격/배경/능력 등을 입력"></textarea>
+
+                        <button id="btnNext" class="btn primary mt-30">다음</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <script type="module" src="./create-prompt.js"></script>
+        <script type="module">
+            // chrome 유지
+            fetch("/base/common/chrome.html")
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById("chrome-root").innerHTML = html;
+                    return import("/base/common/chrome.js");
+                })
+                .then(m => {
+                    m.initChrome({
+                        mode: "back-only",
+                        onBack: () => window.location.href = "./create.html"
+                    });
+                });
+        </script>
+            </div >
+</body >
+</html >

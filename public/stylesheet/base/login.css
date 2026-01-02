@@ -1,0 +1,97 @@
+﻿/* ===============================
+   LOGIN PAGE ONLY
+=============================== */
+
+/* 전체 중앙 정렬 */
+.login-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    padding: 0 24px;
+    text-align: center;
+}
+
+/* 상단 로고 영역 (나중에 이미지로 교체 가능) */
+.login-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 살짝 떠 있는 느낌 */
+    animation: floatLogo 3.5s ease-in-out infinite;
+}
+
+@keyframes floatLogo {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* 타이틀 */
+.login-box h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+
+/* 구글 로그인 버튼 */
+.login-btn {
+    width: 100%;
+    max-width: 320px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    color: #1f1f1f;
+    border: 1px solid #dadce0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+    /* hover 느낌 */
+    .login-btn:hover {
+        background: #f8f9fa;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* 구글 아이콘 */
+    .login-btn::before {
+        content: "";
+        width: 18px;
+        height: 18px;
+        background-image: url("https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg");
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+/* 설명 문구 */
+.login-box .sub {
+    font-size: 13px;
+    color: var(--text-sub);
+    opacity: 0.85;
+}
+/* 로그인 화면 전용 body 배경 */
+.login-page {
+    background: radial-gradient( circle at top, #1d1638 0%, #0b0816 70%, #050408 100% );
+}

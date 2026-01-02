@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>기원 선택</title>
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
+    <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
+
+</head>
+
+<body class="page-fade">
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+
+            <!-- 🔒 상단 고정 뒤로가기 (기존 패턴 유지) -->
+            <div id="chrome-root"></div>
+
+
+
+            <div class="content">
+                <div class="scroll-area">
+                    <div class="origin-wrap">
+
+                        <!-- 기원 카드 목록 -->
+                        <div class="origin-list" id="originList">
+
+
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+        <!-- 지역 상세 팝업 (위치 유지) -->
+        <div id="wrapOverlay" class="ui-wrap-overlay">
+            <div class="ui-wrap">
+                <div class="ui-wrap-body" id="wrapBody"></div>
+                <button class="ui-wrap-close" id="wrapClose">닫기</button>
+            </div>
+        </div>
+
+
+
+    </div>
+    <script type="module" src="./create.js"></script>
+    <script type="module">
+        fetch("/base/common/chrome.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("chrome-root").innerHTML = html;
+                return import("/base/common/chrome.js");
+            })
+            .then(m => {
+                m.initChrome({
+                    mode: "back-only",
+                    onBack: () => {
+                        window.location.href = "/base/index.html";
+                    }
+                });
+            });
+    </script>
+    <script type="module">
+        import { initOverscrollBounce } from "/base/common/overscroll-bounce.js";
+
+        // create 페이지: scroll-area 전체에 바운스 적용
+        initOverscrollBounce(".scroll-area", {
+            refreshThreshold: 90,   // index보다 살짝 묵직하게
+            maxPull: 150,
+            resistance: 0.32,
+
+            // create 페이지에서는 새로고침 막고 싶으면 비워도 됨
+            onRefresh: async () => {
+                // 아무 것도 안 함 (bounce 효과만)
+            }
+        });
+    </script>
+
+</body>
+</html >
+

@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>전투 플레이</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/battle/battle-common.css">
+    <link rel="stylesheet" href="/stylesheet/battle/battle-play.css">
+
+
+    <style>
+        .winner {
+            color: #00ff66;
+            font-weight: bold;
+            text-shadow: 0 0 6px rgba(0,255,120,0.8);
+        }
+
+        .battle-log {
+            background: #111; /* 검은 배경 */
+            color: #fff; /* 흰 글씨 */
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: pre-line;
+        }
+
+
+        .skill-box button {
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        .vs-text {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-box {
+            background: #222;
+            color: #fff;
+            padding: 20px 28px;
+            border-radius: 12px;
+        }
+
+        .top-home-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div class="bar"></div>
+
+            <div class="content">
+
+                <!-- ✅ 좌상단 홈 버튼 -->
+                <button id="btnTopHome" class="top-home-btn">홈</button>
+
+                <h2>전투</h2>
+
+                <!-- ✅ VS 표시 -->
+                <p id="vsText" class="vs-text">- VS -</p>
+
+
+                <!-- ✅ 턴 -->
+                <div id="turnInfo" class="muted" style="margin-bottom:8px;"></div>
+
+                <!-- ✅ 스토리 박스 -->
+                <div class="box story-box">
+                    <p class="muted">전투 기록</p>
+                    <div id="storyContainer"></div>
+                </div>
+
+                <!-- ✅ 스킬 선택지 -->
+                <div id="skillButtons" class="skill-box" style="margin-bottom:16px;"></div>
+
+                <!-- ✅ 전투 종료 후 홈 -->
+                <button id="btnHome" class="btn-create" style="width:100%; display:none; margin-top:8px;">
+                    홈으로
+                </button>
+
+                <!-- ✅ 전투 포기 -->
+                <button id="btnGiveUp" class="btn" style="width:100%; margin-top:8px;">
+                    전투 포기하고 돌아가기
+                </button>
+            </div>
+
+            <div class="bar"></div>
+        </div>
+    </div>
+        <!-- ✅ 로딩 -->
+        <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+            <div class="loading-box">
+                전투를 해석 중입니다...
+            </div>
+        </div>
+
+        <!-- ✅ 컨트롤러 -->
+        <script type="module" src="battle-controller.js"></script>
+</body>
+</html>

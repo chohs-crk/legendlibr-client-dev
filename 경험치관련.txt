@@ -1,0 +1,29 @@
+0. 캐릭터 경험치
+또렷한 불빛
+선명한 울림
+
+1. 생성 요소
+
+region create
+image create
+character create
+
+이미지 생성 시 강화(점수 x)
+1차적으로 gpt에게 요청해서
+메인 캐릭터, 배경, 이외의 디테일 요소를 받기
+
+passive region이면 배경 고정
+이미지 생성 이후엔 프리셋 x
+프리셋-origion별로 2~3개정도
+
+region create
+origionid, name, detail, score, owner, user
+user 0명이고 owner면 이용 가능
+owner=내아이디일 때 내가 owner
+user수에 비례해서 강해짐
+
+기본 region은 originid name detail user만
+user수비례강해짐 한도 낮음
+
+이미지 생성 시 불빛 + 유저 region이면 +
+

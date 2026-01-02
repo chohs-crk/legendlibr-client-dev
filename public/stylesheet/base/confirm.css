@@ -1,0 +1,56 @@
+﻿/* ===============================
+   CONFIRM UI
+=============================== */
+.ui-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 8500;
+    display: none;
+}
+
+.ui-confirm {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    max-width: 320px;
+    background: #0D0A12;
+    color: #fff;
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+    z-index: 8600;
+}
+
+.ui-confirm-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+    margin-top: 18px;
+}
+
+    /* 공통 버튼 스타일 */
+    .ui-confirm-actions button {
+        width: 20%;
+        min-width: 64px; /* 모바일 대비 */
+        padding: 10px 0;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        justify-self: center;
+    }
+
+        /* 취소 버튼 → 3번째 칸 */
+        .ui-confirm-actions button:first-child {
+            grid-column: 3;
+        }
+
+        /* 확인 버튼 → 4번째 칸 */
+        .ui-confirm-actions button:last-child {
+            grid-column: 4;
+        }
+

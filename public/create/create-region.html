@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>지역 생성</title>
+
+    <!-- 공통 베이스 -->
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+    <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
+
+    <!-- create 계열 공통 -->
+    <link rel="stylesheet" href="/stylesheet/create/create-common.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-region.css">
+</head>
+
+<body class="page-fade">
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+
+            <!-- 🔒 상단 chrome (create.html과 동일) -->
+            <div id="chrome-root"></div>
+
+            <!-- ===============================
+                 MAIN CONTENT
+            =============================== -->
+            <div class="content">
+                <div class="scroll-area">
+                    <div class="compose-wrap">
+
+                        <h1>새 지역 만들기</h1>
+
+                        <div class="field">
+                            <span class="label">기원</span>
+                            <div id="originName" class="value-box"></div>
+                        </div>
+
+                        <div class="field">
+                            <span class="label">지역 이름</span>
+                            <input id="regionName"
+                                   type="text"
+                                   placeholder="예) 패왕곡 북단"
+                                   maxlength="20" />
+                        </div>
+
+                        <div class="field">
+                            <span class="label">지역 설명</span>
+                            <textarea id="regionDetail"
+                                      placeholder="이 지역의 분위기, 전설 등을 자유롭게 적어주세요."
+                                      maxlength="500"></textarea>
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn secondary" id="btnBack">취소</button>
+                            <button class="btn primary" id="btnCreate">생성</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===============================
+         LOGIC
+    =============================== -->
+    <script type="module">
+        import { apiFetch } from "/base/api.js";
+
+        const $ = (s) => document.querySelector(s);
+
+        const origin = sessionStorage.getItem("origin");
+        if (!origin) {
+            alert("기원을 다시 선택해주세요.");
+            window.location.href = "/create/create.html";
+        }
+
+        $("#originName").textContent = origin || "(기원 없음)";
+
+        const btnCreate = $("#btnCreate");
+        const btnBack = $("#btnBack");
+        const regionName = $("#regionName");
+        const regionDetail = $("#regionDetail");
+
+        // 🔙 취소 → 기원 선택 화면
+        btnBack.onclick = () => {
+            window.location.href = "/create/create.html";
+        };
+
+        // ✅ 지역 생성
+        btnCreate.onclick = async () => {
+            const name = regionName.value.trim();
+            const detail = regionDetail.value.trim();
+
+            if (!name || !detail) {
+                alert("이름과 설명을 모두 입력하세요.");
+                return;
+            }
+
+            const res = await apiFetch("/base/region-create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    originId: origin,
+                    name,
+                    detail
+                })
+            });
+
+
+            const json = await res.json();
+            if (!json.ok) {
+                alert("생성 실패: " + (json.error || "알 수 없는 오류"));
+                return;
+            }
+
+            alert("지역 생성 완료!");
+            window.location.href = "/create/create.html";
+        };
+
+        // page-fade 등장 애니메이션
+        window.addEventListener("DOMContentLoaded", () => {
+            requestAnimationFrame(() => {
+                document.body.classList.add("show");
+            });
+        });
+    </script>
+
+    <!-- ===============================
+         CHROME INIT (create.html과 동일)
+    =============================== -->
+    <script type="module">
+        fetch("/base/common/chrome.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("chrome-root").innerHTML = html;
+                return import("/base/common/chrome.js");
+            })
+            .then(m => {
+                m.initChrome({
+                    mode: "back-only",
+                    onBack: () => {
+                        window.location.href = "/create/create.html";
+                    }
+                });
+            });
+    </script>
+
+    <!-- ===============================
+         OVERSCROLL BOUNCE (선택)
+         create와 동일한 감성, refresh는 비활성
+    =============================== -->
+    <script type="module">
+        import { initOverscrollBounce } from "/base/common/overscroll-bounce.js";
+        initOverscrollBounce(".scroll-area", {
+            onRefresh: async () => { }
+        });
+    </script>
+
+</body>
+</html>

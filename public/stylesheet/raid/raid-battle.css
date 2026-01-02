@@ -1,0 +1,21 @@
+﻿/* =========================================
+   RAID BATTLE
+   ========================================= */
+
+.story-box {
+    background: #0e0c13;
+    border-radius: 10px;
+    padding: 12px;
+    max-height: 420px;
+    overflow-y: auto;
+    color: #f5f3ff;
+    line-height: 1.6;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+}
+
+#choiceContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}

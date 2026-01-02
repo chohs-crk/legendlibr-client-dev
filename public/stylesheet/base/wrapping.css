@@ -1,0 +1,43 @@
+﻿/* ===============================
+   WRAPPING UI
+=============================== */
+.ui-wrap-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    z-index: 8000;
+    display: none;
+}
+
+.ui-wrap {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 360px;
+    background: #0D0A12;
+    color: #fff;
+    border-radius: 16px;
+    padding: 18px 16px 56px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    z-index: 8100;
+}
+
+.ui-wrap-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.ui-wrap-close {
+    position: absolute;
+    right: 16px;
+    bottom: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+}

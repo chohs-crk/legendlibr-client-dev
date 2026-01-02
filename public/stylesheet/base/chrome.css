@@ -1,0 +1,240 @@
+﻿/* ===============================
+   CHROME VARIABLES
+=============================== */
+:root {
+    --top-bar-height: 28px;
+    --footer-h: 64px;
+    --footer-safe: env(safe-area-inset-bottom);
+    --footer-total: calc(var(--footer-h) + var(--footer-safe));
+}
+
+
+/* ===============================
+   TOP BAR
+=============================== */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    height: var(--top-bar-height);
+    display: flex;
+    align-items: center;
+    z-index: 6000;
+    pointer-events: auto;
+}
+
+/* 뒤로가기 버튼 */
+.back-btn.icon-only {
+    background: rgba(0,0,0,0.5);
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+}
+
+    .back-btn.icon-only svg {
+        width: 28px;
+        height: 28px;
+    }
+
+/* 중앙 밀기 */
+.top-spacer {
+    flex: 1;
+}
+
+/* 우측 리소스 */
+.top-extra {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+    .top-extra .top-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+/* ===============================
+   CURRENCY ICON (WORLD STYLE)
+=============================== */
+.currency-icon {
+    width: 16px;
+    height: 16px;
+    color: #b388ff;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(140,90,255,.5));
+}
+
+/* scroll / frame 미세 차별 */
+.currency-item.scroll .currency-icon {
+    transform: translateY(-0.5px);
+}
+
+.currency-item.frame .currency-icon {
+    opacity: 0.9;
+}
+
+/* ===============================
+   SETTING ICON – DETAIL ONLY
+=============================== */
+.tab-item#tabSetting .tab-icon {
+    stroke-width: 1.4;
+    opacity: 0.85;
+}
+
+
+
+
+/* ===============================
+   FOOTER / TAB BAR
+=============================== */
+.tab-footer {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    height: var(--footer-h);
+    padding-bottom: var(--footer-safe);
+    display: flex;
+    background: linear-gradient( to top, #151320 75%, rgba(21,19,32,0.85) 100% );
+    z-index: 5000;
+}
+
+.tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+    .tab-item:hover {
+        background: rgba(255,255,255,0.06);
+    }
+
+.tab-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.stroke-icon {
+    fill: none;
+    stroke: #8f4bff;
+    stroke-width: 1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.tab-text {
+    font-size: 11px;
+    color: #e6dbff;
+}
+
+.tab-item.active .tab-text {
+    color: #ffffff;
+}
+/* ===============================
+   TAB ICON – WORLD ENHANCE
+=============================== */
+.tab-icon {
+    color: #9c6bff;
+    transition: color .15s ease, filter .15s ease, transform .15s ease;
+}
+
+/* 기본 미세 광택 */
+.tab-item .tab-icon {
+    filter: drop-shadow(0 0 2px rgba(140,90,255,.35));
+}
+
+/* 활성 강조 */
+.tab-item.active .tab-icon {
+    color: #ffffff;
+    transform: translateY(-1px);
+    filter: drop-shadow(0 0 6px rgba(180,120,255,.9)) drop-shadow(0 0 12px rgba(140,90,255,.6));
+}
+
+
+/* ===============================
+   CHROME SCROLL COMPENSATION
+=============================== */
+/* 🔥 chrome이 있을 때만 스크롤 여백 */
+.app .scroll-area {
+    padding-top: var(--top-bar-height);
+    padding-bottom: var(--footer-total);
+}
+.scroll-area::before,
+.scroll-area::after {
+    content: "";
+    display: block;
+    height: 5dvh;
+    flex-shrink: 0;
+}
+
+
+
+
+.top-bar {
+    background: transparent; /* 🔥 배경 제거 */
+    pointer-events: none; /* 전체는 클릭 통과 */
+}
+
+    .top-bar * {
+        pointer-events: auto; /* 버튼만 클릭 */
+    }
+/* footer-stack은 footer 위에 쌓이는 레이어 */
+.footer-stack {
+    position: fixed;
+    left: 50%;
+    bottom: var(--footer-total);
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    z-index: 4800;
+    pointer-events: none;
+}
+
+    .footer-stack * {
+        pointer-events: auto;
+    }
+/* ===============================
+   LEVEL (LEFT SLOT)
+=============================== */
+.top-level.left-slot {
+    display: inline-flex;
+    align-items: center;
+    height: 28px; /* top-bar-height랑 맞춤 */
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff; /* 🔥 완전 흰색 */
+
+    background: rgba(0,0,0,0.35); /* 배경 위에서도 잘 보이게(선택) */
+}
+/* 🔥 활성 탭 아이콘도 같이 강조 */
+.tab-item.active .tab-icon.stroke-icon {
+    stroke: #ffffff;
+}
+
+/* (선택) 활성 아이콘에 살짝 광택 */
+.tab-item.active .tab-icon.stroke-icon {
+    filter: drop-shadow(0 0 6px rgba(140, 90, 255, 0.9));
+}
+/* setting icon detail preserve */
+#tabSetting .tab-icon {
+    stroke-width: 1.4;
+}
+
+    #tabSetting .tab-icon circle {
+        opacity: 0.7;
+    }

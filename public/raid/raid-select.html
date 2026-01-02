@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <title>캐릭터 & 스킬 선택</title>
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-select.css">
+
+
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div class="bar"></div>
+
+            <div class="content">
+
+                <!-- 🔙 뒤로가기 버튼 -->
+                <button class="btn" onclick="window.location.href='/raid/raid.html'"
+                        style="margin-bottom:12px;">
+                    ← 뒤로가기
+                </button>
+
+                <!-- 상단: 보스 정보 -->
+
+                <div class="boss-detail-wrapper">
+                    <div class="boss-detail-name" id="bossName"></div>
+                    <div class="boss-detail-season" id="bossStage"></div>
+                    <div class="boss-detail-desc" id="bossDesc"></div>
+                </div>
+
+                <!-- 안내 -->
+                <p id="limitText"></p>
+
+                <!-- 캐릭터 목록 -->
+                <div id="slotContainer"></div>
+
+
+                <button id="btnStartRaid" class="btn-create" disabled>
+                    레이드 시작
+                </button>
+
+            </div>
+
+            <div class="bar"></div>
+        </div>
+
+        <!-- 스킬 선택 팝업 -->
+        <dialog id="skillDialog">
+            <div class="dlg">
+                <h3 id="skillCharName"></h3>
+                <div id="skillList" class="list"></div>
+                <button id="closeSkill">닫기</button>
+            </div>
+        </dialog>
+
+        <script type="module" src="raid-select.js"></script>
+    </div>
+</body>
+</html>

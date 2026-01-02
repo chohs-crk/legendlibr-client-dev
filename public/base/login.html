@@ -1,0 +1,85 @@
+﻿<!-- login.html 수정본 시작 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>로그인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/login.css">
+
+
+
+</head>
+<body class="login-page">
+
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+            <div class="login-box">
+                <h1>구글 계정으로 로그인</h1>
+                <button id="googleLoginBtn" class="login-btn">Google로 로그인</button>
+                <div class="sub">로그인 후 자동으로 메인으로 이동합니다</div>
+            </div>
+
+            <!-- 🔥 프론트 로그인 + 토큰 localStorage 저장 -->
+            <script type="module">
+                import { apiFetch } from "/base/api.js";
+                import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+                import {
+                    getAuth,
+                    signInWithPopup,
+                    GoogleAuthProvider
+                } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBOdqBFXQRg_jdRhYUjuusjOznqt6v7pkQ",
+                    authDomain: "legendlibr.firebaseapp.com",
+                    projectId: "legendlibr",
+                    storageBucket: "legendlibr.firebasestorage.app",
+                    messagingSenderId: "368559609215",
+                    appId: "1:368559609215:web:9434f0e39b82a927e5364a",
+                    measurementId: "G-N896X6SGD4"
+                };
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const provider = new GoogleAuthProvider();
+
+                const btn = document.getElementById("googleLoginBtn");
+
+                btn.addEventListener("click", async () => {
+                    try {
+                        const result = await signInWithPopup(auth, provider);
+                        const user = result.user;
+
+                        // ✅ ✅ ✅ 이 줄이 없어서 final에서 로그인 오류가 났던 것
+                        sessionStorage.setItem("uid", user.uid);
+
+                        const idToken = await user.getIdToken(true);
+
+                        // ✅ 서버로 토큰 전달 → 서버가 쿠키로 저장
+                        await apiFetch("/base/auth?action=login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ idToken })
+                        });
+
+                        window.location.href = "/base/index.html";
+
+
+
+                    } catch (e) {
+                        console.error(e);
+                        alert("로그인 실패");
+                    }
+                });
+            </script>
+       
+
+        </div>
+    </div>
+</body>
+</html>
+<!-- login.html 수정본 끝 -->

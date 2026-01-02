@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>랭킹</title>
+
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/rank.css" />
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+            <div id="chrome-root"></div>
+
+            <main class="content">
+                <div class="scroll-area">
+                    <div id="rankingList" class="ranking-list">
+                        <!-- ranking-view.js -->
+                    </div>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+        <script type="module">
+            fetch("/base/common/chrome.html")
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById("chrome-root").innerHTML = html;
+                    return import("/base/common/chrome.js");
+                })
+                .then(m => {
+                    m.initChrome({ mode: "resource-only" });
+                });
+        </script>
+
+
+        <!-- 랭킹 로직 -->
+        <script type="module" src="./ranking-view.js"></script>
+
+</body>
+</html>
+

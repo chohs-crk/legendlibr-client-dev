@@ -1,0 +1,23 @@
+
+
+
+
+
+cd C:\Users\namuk\OneDrive\문서\heroeslib
+git add .
+git commit -m "ui"
+git push
+firebase deploy --only hosting
+cd C:\Users\namuk\OneDrive\문서\ai-proxy2
+git add .
+git commit -m "서버"
+git push
+vercel --prod
+
+firebase login
+vercel login
+
+
+
+
+

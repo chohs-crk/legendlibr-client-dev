@@ -1,0 +1,341 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LegendLibr</title>
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/index.css">
+    <link rel="stylesheet" href="/stylesheet/base/rank.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-view.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-image.css">
+    <link rel="stylesheet" href="/stylesheet/base/journey.css">
+    <link rel="stylesheet" href="/stylesheet/base/confirm.css">
+    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-compose.css">
+    <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
+
+    <style>
+        .page {
+            display: none;
+        }
+
+            .page.active {
+                display: block;
+            }
+    </style>
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+
+            <!-- 🔒 chrome는 단 한 번 -->
+            <div id="chrome-root"></div>
+
+            <!-- ================= HOME ================= -->
+            <section id="page-home" class="page active">
+                <!-- home.html의 main/content/footer 부분만 복사 -->
+                <main class="content">
+                    <div class="bar"></div>
+                    <div class="scroll-area">
+                        <div id="charList" class="list"></div>
+                    </div>
+                </main>
+
+                <div class="footer-stack">
+                    <button id="btnCreate" class="btn-create">생성하기</button>
+                </div>
+            </section>
+
+            <!-- ================= JOURNEY ================= -->
+            <section id="page-journey" class="page">
+                <div class="content">
+                    <div class="bar"></div>
+                    <div class="scroll-area">
+                        <h2>여정 선택</h2>
+                        <button id="btnBattle" class="journey-card battle">⚔ 전투 시작</button>
+                        <button id="btnRaid" class="journey-card raid">🌀 레이드 시작</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SETTING ================= -->
+            <section id="page-setting" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+                        <h2>설정</h2>
+                        <button id="btnLogout" class="btn danger">로그아웃</button>
+                    </div>
+                </main>
+            </section>
+
+            <!-- ================= CREATE ================= -->
+            <section id="page-create" class="page">
+                <div class="content">
+                    <div class="scroll-area">
+                        <div id="originList"></div>
+                    </div>
+                </div>
+            </section>
+            <!-- ================= CREATE PROMPT ================= -->
+            <section id="page-create-prompt" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+
+                        <!-- create-prompt.html 안의 실제 내용 복사 -->
+                        <h2 class="page-title">캐릭터 이름과 설명</h2>
+
+                        <div class="info-line">
+                            <span class="label">기원</span>
+                            <span class="value" id="originName"></span>
+                        </div>
+
+                        <div class="info-line">
+                            <span class="label">지역</span>
+                            <span class="value" id="regionName"></span>
+                        </div>
+
+                        <input id="nameInput" placeholder="캐릭터 이름" />
+
+<textarea id="promptInput"
+          placeholder="캐릭터에 대한 간단한 설명을 적어주세요"></textarea>
+
+                        <button id="btnNext" class="btn primary">다음</button>
+
+
+                    </div>
+                </main>
+            </section>
+
+            <!-- ================= RANKING ================= -->
+            <section id="page-ranking" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+                        <div id="rankingList" class="ranking-list"></div>
+                    </div>
+                </main>
+            </section>
+
+
+            <!-- ================= CHARACTER VIEW ================= -->
+            <section id="page-character-view" class="page">
+                <main class="page-body">
+                    <div class="scroll-area">
+
+                        <!-- 캐릭터 이미지 -->
+                        <div class="char-image-box clickable" id="charImageBox">
+                            <img id="charImage" src="/images/base/base_01.png">
+
+                            <!-- 교체 아이콘 -->
+                            <div class="image-edit-icon" id="imageEditIcon">
+                                <svg viewBox="0 0 24 24" class="stroke-icon">
+                                    <path d="M4 20h4l10-10-4-4L4 16z" />
+                                    <path d="M14 6l4 4" />
+                                </svg>
+                            </div>
+
+                            <div class="char-name-overlay" id="charName">(이름)</div>
+                        </div>
+
+                        <!-- 사각형 정보 -->
+                        <div id="charIntroBox" class="info-box">
+                            (정보 불러오는 중...)
+                        </div>
+
+                        <!-- 탭 -->
+                        <div class="tab-bar">
+                            <button class="tab-btn active" id="tabStory">스토리</button>
+                            <button class="tab-btn" id="tabSkill">스킬</button>
+                            <button class="tab-btn" id="tabBattle">전투 기록</button>
+                        </div>
+
+                        <!-- 탭 내용 -->
+                        <div class="content-box" id="content">(불러오는 중...)</div>
+
+                        <!-- 전투 기록 페이지네이션 -->
+                        <div class="pager" id="battlePager" style="display:none;">
+                            <button class="pager-btn" id="btnPrevPage">&lt;</button>
+                            <div class="pager-pages" id="battlePageNumbers"></div>
+                            <button class="pager-btn" id="btnNextPage">&gt;</button>
+                        </div>
+
+                    </div>
+                </main>
+            </section>
+
+
+            <!-- ================= CHARACTER IMAGE ================= -->
+            <section id="page-character-image" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+
+                        <h2 class="page-title">이미지 변경</h2>
+
+                        <div class="char-image-box">
+                            <img id="currentImage" src="/images/base/base_01.png">
+                        </div>
+
+                        <div class="image-selector grid" id="imageGrid">
+                            <img data-type="default" data-key="base_01" src="/images/base/base_01.png">
+                            <img data-type="preset" data-key="warrior_01" src="/images/preset/warrior_01.png">
+                            <img data-type="preset" data-key="mage_01" src="/images/preset/mage_01.png">
+                            <img data-type="preset" data-key="rogue_01" src="/images/preset/rogue_01.png">
+
+                            <div class="ai-slot" id="aiSlot">
+                                <div class="ai-slot-inner">
+                                    <span class="ai-plus">＋</span>
+                                    <span class="ai-text">AI 이미지 생성</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-bar">
+                            <button class="btn apply-btn" id="btnApply">적용</button>
+                        </div>
+
+                    </div>
+                </main>
+
+                <!-- AI 생성 오버레이 -->
+                <div class="ai-overlay" id="aiOverlay" style="display:none;">
+                    <div class="ai-modal">
+                        <h3>AI 이미지 생성</h3>
+
+                        <textarea id="aiPromptInput"
+                                  placeholder="캐릭터 이미지에 반영하고 싶은 분위기나 인상을 적어주세요"></textarea>
+
+                        <div class="style-tags">
+                            <button class="style-btn" data-style="anime2d">2D 애니메이션</button>
+                            <button class="style-btn" data-style="real3d">3D 사실적</button>
+                            <button class="style-btn" data-style="watercolor">수채화</button>
+                            <button class="style-btn" data-style="darkfantasy">다크 판타지</button>
+                            <button class="style-btn" data-style="pixel">픽셀 아트</button>
+                        </div>
+
+                        <div class="ai-modal-actions">
+                            <button id="btnAICancel">취소</button>
+                            <button id="btnAIGenerate" disabled>생성</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 로딩 오버레이 -->
+                <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+                    <div class="loading-box">
+                        <div class="spinner"></div>
+                        <p>AI 이미지 생성 중입니다…</p>
+                    </div>
+                </div>
+            </section>
+
+
+        </div>
+
+
+    </div>
+    <div id="confirmOverlay" class="ui-confirm-overlay">
+        <div class="ui-confirm">
+            <div id="confirmText"></div>
+            <div class="ui-confirm-actions" id="confirmActions"></div>
+        </div>
+    </div>
+    <!-- ================= CHARACTER VIEW DIALOG ================= -->
+    <dialog id="detailDialog" class="plain-dialog">
+
+        <div class="top-bar dialog-topbar">
+            <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
+                <svg class="stroke-icon" viewBox="0 0 24 24">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+            </button>
+            <div class="top-spacer"></div>
+        </div>
+
+        <div class="dlg">
+            <div class="dlg-body story-box text-flow" id="detailBody"></div>
+        </div>
+
+    </dialog>
+    <!-- ================= REGION DETAIL WRAP (SPA 공용) ================= -->
+    <div id="wrapOverlay" class="ui-wrap-overlay" style="display:none;">
+        <div class="ui-wrap">
+            <div class="ui-wrap-body" id="wrapBody"></div>
+            <button class="ui-wrap-close" id="wrapClose">닫기</button>
+        </div>
+    </div>
+
+    <!-- chrome 로드 -->
+    <script type="module">
+        fetch("/base/common/chrome.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("chrome-root").innerHTML = html;
+                return import("/base/common/chrome.js");
+            })
+            .then(m => {
+                m.initChrome({ mode: "resource-only" });
+            });
+    </script>
+    <script type="module">
+        import { apiFetch } from "/base/api.js";
+
+        window.API = {
+            async getMyCharacters() {
+                const res = await apiFetch("/base/characters");
+                if (!res.ok) throw new Error("AUTH_FAIL");
+                return res.json();
+            },
+
+            async deleteCharacter(id) {
+                const res = await apiFetch(`/base/characters?id=${id}`, {
+                    method: "DELETE"
+                });
+                if (!res.ok) throw new Error("DELETE_FAIL");
+                return res.json();
+            },
+
+            async me() {
+                const res = await apiFetch("/base/me");
+                if (res.status === 401) return null;
+                if (!res.ok) throw new Error("SERVER_ERROR");
+                return res.json();
+            }
+
+
+        };
+    </script>
+
+
+    <script type="module">
+        import { requireAuthOrRedirect } from "/base/auth.js";
+
+        (async function bootstrapApp() {
+            try {
+                const me = await requireAuthOrRedirect();
+
+                console.log("인증 성공:", me);
+
+                // 인증 성공 후 SPA 시작
+                if (window.showPage) {
+                    window.showPage("home");
+                }
+            } catch (e) {
+                // requireAuthOrRedirect 내부에서 이미 redirect 처리함
+                console.warn("인증 실패:", e.message);
+            }
+        })();
+    </script>
+
+
+    <script type="module" src="/base/app-router.js"></script>
+    <script type="module" src="/base/home.js"></script>
+    <script type="module" src="/create/create.js"></script>
+
+</body>
+</html>

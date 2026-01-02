@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>캐릭터 결말 생성중...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/index.css">
+
+    <style>
+        body {
+            margin: 0;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        #loadingBox {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: .9;
+        }
+
+        .spinner {
+            border: 6px solid rgba(255,255,255,0.2);
+            border-top: 6px solid #fff;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div id="loadingBox">
+            <div class="spinner"></div>
+            <div>캐릭터를 완성하고 있습니다...</div>
+            <div>잠시만 기다려 주세요.</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { apiFetch } from "/base/api.js";
+
+        async function gen() {
+            try {
+                const res = await apiFetch("/create/final", {
+                    method: "POST"
+                });
+
+                const j = await res.json();
+
+                if (!j.ok) {
+                    document.getElementById("loadingBox").innerHTML = "<div>생성 실패</div>";
+                    return;
+                }
+
+                location.href = "../base/index.html";
+            } catch {
+                document.getElementById("loadingBox").innerHTML =
+                    "<div>오류. 다시 시도하십시오.</div>";
+            }
+        }
+
+        gen();
+    </script>
+
+
+</body>
+</html>

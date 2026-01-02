@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <title>레이드 준비 중…</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-load.css">
+
+
+</head>
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div class="bar"></div>
+
+            <div class="content">
+                <h2 style="margin-bottom: 12px;">레이드 준비 중…</h2>
+                <p id="vsText" class="muted" style="margin-bottom: 16px;"></p>
+
+                <div id="statusBox" class="box" style="min-height: 80px;">
+                    <p id="statusText">레이드 정보를 불러오는 중입니다…</p>
+                </div>
+
+                <button id="btnCancel" class="btn" style="margin-top: 16px; width: 100%;">
+                    레이드 취소하고 돌아가기
+                </button>
+            </div>
+
+            <div class="bar"></div>
+        </div>
+
+        <!-- ✅ 레이드 전용 로더 스크립트 -->
+        <script type="module" src="raid-load.js"></script>
+    </div>
+</body>
+</html>

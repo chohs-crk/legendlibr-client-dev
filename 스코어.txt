@@ -1,0 +1,10 @@
+"scores": {
+   "combatScore": 1-10,        // 전투에 어울리는 정도
+   "supportScore": 1-10,       // 보조에 어울리는 정도
+   "worldScore": 1-10,         // 세계관과 어울리는 정도
+   "narrativeScore": 1-10,     // 입체적인 정도
+   "charmScore": 1-10,         // 묘사가 매력적인 정도
+   "dominateScore": 1-10,      // 상대 특성을 무시하고 강제하는 정도
+   "metaScore": 1-10,          // 허구 인지 정도
+   "ruleBreakScore": 1-10      // 규칙 무시 성향
+},

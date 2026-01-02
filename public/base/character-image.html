@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캐릭터 이미지 변경</title>
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-image.css">
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+            <div id="chrome-root"></div>
+
+            <main class="content">
+                <div class="scroll-area">
+
+                    <h2 class="page-title">이미지 변경</h2>
+
+                    <div class="char-image-box">
+                        <img id="currentImage" src="/images/base/base_01.png">
+                    </div>
+
+                    <div class="image-selector grid" id="imageGrid">
+                        <img data-type="default" data-key="base_01" src="/images/base/base_01.png">
+                        <img data-type="preset" data-key="warrior_01" src="/images/preset/warrior_01.png">
+                        <img data-type="preset" data-key="mage_01" src="/images/preset/mage_01.png">
+                        <img data-type="preset" data-key="rogue_01" src="/images/preset/rogue_01.png">
+
+                        <div class="ai-slot" id="aiSlot">
+                            <div class="ai-slot-inner">
+                                <span class="ai-plus">＋</span>
+                                <span class="ai-text">AI 이미지 생성</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button class="btn apply-btn" id="btnApply">적용</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- AI 생성 모달 -->
+            <div class="ai-overlay" id="aiOverlay" style="display:none;">
+                <div class="ai-modal">
+                    <h3>AI 이미지 생성</h3>
+
+                    <textarea id="aiPromptInput"
+                              placeholder="캐릭터 이미지에 반영하고 싶은 분위기나 인상을 적어주세요"></textarea>
+
+                    <!-- 🎨 스타일 선택 -->
+                    <div class="style-tags">
+                        <button class="style-btn" data-style="anime2d">2D 애니메이션</button>
+                        <button class="style-btn" data-style="real3d">3D 사실적</button>
+                        <button class="style-btn" data-style="watercolor">수채화</button>
+                        <button class="style-btn" data-style="darkfantasy">다크 판타지</button>
+                        <button class="style-btn" data-style="pixel">픽셀 아트</button>
+                    </div>
+
+                    <div class="ai-modal-actions">
+                        <button id="btnAICancel">취소</button>
+                        <button id="btnAIGenerate" disabled>생성</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p>AI 이미지 생성 중입니다…</p>
+        </div>
+    </div>
+
+    <script type="module" src="/base/character-image.js"></script>
+
+    <script type="module">
+        fetch("/base/common/chrome.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("chrome-root").innerHTML = html;
+                return import("/base/common/chrome.js");
+            })
+            .then(m => m.initChrome({ mode: "back+resource" }));
+    </script>
+</body>
+</html>

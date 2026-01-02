@@ -1,0 +1,487 @@
+﻿/* ===============================
+   INFO / INTRO
+=============================== */
+.info-box {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.intro-text {
+    line-height: 1.7;
+    color: #EDEAFF;
+    font-size: 14px;
+}
+
+.story-em {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+
+/* ===============================
+   TAB BAR / BUTTONS
+=============================== */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px 0;
+    background: #1B1928;
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+    .tab-btn.active {
+        background: var(--accent);
+        color: #fff;
+    }
+
+
+/* ===============================
+   CONTENT
+=============================== */
+.content-box {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px;
+    flex: 1;
+    overflow: unset;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+}
+
+
+/* ===============================
+   SKILL
+=============================== */
+.skill-box {
+    background: #141221; /* 더 진한 내부 */
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1.5px solid rgba(143,75,255,0.75);
+    box-shadow: 0 4px 14px rgba(120,60,255,0.25);
+}
+
+.skill-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #caa7ff;
+    margin-bottom: 6px;
+}
+
+.skill-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #EDEAFF;
+}
+
+    .skill-box strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--accent);
+    }
+
+
+/* ===============================
+   CHARACTER IMAGE
+=============================== */
+.char-image-box {
+    width: 70vw;
+    max-width: 230px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid rgba(143,75,255,0.6);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+    pointer-events: auto;
+    cursor: pointer;
+    isolation: isolate; /* 🔥 핵심 */
+    z-index: 1;
+    pointer-events: auto;
+}
+
+    .char-image-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .char-image-box::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient( to bottom, rgba(0,0,0,0) 55%, rgba(0,0,0,0.65) 100% );
+        pointer-events: none;
+    }
+
+
+    .image-edit-icon,
+    .char-name-overlay,
+    .char-image-box::after {
+        pointer-events: none;
+    }
+
+.char-name-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    z-index: 2; /* 🔥 핵심 */
+    pointer-events: none;
+}
+
+
+/* ===============================
+   IMAGE EDIT BUTTON
+=============================== */
+.image-edit-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1; /* 🔥 항상 표시 */
+
+    z-index: 3; /* 이미지 위에만 */
+    pointer-events: none;
+}
+.char-image-box img {
+    position: relative;
+    z-index: 0;
+    pointer-events: none;
+}
+.image-edit-icon {
+    transform: translateZ(0); /* 🔥 모바일 hit-test 안정화 */
+}
+
+.char-image-box:not(.own-character) .image-edit-icon {
+    display: none;
+}
+
+
+.image-edit-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+
+/* ===============================
+   INFO GRID (2x2)
+=============================== */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.info-cell {
+    background: #1B1928;
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+}
+
+    .info-cell .label {
+        font-size: 12px;
+        color: #9A96B8;
+        margin-bottom: 2px;
+    }
+
+    .info-cell .value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #EDEAFF;
+    }
+
+    .info-cell.placeholder {
+        background: transparent;
+        border: 1px dashed rgba(255,255,255,0.15);
+    }
+
+
+
+/* ===============================
+   DIALOG (FULL STORY)
+   app 기준으로 고정
+=============================== */
+
+
+
+
+
+.story-box {
+    width: 100%;
+    padding: 0; /* padding은 dlg-body가 담당 */
+    font-size: 15px;
+    line-height: 1.9;
+    color: #ffffff;
+}
+
+
+
+
+.story-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    margin: 8px auto 24px;
+    color: #e6dbff;
+}
+
+
+
+
+
+
+
+
+/* ===============================
+   BLUR / OVERLAY
+=============================== */
+/* blur는 page-body만 */
+.app.is-blurred .page-body {
+    filter: blur(6px);
+
+}
+
+
+
+
+
+
+/* 스토리 미리보기 클릭 가능 표시 */
+.clickable-preview {
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+    /* 마우스 올렸을 때 */
+    .clickable-preview:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 6px 18px rgba(140,90,255,0.35);
+    }
+
+    /* 클릭 순간 바운스 */
+    .clickable-preview:active {
+        transform: scale(0.96);
+    }
+
+.story-preview {
+    position: relative;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.55);
+    cursor: pointer;
+    overflow: hidden; /* 🔥 페이드 잘리게 */
+}
+
+    /* 🔥 오른쪽 글자 페이드 */
+    .story-preview::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4.5em; /* ✅ 대략 5글자 폭 */
+        height: 100%;
+        pointer-events: none;
+        background: linear-gradient( to right, rgba(0,0,0,0), rgba(0,0,0,0.85) );
+    }
+
+
+
+
+
+/* 전투 텍스트 공통 */
+.battle-title-main,
+.battle-sub,
+.battle-story {
+    color: #ffffff;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+/* 전투 상단 이미지 */
+.battle-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 2px solid rgba(143,75,255,0.8);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+    .battle-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.battle-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100% );
+}
+
+/* 전투 본문 */
+.battle-story {
+    color: #ffffff;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+/* ===============================
+   BATTLE LIST
+=============================== */
+
+.battle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 전투 카드 */
+.battle-item {
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid rgba(143,75,255,0.55);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+/* 상단 이미지 */
+.battle-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+}
+
+    .battle-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.battle-thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.75) 100% );
+}
+
+/* 본문 */
+.battle-body {
+    padding: 12px 14px 14px;
+}
+
+/* 제목 줄 */
+.battle-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.battle-title-main {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+/* 승패 */
+.battle-title-result {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+    .battle-title-result.win {
+        background: rgba(120,60,255,0.85);
+    }
+
+    .battle-title-result.lose {
+        background: rgba(80,80,80,0.8);
+    }
+
+    .battle-title-result.neutral {
+        background: rgba(120,120,120,0.6);
+    }
+
+/* 미리보기 */
+.battle-sub {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #ffffff;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+/* ===============================
+   PAGER
+=============================== */
+
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0 4px;
+}
+
+.pager-btn {
+    background: #000;
+    color: #8f4bff;
+    border: 1.5px solid rgba(143,75,255,0.6);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .pager-btn.hidden {
+        display: none;
+    }
+
+.pager-pages {
+    display: flex;
+    gap: 6px;
+}
+
+.pager-page {
+    min-width: 32px;
+    text-align: center;
+    padding: 6px 0;
+    background: #000;
+    color: #8f4bff;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .pager-page.active {
+        background: #8f4bff;
+        color: #000;
+        font-weight: 700;
+    }
+
+

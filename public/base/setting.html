@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>설정</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/index.css">
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+
+        <div class="app">
+            <div id="chrome-root"></div>
+
+            <!-- ===============================
+                 AUTH CHECK
+            =============================== -->
+            <script type="module">
+                const me = await fetch(
+                    "https://ai-proxy2.vercel.app/api/base/auth?action=me",
+                    { credentials: "include" }
+                );
+
+                if (me.status === 401) {
+                    location.href = "/base/login.html";
+                    throw new Error("NOT_LOGGED_IN");
+                }
+            </script>
+
+            <!-- ===============================
+                 TOP BAR
+            =============================== -->
+            <div class="bar"></div>
+
+            <!-- ===============================
+                 MAIN CONTENT
+            =============================== -->
+            <main class="content">
+                <div class="scroll-area">
+
+                    <h2 style="margin-bottom:16px;">설정</h2>
+
+                    <!-- 계정 영역 -->
+                    <section class="setting-section">
+                        <h3 class="setting-title">계정</h3>
+
+                        <button id="btnLogout" class="btn danger">
+                            로그아웃
+                        </button>
+                    </section>
+
+                    <!-- 나중에 확장용 -->
+                    <section class="setting-section muted">
+                        <h3 class="setting-title">기타</h3>
+                        <div>버전 정보, 약관 등은 추후 추가 예정</div>
+                    </section>
+
+                </div>
+            </main>
+
+            <!-- ===============================
+                 BOTTOM BAR
+            =============================== -->
+            <div class="bar"></div>
+
+         
+           
+
+        </div>
+    </div>
+
+    <script type="module">
+        fetch("/base/common/chrome.html")
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("chrome-root").innerHTML = html;
+                return import("/base/common/chrome.js");
+            })
+            .then(m => {
+                m.initChrome({ mode: "resource-only" });
+            });
+    </script>
+
+    <script type="module">
+        document.getElementById("btnLogout")?.addEventListener("click", async () => {
+            const ok = confirm("정말 로그아웃 하시겠습니까?");
+            if (!ok) return;
+
+            await fetch("https://ai-proxy2.vercel.app/api/base/auth?action=logout", {
+                method: "POST",
+                credentials: "include"
+            });
+
+            location.href = "/base/login.html";
+        });
+    </script>
+
+</body>
+</html>

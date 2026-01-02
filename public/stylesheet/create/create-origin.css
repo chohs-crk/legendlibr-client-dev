@@ -1,0 +1,235 @@
+﻿/* ==================================================
+   CREATE ORIGIN
+   ================================================== */
+
+.origin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* 전체 카드 */
+.origin-item {
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+.origin-item {
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+    .origin-item.selected {
+        transform: translateY(-2px);
+        box-shadow: inset 0 0 0 2px rgba(180,140,255,0.7), 0 10px 20px rgba(120,80,200,0.35);
+    }
+
+/* 이미지 영역만 높이 고정 */
+.origin-image {
+    position: relative;
+    height: 110px; /* ← 여기서 이미지 크기 결정 */
+    background-size: cover;
+    background-position: center;
+}
+
+    /* 텍스트 가독성 오버레이 */
+    .origin-image::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient( to right, rgba(0,0,0,0.65), rgba(0,0,0,0.2) );
+    }
+
+/* 제목 */
+.origin-title {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    z-index: 1;
+}
+.origin-item.selected .origin-title {
+    color: #caa7ff; /* 연한 보라 */
+}
+
+/* 확장 영역 */
+.origin-expand {
+    display: none;
+    padding: 14px;
+    background: rgba(70, 55, 110, 0.75);
+}
+
+/* 선택된 카드만 열림 */
+.origin-item.selected .origin-expand {
+    display: block;
+}
+.origin-image {
+    height: clamp(96px, 22vw, 130px);
+}
+/* 기본 상태: 닫힘 */
+.origin-expand {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: max-height 0.45s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* 열린 상태 */
+.origin-item.selected .origin-expand {
+    max-height: 800px; /* 충분히 큰 값 */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+
+
+.origin-desc-box {
+    font-size: 14px;
+    opacity: 0.75;
+}
+.origin-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+    .origin-actions .btn {
+        flex: 1;
+    }
+
+/* ===== 지역 ===== */
+.region-item {
+    background: #4b3f63;
+    padding: 10px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+    .region-item.selected {
+        background: #6e5aa3;
+    }
+
+.region-info-btn {
+    background: #fff2;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+
+
+/* ===== 미지의 지역 ===== */
+.region-unknown-box {
+    padding: 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    text-align: center;
+}
+/* ===============================
+   REGION DIALOG CONTENT
+=============================== */
+
+.region-dialog-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e9dcff;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(180,140,255,0.25);
+}
+
+.region-dialog-story {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #e6dbff;
+    opacity: 0.95;
+}
+/* create-origin.css */
+
+.origin-wrap {
+    padding: 0 12px;
+}
+body.dialog-open .scroll-area {
+    overflow: hidden;
+}
+body.dialog-open .app .scroll-area {
+    padding: 0 !important;
+}
+
+.region-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.region-delete-btn {
+    background: none;
+    border: none;
+    color: #bbb;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+    .region-delete-btn:hover {
+        color: #ff6666;
+    }
+.region-unknown-box {
+    pointer-events: none;
+}
+/* ===============================
+   ORIGIN ACTION BUTTONS
+   =============================== */
+
+.origin-actions .btn {
+    height: 46px;
+    border-radius: 14px; /* 곡선 강조 */
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+    /* ▶ 지역 추가하기 */
+    .origin-actions .btn.secondary {
+        background: linear-gradient( 180deg, #6a4bbf, #5636a8 ); /* 기원 강조색보다 한 톤 진한 보라 */
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(80, 40, 150, 0.35);
+    }
+
+    /* ▶ 다음 */
+    .origin-actions .btn.primary {
+        background: linear-gradient( 180deg, #7b5cff, #5b3fe6 );
+        color: #ffffff;
+        box-shadow: 0 6px 14px rgba(120, 90, 255, 0.45);
+    }
+
+    /* hover */
+    .origin-actions .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(140, 100, 255, 0.5);
+    }
+
+    /* active */
+    .origin-actions .btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(100, 70, 200, 0.4);
+    }
+
+    /* disabled (다음 버튼 기본 상태) */
+    .origin-actions .btn:disabled {
+        background: #3f355a;
+        color: #b9b3cc;
+        box-shadow: none;
+        cursor: not-allowed;
+        opacity: 0.85;
+    }

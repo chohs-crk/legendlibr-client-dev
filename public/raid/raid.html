@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <title>레이드 입장</title>
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-common.css">
+    <link rel="stylesheet" href="/stylesheet/raid/raid-entry.css">
+
+
+</head>
+
+<body>
+    <div class="bg-root">
+        <div class="bg-frame"></div>
+        <div class="app">
+            <div class="bar"></div>
+
+            <div class="content">
+
+                <!-- 🔙 뒤로가기 버튼 추가 -->
+                <button class="btn" onclick="window.location.href='/base/journey.html'"
+                        style="margin-bottom:12px;">
+                    ← 뒤로가기
+                </button>
+
+                <div class="raid-header">
+
+                    <div class="raid-season-badge">
+                        <span id="seasonTitle">시즌 1</span>
+                        <span id="seasonDesc">침식의 레이드</span>
+                    </div>
+
+
+                    <div class="raid-header-title">레이드: 보스 선택</div>
+                    <div class="raid-header-sub">1~5단계 및 시즌 보스를 공략할 수 있습니다.</div>
+                </div>
+
+                <div class="raid-layout">
+                    <!-- 보스 목록 -->
+                    <div class="boss-list-wrapper">
+                        <div class="boss-list-title">보스 목록</div>
+                        <div class="boss-list" id="bossList"></div>
+
+                    </div>
+
+                    <!-- 보스 상세 -->
+                    <div class="boss-detail-wrapper">
+                        <div class="boss-detail-name" id="bossName">보스를 선택하세요</div>
+                        <div class="boss-detail-season" id="bossSeason">시즌 정보</div>
+
+
+
+                        <div class="boss-detail-desc" id="bossDesc">
+                            보스를 선택하면 패턴 · 난이도 등이 표시됩니다.
+                        </div>
+
+                        <button class="btn-raid-enter" id="btnEnter" disabled>
+                            레이드 입장
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bar"></div>
+        </div>
+
+        <!-- 나중에 raid.js 연결 -->
+        <script type="module" src="raid.js"></script>
+    </div>
+</body>
+</html>

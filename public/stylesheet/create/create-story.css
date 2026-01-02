@@ -1,0 +1,63 @@
+﻿.char-intro {
+    margin: 12px 5vw;
+    padding: 12px;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    font-size: 14px;
+}
+
+.story-box {
+    margin: 0 5vw;
+    height: 45vh;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.85); /* 검은 배경 */
+    color: #ffffff; /* 흰 글자 */
+    border-radius: 10px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+
+.choice-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    background: #eee;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.prev-choice {
+    margin: 10px 0;
+    font-style: italic;
+    color: #555;
+}
+
+.info-text {
+    margin-top: 12px;
+    text-align: center;
+    color: #ccc;
+    font-size: 13px;
+}
+.choice-box {
+    margin: 12px 5vw 0;
+    padding: 12px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 10px;
+}
+
+.choice-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    background: #eee;
+    font-size: 15px;
+    cursor: pointer;
+}

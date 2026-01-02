@@ -1,0 +1,32 @@
+﻿/* =========================================
+   RAID SELECT
+   ========================================= */
+
+#limitText {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-bottom: 10px;
+}
+
+#slotContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 버튼 그룹 */
+.char-actions button {
+    border: 1px solid rgba(255,255,255,0.15);
+    background: #1f1d2e;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.15s ease;
+    color: #fff;
+}
+
+    .char-actions button:hover {
+        background: #2b2940;
+        border-color: rgba(255,255,255,0.25);
+    }
