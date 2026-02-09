@@ -1,12 +1,24 @@
 ﻿// /base/client.config.js
-// 🔒 [PRODUCTION DEFAULT CONFIG]
-// 이 파일은 배포 기준입니다.
-// 개발 시에는 client.config.dev.js로 교체해서 사용하세요.
 
+
+
+// /base/client.config.js
 export const CLIENT_CONFIG = {
-    API_BASE: "https://ai-proxy2.vercel.app/api",
+    API_BASE: "https://ai-proxy-dev.vercel.app/api",
 
-    MODE: "prod",
-
+    MODE: "dev",
     DEBUG: false,
+
+    FIREBASE: {
+        apiKey: "AIzaSyAZz572fUZz33HF7g0cc7SnYqjUP64W-Tc",
+        authDomain: "mythticstory.firebaseapp.com",
+        projectId: "mythticstory",
+        storageBucket: "mythticstory.firebasestorage.app",
+        messagingSenderId: "926341292372",
+        appId: "1:926341292372:web:758b9df00f315a8be568c1",
+        measurementId: "G-V8VYP82S10"
+
+    },
+    ADMIN_EMAIL: "hhchocookierun1@gmail.com"
 };
+

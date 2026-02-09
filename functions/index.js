@@ -1,20 +1,26 @@
-﻿const { setGlobalOptions } =
-    require("firebase-functions/v2");
+﻿const { setGlobalOptions } = require("firebase-functions/v2");
 
-/**
- * 전역 옵션 (딱 1번만)
- */
 setGlobalOptions({
     maxInstances: 10,
 });
 
-/**
- * Cloud Functions export
- */
+/* ============================
+   BATTLE ELO 처리
+============================ */
 exports.applyEloOnBattleFinish =
     require("./battles/applyElo")
         .applyEloOnBattleFinish;
 
+/* ============================
+   랭킹 캐시 업데이트
+============================ */
 exports.updateRankingCache =
     require("./ranking/updateRankingCache")
         .updateRankingCache;
+
+/* ============================
+   🔥 전투 워커 (1분 → 내부 5초 x 12회)
+============================ */
+exports.battleWorker =
+    require("./battles/battleWorker")
+        .battleWorker;

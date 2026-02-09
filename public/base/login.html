@@ -26,6 +26,8 @@
             <!-- 🔥 프론트 로그인 + 토큰 localStorage 저장 -->
             <script type="module">
                 import { apiFetch } from "/base/api.js";
+                import { CLIENT_CONFIG } from "/base/client.config.js";
+
                 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
                 import {
                     getAuth,
@@ -33,17 +35,8 @@
                     GoogleAuthProvider
                 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBOdqBFXQRg_jdRhYUjuusjOznqt6v7pkQ",
-                    authDomain: "legendlibr.firebaseapp.com",
-                    projectId: "legendlibr",
-                    storageBucket: "legendlibr.firebasestorage.app",
-                    messagingSenderId: "368559609215",
-                    appId: "1:368559609215:web:9434f0e39b82a927e5364a",
-                    measurementId: "G-N896X6SGD4"
-                };
-
-                const app = initializeApp(firebaseConfig);
+                // ✅ 중앙 config 사용
+                const app = initializeApp(CLIENT_CONFIG.FIREBASE);
                 const auth = getAuth(app);
                 const provider = new GoogleAuthProvider();
 
@@ -54,12 +47,10 @@
                         const result = await signInWithPopup(auth, provider);
                         const user = result.user;
 
-                        // ✅ ✅ ✅ 이 줄이 없어서 final에서 로그인 오류가 났던 것
                         sessionStorage.setItem("uid", user.uid);
 
                         const idToken = await user.getIdToken(true);
 
-                        // ✅ 서버로 토큰 전달 → 서버가 쿠키로 저장
                         await apiFetch("/base/auth?action=login", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -68,15 +59,14 @@
 
                         window.location.href = "/base/index.html";
 
-
-
                     } catch (e) {
                         console.error(e);
                         alert("로그인 실패");
                     }
                 });
             </script>
-       
+
+
 
         </div>
     </div>

@@ -1,4 +1,6 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+﻿import { CLIENT_CONFIG } from "/base/client.config.js";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import {
     getFirestore,
     doc,
@@ -14,28 +16,10 @@ import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
+// ✅ 중앙 config 사용
+const { FIREBASE, ADMIN_EMAIL } = CLIENT_CONFIG;
 
-// =====================================================
-// ✅ 관리자 이메일 (본인 Google 계정)
-// =====================================================
-const ADMIN_EMAIL = "hhchocookierun1@gmail.com";
-
-
-// ====== Firebase 초기화 ======
-const firebaseConfig = {
-    apiKey: "AIzaSyBOdqBFXQRg_jdRhYUjuusjOznqt6v7pkQ",
-    authDomain: "legendlibr.firebaseapp.com",
-    projectId: "legendlibr",
-    storageBucket: "legendlibr.firebasestorage.app",
-    messagingSenderId: "368559609215",
-    appId: "1:368559609215:web:9434f0e39b82a927e5364a"
-};
-
-
-// =====================================================
-// ✅ Firebase 초기화
-// =====================================================
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(FIREBASE);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();

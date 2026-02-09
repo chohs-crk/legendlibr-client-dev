@@ -41,7 +41,7 @@ body {
 .bg-root {
     position: relative;
     width: 100%;
-    height: 100dvh;
+    min-height: 100dvh; /* 🔥 100dvh → min-height로 변경 */
 }
 
 /* 배경 프레임은 app 기준 중앙 */
@@ -64,23 +64,29 @@ body {
 /* ===============================
    APP CONTAINER
 =============================== */
+
 .app {
     position: relative;
     z-index: 1;
     width: 100%;
+    max-width: 420px; /* ← 데스크탑 여부와 상관없이 강제 적용 */
+    margin: 0 auto;
     height: 100dvh;
+    /* 🔥 핵심 변경점: X축 확장 금지 */
+    overflow-x: hidden;
+    overflow-y: hidden; /* 기존 overflow: hidden 유지 */
+
     display: flex;
     flex-direction: column;
     background: transparent;
 }
 
-/* 데스크탑에서도 모바일 폭 유지 */
-@media (min-width: 768px) {
-    .app {
-        max-width: 420px;
-        margin: 0 auto;
+    /* 내부 요소가 폭 초과 못 하도록 보호막 */
+    .app * {
+        max-width: 100%;
+        box-sizing: border-box;
     }
-}
+
 
 
 /* ===============================
@@ -88,7 +94,7 @@ body {
 =============================== */
 .content {
     flex: 1;
-    overflow: hidden;
+
     display: flex;
     flex-direction: column;
     background: transparent;
@@ -97,7 +103,7 @@ body {
 /* page-body가 필요한 화면용 */
 .page-body {
     flex: 1;
-    overflow: hidden;
+  
     display: flex;
     flex-direction: column;
 }
@@ -106,10 +112,6 @@ body {
 /* ===============================
    SCROLL AREA (NO CHROME PADDING)
 =============================== */
-/* 브라우저 기본 Pull-to-Refresh 방지 (우리 커스텀 PTR 쓰기 위함) */
-html, body {
-    overscroll-behavior-y: contain;
-}
 
 /* 스크롤 컨테이너가 체인으로 바깥으로 튀지 않게 */
 .scroll-area {
@@ -159,4 +161,29 @@ html, body {
     word-break: keep-all;
     overflow-wrap: break-word;
     white-space: normal;
+}
+/* ===============================
+   PTR BASE SCROLL EXTENSION
+   (PURE CONTENT 기준 +20%)
+=============================== */
+
+.scroll-area::before {
+    content: "";
+    display: block;
+    flex-shrink: 0;
+    height: 20px !important;
+}
+
+.scroll-area::after {
+    content: "";
+    display: block;
+    flex-shrink: 0;
+    height: 30px !important;
+}
+.page,
+.content,
+.page-body {
+    min-height: 0;
+    /* overflow: hidden; ← 삭제 */
+    overflow: visible;
 }

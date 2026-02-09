@@ -48,7 +48,7 @@
 
         <div id="loadingBox">
             <div class="spinner"></div>
-            <div>캐릭터를 완성하고 있습니다...</div>
+            <div>캐릭터의 이야기를 마무리하고 있습니다.</div>
             <div>잠시만 기다려 주세요.</div>
         </div>
     </div>
@@ -64,21 +64,62 @@
 
                 const j = await res.json();
 
-                if (!j.ok) {
-                    document.getElementById("loadingBox").innerHTML = "<div>생성 실패</div>";
+                // 🔒 이미 호출 중이거나 처리 중인 경우
+                if (j.status === "waiting") {
+                    document.getElementById("loadingBox").innerHTML =
+                        `<div>결말을 정리하고 있습니다...</div>
+                             <div>곧 완료됩니다.</div>`;
                     return;
                 }
 
-                location.href = "../base/index.html";
-            } catch {
+                // ✅ 이미 완료된 경우
+                if (j.status === "done") {
+                    document.getElementById("loadingBox").innerHTML =
+                        `<div>캐릭터 생성이 완료되었습니다.</div>
+                             <div>잠시 후 홈으로 이동합니다.</div>`;
+                    setTimeout(() => {
+                        sessionStorage.setItem("homeCalled", "false");
+                        location.href = "../base/index.html";
+                    }, 1200);
+                    return;
+                }
+
+                // ❌ 실패 (서버 정책상 재시도 불가)
+                if (!j.ok) {
+                    document.getElementById("loadingBox").innerHTML =
+                        `<div>캐릭터 생성이 종료되었습니다.</div>
+                             <div>다시 생성할 수 있습니다.</div>
+                             <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
+                    setTimeout(() => {
+                        sessionStorage.setItem("homeCalled", "false");
+                        location.href = "../base/index.html";
+                    }, 2000);
+                    return;
+                }
+
+                // ✅ 정상 성공 응답
                 document.getElementById("loadingBox").innerHTML =
-                    "<div>오류. 다시 시도하십시오.</div>";
+                    `<div>캐릭터 생성이 완료되었습니다.</div>
+                         <div>잠시 후 이동합니다.</div>`;
+                setTimeout(() => {
+                    sessionStorage.setItem("homeCalled", "false");
+                    location.href = "../base/index.html";
+                }, 1200);
+
+            } catch (err) {
+                // 네트워크 / 예외 오류
+                document.getElementById("loadingBox").innerHTML =
+                    `<div>처리 중 문제가 발생했습니다.</div>
+                         <div>캐릭터 생성은 종료되었습니다.</div>
+                         <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
+                setTimeout(() => {
+                    sessionStorage.setItem("homeCalled", "false");
+                    location.href = "../base/index.html";
+                }, 2500);
             }
         }
 
         gen();
     </script>
-
-
 </body>
 </html>

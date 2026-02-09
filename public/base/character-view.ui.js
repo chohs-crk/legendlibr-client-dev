@@ -67,13 +67,7 @@ export function initCharacterViewUI() {
         return html.trim();
     }
 
-    /* ===== 스토리 요약 (앞부분만) ===== */
-    function cutStory(text, maxChars = 450) {
-        if (!text) return "";
-        const plain = String(text);
-        if (plain.length <= maxChars) return plain;
-        return plain.slice(0, maxChars) + " ...";
-    }
+
 
     function openDetailDialog(title, bodyHtml) {
         detailBody.innerHTML = `
@@ -101,7 +95,7 @@ export function initCharacterViewUI() {
         detailDialog.removeAttribute("open");
         detailBody.innerHTML = "";
     }
-
+    window.__closeCharacterDetailDialog = closeDetailDialog;
     detailDialog.addEventListener("cancel", (e) => {
         e.preventDefault(); // 🔥 브라우저 뒤로가기 차단
         closeDetailDialog();
@@ -216,8 +210,10 @@ export function initCharacterViewUI() {
                                       </div>
 `;
 
+    
             // 스토리 원본 저장
-            fullStoryText = data.finalStory || "(스토리 없음)";
+            fullStoryText = data.fullStory || "(스토리 없음)";
+
 
             // 기본 탭: 스토리
             setActiveTab("story");
@@ -495,22 +491,7 @@ export function initCharacterViewUI() {
             });
         });
     }
-    function handleBack() {
-        const dialog = document.getElementById("detailDialog");
-
-        // 🔥 상세 보기(dialog)가 열려 있으면
-        if (dialog?.hasAttribute("open")) {
-            closeDetailDialog(); // 기본 캐릭터 화면으로 복귀
-            return;
-        }
-
-        // 그 외에는 정상 뒤로가기
-        history.back();
-    }
-    const dialogBack = document.getElementById("dialogBack");
-    if (dialogBack) {
-        dialogBack.addEventListener("click", handleBack);
-    }
+   
 
 
     function openBattleDetail(idx) {
@@ -560,7 +541,7 @@ export function initCharacterViewUI() {
 
         
     }
-    window.__characterViewBack = handleBack;
+
 
     // 초기 로드
     loadCharacter();

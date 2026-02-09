@@ -4,10 +4,11 @@ export function initJourneyPage() {
     const btnRaid = document.getElementById("btnRaid");
 
     if (btnBattle) {
+        // base/journey.js (변경)
         btnBattle.onclick = () => {
-            // 외부 페이지(/nbattle/battle.html)로 이동
-            window.location.href = "/nbattle/battle.html";
+            showPage("battle");
         };
+
     }
 
     if (btnRaid) {

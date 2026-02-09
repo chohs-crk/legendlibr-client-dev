@@ -18,6 +18,39 @@ const originListEl = document.getElementById("originList");
 
 let selectedOrigin = null;
 let selectedRegion = null;
+/* =========================================
+   🔥 CREATE PAGE RESET
+========================================= */
+function resetCreatePageState() {
+    // JS 상태
+    selectedOrigin = null;
+    selectedRegion = null;
+
+    // sessionStorage 정리
+    sessionStorage.removeItem("origin");
+    sessionStorage.removeItem("regionId");
+    sessionStorage.removeItem("regionName");
+
+    // DOM 상태 초기화
+    document.querySelectorAll(".origin-item").forEach(el => {
+        el.classList.remove("selected");
+    });
+
+    document.querySelectorAll(".region-list").forEach(el => {
+        el.innerHTML = "";
+        el.style.display = "none";
+    });
+
+    document.querySelectorAll(".origin-desc-box").forEach(el => {
+        el.textContent = "";
+        el.style.display = "none";
+    });
+
+    document.querySelectorAll(".btn-next").forEach(btn => {
+        btn.disabled = true;
+    });
+}
+
 function bindOriginEvents() {
     const items = document.querySelectorAll('.origin-item');
 
@@ -245,11 +278,7 @@ async function renderOriginDetail(originName, ui) {
     ui.nextBtn.onclick = () => {
         if (!selectedOrigin || !selectedRegion) return;
 
-        if (typeof showPage === "function") {
-            showPage("create-prompt");
-        } else {
-            location.href = "/create/create-prompt.html";
-        }
+        showPage("create-prompt");
     };
 
 
@@ -258,7 +287,7 @@ async function renderOriginDetail(originName, ui) {
         .querySelector('.origin-actions .btn.secondary');
 
     addBtn.onclick = () => {
-        window.location.href = "/create/create-region.html";
+        showPage("create-region");
     };
 
 
@@ -292,6 +321,8 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 });
            
+// SPA router에서 호출 가능하게 노출
+window.resetCreatePageState = resetCreatePageState;
 
 
   

@@ -1,42 +1,9 @@
 ﻿import { requireAuthOrRedirect } from "./auth.js";
 import { resolveCharImage } from "/base/common/image-util.js";
 import { openConfirm } from "/base/common/ui-confirm.js";
-let currentUid = null;
+import { apiFetch } from "/base/api.js";
+const btnCreate = document.getElementById("btnCreate");
 let characters = [];
-
-
-
-function smoothNavigate(url) {
-    document.body.classList.add("page-fade");
-    document.body.classList.add("hide");
-
-    setTimeout(() => {
-        window.location.href = url;
-    }, 300);
-}
-
-
-
-
-const MAX_CHARACTERS = 5; // 계정당 최대 생성 가능 수
-
-
-
-
-// ==== DOM 요소 ====
-const $ = (sel) => document.querySelector(sel);
-const listEl = $("#charList");
-
-
-
-
-const btnCreate = document.querySelector("#btnCreate");
-
-
-
-// 미로그인 기본 상태: 생성 비활성
-if (btnCreate) btnCreate.disabled = true;
-
 
 // ==== 생성 버튼 → 모달 열기 ====
 btnCreate?.addEventListener("click", () => {
@@ -45,14 +12,63 @@ btnCreate?.addEventListener("click", () => {
 
 
 });
+// home.js 전용 API로 이전
+async function getMyCharacters() {
+    const res = await apiFetch("/base/characters");
+    if (!res.ok) throw new Error("AUTH_FAIL");
+    return res.json();
+}
 
+async function deleteCharacter(id) {
+    const res = await apiFetch(`/base/characters?id=${id}`, {
+        method: "DELETE"
+    });
+    if (!res.ok) throw new Error("DELETE_FAIL");
+    return res.json();
+}
+function applyCharCountUI(charCount) {
+    const count = Number(charCount ?? characters.length);
+    const btnCreate = document.getElementById("btnCreate");
+    if (!btnCreate) return;
+
+    btnCreate.style.display = count >= 10 ? "none" : "";
+}
 
 async function loadMyCharactersFromServer() {
     try {
-        const data = await API.getMyCharacters();
+        const data = await getMyCharacters();
+
+
         characters = data.characters || [];
+
+        // ✅ 세션 캐시 저장
+        sessionStorage.setItem(
+            "homeCharacters",
+            JSON.stringify(characters)
+        );
+        sessionStorage.setItem("homeCalled", "true");
+        /* =========================
+   🔥 battleCharId 삭제 대응
+========================= */
+        const battleCharId = sessionStorage.getItem("battleCharId");
+
+        if (battleCharId === characters.id) {
+            sessionStorage.removeItem("battleCharId");
+
+            if (characters.length > 0) {
+                sessionStorage.setItem(
+                    "battleCharId",
+                    characters[0].id // ✅ 0번 캐릭터로 자동 교체
+                );
+            }
+        }
+
+
+        applyCharCountUI(data.charCount);
+
         renderList();
     } catch (e) {
+        console.error(e);
         alert("캐릭터 불러오기 실패");
     }
 }
@@ -62,8 +78,6 @@ async function loadMyCharactersFromServer() {
 function renderList() {
     // SPA 구조에서는 페이지 전환 시 요소가 새로 그려질 수 있으므로 다시 참조합니다.
     const listEl = document.getElementById("charList");
-    const btnCreate = document.getElementById("btnCreate");
-
     if (!listEl) return;
     listEl.innerHTML = '';
 
@@ -116,27 +130,37 @@ function renderList() {
                 openConfirm(`"${c.displayRawName}" 캐릭터를 삭제하시겠습니까?`, {
                     onConfirm: async () => {
                         try {
-                            // 서버 삭제 (window.API 참조)
-                            await window.API.deleteCharacter(c.id);
+                            await deleteCharacter(c.id);
 
-                            // UI 업데이트
-                            card.remove();
+
+                            // ✅ 메모리 상태 갱신
                             characters = characters.filter(ch => ch.id !== c.id);
 
-                            // 생성 버튼 복구 체크
-                            if (btnCreate && characters.length < MAX_CHARACTERS) {
-                                btnCreate.style.display = "";
-                            }
+                            // ✅ 세션 캐시 갱신
+                            sessionStorage.setItem(
+                                "homeCharacters",
+                                JSON.stringify(characters)
+                            );
 
-                            // 2️⃣ 삭제 완료 알림
+                            // ✅ UI 즉시 반영
+                            applyCharCountUI();
+                            renderList();
+
                             openConfirm("삭제되었습니다.");
+
 
                         } catch (err) {
                             console.error("DELETE_FAIL:", err);
                             openConfirm("삭제에 실패했습니다.");
                         }
+                    },
+
+                    // ✅ 취소 버튼 추가 (아무 동작 없음)
+                    onCancel: () => {
+                        // 닫기만 하면 됨
                     }
                 });
+
             }
         });
 
@@ -155,49 +179,40 @@ function renderList() {
         listEl.appendChild(card);
     });
 
-    // 생성 버튼 제한 처리
-    if (btnCreate) {
-        if (characters.length >= MAX_CHARACTERS) {
-            btnCreate.style.display = "none";
-        } else {
-            btnCreate.style.display = "";
-        }
-    }
+    
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 export async function initHomePage() {
     const me = await requireAuthOrRedirect();
-    currentUid = me.uid;
-    btnCreate.disabled = false;
+
+    const homeCalled = sessionStorage.getItem("homeCalled");
+
+    if (homeCalled === "true") {
+        // ✅ 세션 캐시 사용
+        const cached = sessionStorage.getItem("homeCharacters");
+        if (cached) {
+            try {
+                characters = JSON.parse(cached);
+            } catch (e) {
+                // ⚠️ 세션 데이터 손상 시 복구
+                console.warn("[home] invalid session cache, refetch");
+                sessionStorage.removeItem("homeCharacters");
+                sessionStorage.setItem("homeCalled", "false");
+                await loadMyCharactersFromServer();
+                return;
+            }
+
+            applyCharCountUI();
+            renderList();
+            return;
+        }
+    }
+
+
+    // ❌ 캐시 없음 or 강제 갱신
     await loadMyCharactersFromServer();
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 // 🔽 생성 플로우 시작 시 초기화용 함수 추가

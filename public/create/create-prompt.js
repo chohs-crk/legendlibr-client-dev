@@ -1,9 +1,51 @@
 ﻿import { ORIGINS_FRONT } from "./origins.front.js";
 import { apiFetch } from "/base/api.js";
 
-export function initCreatePromptPage() {
-
+export async function initCreatePromptPage() {
     const $ = (s) => document.querySelector(s);
+
+    /* ==========================
+       🔥 서버 생성 상태 확인
+    ========================== */
+    try {
+        const res = await apiFetch("/create/story-check");
+        const j = await res.json();
+        if (!j.ok && j.error === "CHARACTER_LIMIT_REACHED") {
+            alert("캐릭터는 최대 10명까지 생성할 수 있습니다.");
+            showPage("home");
+            return;
+        }
+
+        if (!j.ok) {
+            alert("서버 응답 오류: " + json.error);
+            return;
+        }
+
+        if (j.ok) {
+            // 🔥 final + FF 인 경우만 final 이동
+            if (j.isFinalFF) {
+                location.href = "/create/create-final.html";
+                return;
+            }
+
+            // ❌ 그 외 세션 존재 → 생성 불가
+            if (j.flow) {
+                alert("이미 진행 중인 캐릭터 생성이 있습니다.");
+                window.location.href = "/create/create-story.html";
+             
+            }
+        }
+    } catch (e) {
+        console.warn("story-check failed:", e);
+    }
+
+
+    /* ==========================
+       🔽 기존 로직 유지
+    ========================== */
+    $("#nameInput").value = "";
+    $("#promptInput").value = "";
+
 
     /* ==========================
        클라이언트 스토리 세션 리셋
@@ -46,6 +88,16 @@ export function initCreatePromptPage() {
     const btnNext = $("#btnNext");
 
     btnNext.onclick = async () => {
+        // 🔒 서버 세션 존재 여부 확인
+        const checkRes = await apiFetch("/create/story-check");
+        const check = await checkRes.json();
+
+        if (check.ok && check.flow) {
+            alert("이미 생성 중인 캐릭터가 있습니다.");
+            return;
+        }
+
+        // ⬇️ 기존 생성 로직 그대로
         const name = nameInput.value.trim();
         const prompt = promptInput.value.trim();
 
@@ -53,8 +105,8 @@ export function initCreatePromptPage() {
             alert("이름은 1~20자이어야 합니다.");
             return;
         }
-        if (prompt.length < 1 || prompt.length > 700) {
-            alert("프롬프트는 1~700자이어야 합니다.");
+        if (prompt.length < 1 || prompt.length > 1000) {
+            alert("프롬프트는 1~1000자이어야 합니다.");
             return;
         }
 

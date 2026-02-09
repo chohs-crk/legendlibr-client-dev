@@ -1,8 +1,6 @@
 ﻿import { apiFetch } from "/base/api.js";
 
-export function apiFetchMe() {
-    return apiFetch("/base/me");
-}
+
 
 export function apiFetchCharacterById(id) {
     return apiFetch(`/base/characters?id=${encodeURIComponent(id)}`);

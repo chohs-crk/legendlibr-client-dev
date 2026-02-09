@@ -61,3 +61,11 @@
     font-size: 15px;
     cursor: pointer;
 }
+/* ===============================
+   STORY EMPHASIS (STREAM)
+=============================== */
+
+.story-em {
+    color: var(--accent);
+    font-weight: 600;
+}

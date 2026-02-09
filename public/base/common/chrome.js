@@ -1,7 +1,7 @@
 ﻿import { apiFetchUserMeta } from "/base/character-view.api.js";
 
 /* =========================
-   TOP BAR
+   USER META
 ========================= */
 async function ensureUserMeta() {
     const cached = sessionStorage.getItem("userMeta");
@@ -21,6 +21,23 @@ async function ensureUserMeta() {
     return meta;
 }
 
+/* =========================
+   BACK BUTTON VISIBILITY
+========================= */
+function updateBackButtonVisibility() {
+    const btnBack = document.getElementById("btnBack");
+    if (!btnBack) return;
+
+    const stack = window.__navStack || [];
+    btnBack.style.display = stack.length > 1 ? "" : "none";
+}
+
+// 전역 공개
+window.__updateBackBtn = updateBackButtonVisibility;
+
+/* =========================
+   TOP BAR
+========================= */
 function renderTopBar(meta, mode) {
     const btnBack = document.getElementById("btnBack");
     const topExtra = document.getElementById("topExtra");
@@ -28,129 +45,111 @@ function renderTopBar(meta, mode) {
 
     if (mode === "resource-only" && btnBack) {
         btnBack.style.display = "none";
-        topExtra.insertAdjacentHTML("afterbegin", `
-      <span class="top-level left-slot">LV ${meta.level}</span>
-    `);
     }
 
     topExtra.innerHTML = `
-  <div class="top-right">
+        <div class="top-right">
+            <div class="currency-item scroll">
+                <svg class="currency-icon">
+                    <use href="/images/base/icons.svg#icon-currency-scroll"></use>
+                </svg>
+                <span>${Number(meta.scroll).toLocaleString()}</span>
+            </div>
 
-    <div class="currency-item scroll">
-      <svg class="currency-icon">
-        <use href="/images/base/icons.svg#icon-currency-scroll"></use>
-      </svg>
-      <span>${Number(meta.scroll).toLocaleString()}</span>
-    </div>
-
-    <div class="currency-item frame">
-      <svg class="currency-icon">
-        <use href="/images/base/icons.svg#icon-currency-frame"></use>
-      </svg>
-      <span>${Number(meta.frame).toLocaleString()}</span>
-    </div>
-
-  </div>
-`;
-
+            <div class="currency-item frame">
+                <svg class="currency-icon">
+                    <use href="/images/base/icons.svg#icon-currency-frame"></use>
+                </svg>
+                <span>${Number(meta.frame).toLocaleString()}</span>
+            </div>
+        </div>
+    `;
 }
 
-
-
 /* =========================
-   FOOTER
+   FOOTER CONFIG
 ========================= */
 const TAB_CONFIG = {
-    tabHome: {
-        onClick: () => showPage("home")
-    },
-    tabJourney: {
-        onClick: () => showPage("journey")
-    },
-    tabRank: {
-        onClick: () => showPage("ranking")
-    },
-    tabSetting: {
-        onClick: () => showPage("setting")
-    },
-    tabShop: {
-        onClick: () => alert("상점은 아직 준비 중입니다!")
-    }
+    tabHome: { page: "home" },
+    tabJourney: { page: "journey" },
+    tabRank: { page: "ranking" },
+    tabSetting: { page: "setting" },
+    tabShop: { page: null }
 };
 
-function initFooter() {
-    const path = location.pathname;
+/* =========================
+   FOOTER ACTIVE CONTROL
+========================= */
+function setActiveTab(pageName) {
+    Object.keys(TAB_CONFIG).forEach(id => {
+        document.getElementById(id)?.classList.remove("active");
+    });
 
+    const target = Object.entries(TAB_CONFIG)
+        .find(([, cfg]) => cfg.page === pageName);
+
+    if (target) {
+        document.getElementById(target[0])?.classList.add("active");
+    }
+}
+
+window.__setChromeActive = setActiveTab;
+
+/* =========================
+   FOOTER INIT
+========================= */
+function initFooter() {
     Object.entries(TAB_CONFIG).forEach(([id, cfg]) => {
         const btn = document.getElementById(id);
-        if (!btn) return;
+        if (!btn || btn.dataset.bound) return;
 
-        if (!btn.dataset.bound) {
-            btn.dataset.bound = "1";
-            btn.addEventListener("click", () => {
-                if (cfg.to) location.href = cfg.to;
-                else if (cfg.onClick) cfg.onClick();
-            });
-        }
-
-        if (cfg.activeWhen?.some(r => path === r || path.startsWith(r))) {
-            btn.classList.add("active");
-        }
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", () => {
+            if (cfg.page) {
+                // 🔥 footer 이동은 tab 이동
+                window.showPage?.(cfg.page, { type: "tab" });
+            } else {
+                alert("상점은 아직 준비 중입니다!");
+            }
+        });
     });
 }
 
 /* =========================
-   INIT (단일 진입점)
+   SAFE PADDING
+========================= */
+function applyFooterSafePadding() {
+    const footer = document.querySelector(".tab-footer");
+    const scrollArea = document.querySelector(".scroll-area");
+    if (!footer || !scrollArea) return;
+
+    const footerHeight = footer.offsetHeight;
+    const buffer = Math.max(40, window.innerHeight * 0.08);
+    scrollArea.style.paddingBottom = `${footerHeight + buffer}px`;
+}
+
+window.addEventListener("resize", applyFooterSafePadding);
+window.addEventListener("orientationchange", applyFooterSafePadding);
+document.addEventListener("DOMContentLoaded", applyFooterSafePadding);
+
+/* =========================
+   INIT
 ========================= */
 export function initChrome(options = {}) {
     const { mode = "back+resource", onBack } = options;
-
     const btnBack = document.getElementById("btnBack");
 
-    // 🔥 mode가 resource-only이면 뒤로가기 버튼 끄기 & 숨기기
-    if (mode === "resource-only") {
-        if (btnBack) {
-            btnBack.style.display = "none";
-            btnBack.replaceWith(btnBack.cloneNode(true));
-            // → 기존 이벤트 제거용
-        }
-    }
-    // 🔥 그 외 모드는 정상 뒤로가기 버튼 활성화
-    else if (btnBack && !btnBack.dataset.bound) {
+    if (mode !== "resource-only" && btnBack && !btnBack.dataset.bound) {
         btnBack.dataset.bound = "1";
         btnBack.addEventListener("click", () => {
             onBack ? onBack() : history.back();
         });
     }
 
-
     ensureUserMeta()
         .then(meta => renderTopBar(meta, mode))
         .catch(() => { });
 
     initFooter();
+    updateBackButtonVisibility();
 }
-/* =========================
-   FOOTER SCROLL SAFE PADDING (SUPER STABLE)
-========================= */
-function applyFooterSafePadding() {
-    const footer = document.querySelector('.tab-footer');
-    const scrollArea = document.querySelector('.scroll-area');
-    if (!footer || !scrollArea) return;
-
-    // footer 실제 높이 감지
-    const footerHeight = footer.offsetHeight;
-
-    // 안전 여백 (추가 버퍼) — footer 변동 + 모바일 주소창 변동 모두 커버
-    const buffer = Math.max(40, window.innerHeight * 0.08);
-
-    // 최종 패딩 적용
-    scrollArea.style.paddingBottom = `${footerHeight + buffer}px`;
-}
-
-// 화면 사이즈 변화 / 주소창 변화 / 회전 시 재적용
-window.addEventListener("resize", applyFooterSafePadding);
-window.addEventListener("orientationchange", applyFooterSafePadding);
-
-// 최초 실행
-document.addEventListener("DOMContentLoaded", applyFooterSafePadding);

@@ -81,7 +81,7 @@
    SETTING ICON – DETAIL ONLY
 =============================== */
 .tab-item#tabSetting .tab-icon {
-    stroke-width: 1.4;
+    stroke-width: 1;
     opacity: 0.85;
 }
 
@@ -172,13 +172,7 @@
     padding-top: var(--top-bar-height);
     padding-bottom: var(--footer-total);
 }
-.scroll-area::before,
-.scroll-area::after {
-    content: "";
-    display: block;
-    height: 5dvh;
-    flex-shrink: 0;
-}
+
 
 
 
@@ -232,9 +226,21 @@
 }
 /* setting icon detail preserve */
 #tabSetting .tab-icon {
-    stroke-width: 1.4;
+    stroke-width: 1;
 }
 
     #tabSetting .tab-icon circle {
         opacity: 0.7;
     }
+/* ===============================
+   PTR SCROLL EXTENSION
+   (CHROME 제외 내부 기준 +20%)
+=============================== */
+.app .scroll-area::before {
+    height: calc( (100% - var(--top-bar-height) - var(--footer-total)) * 0.2 );
+}
+
+.app .scroll-area::after {
+    height: calc( (100% - var(--top-bar-height) - var(--footer-total)) * 0.35 );
+}
+

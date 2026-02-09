@@ -25,6 +25,12 @@ const charIntro = document.getElementById("charIntro");
 let currentSceneKey = null;
 let collectedChoices = [];
 let isPrinting = false;
+// ================================
+// STREAM EMPHASIS STATE
+// ================================
+let emPendingStar = false;   // '*' 하나가 들어온 상태
+let emActive = false;        // 현재 강조 상태
+let talkActive = false; // 대사 상태
 
 // 🔴 실제 저장 기준 (UI와 무관)
 let logicalStoryBuffer = "";
@@ -48,11 +54,35 @@ function sleep(ms) {
 /* ================================
    CHARACTER INTRO
 ================================ */
+function parseStaticStory(text) {
+    if (!text) return "";
+
+    return text
+        // 대사
+        .replace(/§([^§]+?)§/g, `"${"$1"}"`)
+        // 강조
+        .replace(/\*\*(.+?)\*\*/g, `<span class="story-em">$1</span>`);
+}
+
 function renderCharIntro() {
     const name = sessionStorage.getItem("displayNameRaw") || "";
     const intro = sessionStorage.getItem("aiIntro") || "";
-    charIntro.textContent = name + (intro ? "\n" + intro : "");
+
+    charIntro.innerHTML = "";
+
+    if (name) {
+        const nameDiv = document.createElement("div");
+        nameDiv.textContent = name;
+        charIntro.appendChild(nameDiv);
+    }
+
+    if (intro) {
+        const introDiv = document.createElement("div");
+        introDiv.innerHTML = parseStaticStory(intro);
+        charIntro.appendChild(introDiv);
+    }
 }
+
 
 /* ================================
    STORY LOG (sessionStorage)
@@ -72,6 +102,50 @@ function appendToCurrentScene(text) {
     last.story += text;
     setStoryLog(log);
 }
+function parseStreamForUI(text) {
+    const result = [];
+
+    for (const ch of text) {
+
+        // ===== 대사 마커 =====
+        if (ch === "§") {
+            talkActive = !talkActive;
+
+            // 열릴 때 "
+            if (talkActive) {
+                result.push({ char: `"`, em: false });
+            }
+            // 닫힐 때 "
+            else {
+                result.push({ char: `"`, em: false });
+            }
+            continue;
+        }
+
+        // ===== 강조 마커 =====
+        if (ch === "*") {
+            if (!emPendingStar) {
+                emPendingStar = true;
+            } else {
+                emPendingStar = false;
+                emActive = !emActive;
+            }
+            continue;
+        }
+
+        if (emPendingStar) {
+            emPendingStar = false;
+        }
+
+        result.push({
+            char: ch,
+            em: emActive
+        });
+    }
+
+    return result;
+}
+
 
 function renderStoryFromLog() {
     storyBox.textContent = "";
@@ -115,15 +189,36 @@ function startPrinter(flow) {
 
         let sentence = outputQueue.shift();
 
-        if (storyBox.textContent.length > 0 && !sentence.startsWith(" ")) {
-            sentence = " " + sentence;
+        // 🔧 sentence는 이제 배열이므로 startsWith 불가
+        // 👉 첫 토큰이 공백 문자인지만 확인
+        if (
+            storyBox.textContent.length > 0 &&
+            sentence.length > 0 &&
+            sentence[0].char !== " "
+        ) {
+            // 앞에 공백 토큰 하나 추가
+            sentence.unshift({ char: " ", em: false });
         }
 
-        for (const char of sentence) {
-            storyBox.textContent += char;
+
+        for (const token of sentence) {
+            if (typeof token === "string") {
+                storyBox.append(token);
+            } else {
+                if (token.em) {
+                    const span = document.createElement("span");
+                    span.className = "story-em";
+                    span.textContent = token.char;
+                    storyBox.appendChild(span);
+                } else {
+                    storyBox.append(token.char);
+                }
+            }
+
             storyBox.scrollTop = storyBox.scrollHeight;
             await sleep(10);
         }
+
 
 
 
@@ -238,15 +333,21 @@ async function streamScene(flow, force = false) {
                     renderChoices();
                 }
                 else {
-                    const clean = payload.replace(/<[^>]*>/g, "");
+                    const clean = payload
+                             .replace(/<[^>]*>/g, "")
+                             
                     if (clean) {
-                        // 🔴 실제 저장은 여기서 즉시
+                        // 🔴 저장은 원문 그대로
                         logicalStoryBuffer += clean;
 
-                        // UI는 별도
-                        outputQueue.push(clean);
-                        startPrinter(flow);
+                        // 🔵 UI는 강조 파싱 후 토큰 단위로
+                        const tokens = parseStreamForUI(clean);
+                        if (tokens.length > 0) {
+                            outputQueue.push(tokens);
+                            startPrinter(flow);
+                        }
                     }
+
                 }
 
             }
@@ -339,9 +440,11 @@ async function startFlow() {
     const j = await res.json();
 
     if (!j.ok) {
+        alert("캐릭터 생성이 종료되었습니다.\n새로 생성할 수 있습니다.");
         location.href = "create-prompt.html";
         return;
     }
+
 
     if (j.intro) sessionStorage.setItem("aiIntro", j.intro);
     renderCharIntro();
@@ -350,9 +453,17 @@ async function startFlow() {
     if (!flow) return;
 
     if (flow === "final") {
+        // 🔴 final 진입 시 클라이언트 스토리 상태 정리
+        sessionStorage.removeItem("story_log");
+        sessionStorage.removeItem("choices_backup_story1");
+        sessionStorage.removeItem("choices_backup_story2");
+        sessionStorage.removeItem("choices_backup_story3");
+        sessionStorage.removeItem("currentSceneKey");
+
         location.href = "create-final.html";
         return;
     }
+
 
     const { called, resed, remain } = j;
     const log = getStoryLog();

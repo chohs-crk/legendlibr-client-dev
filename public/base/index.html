@@ -21,10 +21,14 @@
     <style>
         .page {
             display: none;
+            /* 🔥 추가: 페이지 자체가 컨테이너 역할을 하므로 높이와 축 설정 필요 */
+            height: 100%;
+            flex-direction: column;
         }
 
             .page.active {
-                display: block;
+                /* 🔥 변경: block -> flex */
+                display: flex;
             }
     </style>
 </head>
@@ -64,6 +68,40 @@
                     </div>
                 </div>
             </section>
+            <!-- ================= BATTLE ================= -->
+            <section id="page-battle" class="page">
+                <main class="content">
+                    <!-- ================= BATTLE CHARACTER SELECT ================= -->
+                    <div class="battle-char-select">
+                        <button id="battleCharToggle" class="accordion-btn">
+                            캐릭터 선택
+                        </button>
+
+                        <div id="battleCharList" class="accordion-body" style="display:none;"></div>
+                    </div>
+
+                    <div class="bar"></div>
+
+                    <div class="scroll-area">
+                        <h2>전투 매칭 중</h2>
+
+                        <div id="battleStatus">
+                            상대를 탐색 중입니다...
+                        </div>
+
+                        <button id="btnBattleStart"
+                                class="btn primary"
+                                style="display:none; margin-top:12px;">
+                            ⚔ 배틀 시작
+                        </button>
+
+
+                        <!-- 디버그용 -->
+                        <pre id="battleDebug"
+                             style="white-space:pre-wrap; font-size:12px; opacity:0.7;"></pre>
+                    </div>
+                </main>
+            </section>
 
             <!-- ================= SETTING ================= -->
             <section id="page-setting" class="page">
@@ -83,6 +121,44 @@
                     </div>
                 </div>
             </section>
+            <!-- ================= CREATE REGION ================= -->
+            <section id="page-create-region" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+                        <div class="compose-wrap">
+
+                            <h1>새 지역 만들기</h1>
+
+                            <div class="field">
+                                <span class="label">기원</span>
+                                <div id="regionOriginName" class="value-box"></div>
+                            </div>
+
+                            <div class="field">
+                                <span class="label">지역 이름</span>
+                                <input id="regionNameInput"
+                                       type="text"
+                                       maxlength="20"
+                                       placeholder="예) 패왕곡 북단" />
+                            </div>
+
+                            <div class="field">
+                                <span class="label">지역 설명</span>
+                                <textarea id="regionDetailInput"
+                                          maxlength="500"
+                                          placeholder="이 지역의 분위기, 전설 등을 적어주세요"></textarea>
+                            </div>
+
+                            <div class="actions">
+                                <button class="btn secondary" id="btnRegionCancel">취소</button>
+                                <button class="btn primary" id="btnRegionCreate">생성</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </main>
+            </section>
+
             <!-- ================= CREATE PROMPT ================= -->
             <section id="page-create-prompt" class="page">
                 <main class="content">
@@ -164,7 +240,8 @@
                             <div class="pager-pages" id="battlePageNumbers"></div>
                             <button class="pager-btn" id="btnNextPage">&gt;</button>
                         </div>
-
+                        <div class="bar"></div>
+                        <div class="bar"></div>
                     </div>
                 </main>
             </section>
@@ -279,10 +356,43 @@
                 return import("/base/common/chrome.js");
             })
             .then(m => {
-                m.initChrome({ mode: "resource-only" });
+                // ✅ back 버튼은 "표시 여부"만 navStack으로 제어하고,
+                // ✅ 클릭 동작은 바인딩되도록 resource-only를 쓰지 않는다
+                m.initChrome({ mode: "back+resource" });
             });
     </script>
     <script type="module">
+        const dialog = document.getElementById("detailDialog");
+        const dialogBack = document.getElementById("dialogBack");
+
+        if (dialog && dialogBack) {
+            dialogBack.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // 🔥 character-view에서 정의한 정식 닫기 로직 사용
+                if (typeof window.__closeCharacterDetailDialog === "function") {
+                    window.__closeCharacterDetailDialog();
+                }
+            });
+
+        }
+
+        // dialog 열릴 때 SPA back 숨김 (UX 안정화)
+        dialog?.addEventListener("show", () => {
+            const spaBack = document.getElementById("btnBack");
+            if (spaBack) spaBack.style.display = "none";
+        });
+
+        // dialog 닫힐 때 SPA back 복구
+        dialog?.addEventListener("close", () => {
+            window.__updateBackBtn?.();
+        });
+   
+    </script>
+    
+    <script type="module">
+        /*
         import { apiFetch } from "/base/api.js";
 
         window.API = {
@@ -309,8 +419,9 @@
 
 
         };
+        */
     </script>
-
+    
 
     <script type="module">
         import { requireAuthOrRedirect } from "/base/auth.js";
@@ -323,7 +434,13 @@
 
                 // 인증 성공 후 SPA 시작
                 if (window.showPage) {
-                    window.showPage("home");
+                    const hash = location.hash.replace("#", "");
+                    const initialPage = hash && document.getElementById("page-" + hash)
+                        ? hash
+                        : "home";
+
+                    window.showPage(initialPage, { replace: true });
+
                 }
             } catch (e) {
                 // requireAuthOrRedirect 내부에서 이미 redirect 처리함

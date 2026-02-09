@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "hhchocookierun1@gmail.com";
+    }
+
+    // =====================================
+    // 기본 region (관리자만 쓰기)
+    // =====================================
+    match /regionsDefault/{regionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =====================================
+    // 유저 region
+    // =====================================
+    match /users/{uid}/regions/{regionId} {
+      allow read, write: if request.auth != null
+          && request.auth.uid == uid;
+    }
+
+    // =====================================
+    // 캐릭터 (유저 직접 접근 차단)
+    // =====================================
+    match /characters/{charId} {
+      allow read, write: if isAdmin();
+    }
+
+    // =====================================
+    // 전투
+    // =====================================
+    match /battles/{battleId} {
+      allow read, write: if isAdmin();
+    }
+
+    // =====================================
+    // 레이드
+    // =====================================
+    match /raids/{raidId} {
+      allow read, write: if isAdmin();
+    }
+
+    // =====================================
+    // 보스 DB
+    // =====================================
+    match /raidBosses/{bossId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =====================================
+    // 🔥 랭킹 캐시 (읽기 전용 공개)
+    // =====================================
+    match /rankingsCache/{docId} {
+  allow read: if true;
+  allow write: if false;
+}
+
+  }
+}
+
+

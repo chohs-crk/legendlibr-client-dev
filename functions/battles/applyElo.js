@@ -1,12 +1,10 @@
-﻿const admin = require("firebase-admin");
-const { onDocumentUpdated } =
+﻿const { onDocumentUpdated } =
     require("firebase-functions/v2/firestore");
 
-admin.initializeApp();
-const db = admin.firestore();
+const { admin, db } = require("../admin/admin");
 
 /**
- * ELO 계산 함수 (기존 로직 그대로)
+ * ELO 계산 함수 (기존 로직 유지)
  */
 function calcEloDelta(winnerElo, loserElo) {
     const BASE_K = 15;
@@ -37,17 +35,12 @@ function calcEloDelta(winnerElo, loserElo) {
 exports.applyEloOnBattleFinish = onDocumentUpdated(
     "battles/{battleId}",
     async (event) => {
-
         const before = event.data.before.data();
         const after = event.data.after.data();
 
-        // 1️⃣ finished 아니면 무시
-        if (!after.finished) return;
-
-        // 2️⃣ 이미 반영됐으면 무시
+        if (!after?.finished) return;
         if (after.eloApplied === true) return;
 
-        // 3️⃣ winner / loser 없으면 중단
         const { winnerId, loserId } = after;
         if (!winnerId || !loserId) return;
 
@@ -55,7 +48,6 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
         const winnerRef = db.collection("characters").doc(winnerId);
         const loserRef = db.collection("characters").doc(loserId);
 
-        // 4️⃣ Transaction (동시성 안전)
         await db.runTransaction(async (tx) => {
             const winnerSnap = await tx.get(winnerRef);
             const loserSnap = await tx.get(loserRef);
