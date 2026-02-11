@@ -1,6 +1,12 @@
 ﻿// functions/battle/processOneBattle.js
-const { admin, db } = require("../admin/admin");
 
+const { admin, db } = require("../admin/admin");
+const { getSkillEvaluation } = require("./ai/aiSkillEval");
+
+/* =========================================================
+   🔥 배틀 실행 메인 로직 (임시 = TF/순서만 로그에 기록)
+   - 이후 단계에서 체력/데미지/3턴 전투 엔진 추가 예정
+========================================================= */
 async function runBattleLogic(myId, enemyId) {
     // 캐릭터 문서 가져오기
     const mySnap = await db.collection("characters").doc(myId).get();
@@ -13,6 +19,26 @@ async function runBattleLogic(myId, enemyId) {
     const my = mySnap.data();
     const enemy = enemySnap.data();
 
+    /* =========================================================
+       🔥 AI 호출: 스킬 T/F 판단 + 스킬 추천 순서
+    ========================================================== */
+    let aiEval;
+    try {
+        aiEval = await getSkillEvaluation(my, enemy);
+    } catch (err) {
+        console.error("AI 호출 실패:", err);
+        aiEval = {
+            myTF: [],
+            enemyTF: [],
+            myOrder: "0000",
+            enemyOrder: "0000",
+        };
+    }
+
+    /* =========================================================
+       🔥 임시 승패 판단 (서사 점수 비교)
+       (추후 HP/데미지 기반 3턴 엔진으로 교체 예정)
+    ========================================================== */
     const myScore = my?.scores?.narrativeScore ?? 0;
     const enemyScore = enemy?.scores?.narrativeScore ?? 0;
 
@@ -30,7 +56,9 @@ async function runBattleLogic(myId, enemyId) {
         loserId = winnerId === myId ? enemyId : myId;
     }
 
-    // logs에 대신 넣을 promptRefined 준비
+    /* =========================================================
+       🔥 narration 로그 생성
+    ========================================================== */
     const myPrompt = my.promptRefined || "";
     const enemyPrompt = enemy.promptRefined || "";
 
@@ -40,9 +68,25 @@ async function runBattleLogic(myId, enemyId) {
         logs: [
             {
                 skillAName: "전투 요약",
-                narration: `내 캐릭터: ${myPrompt}\n상대 캐릭터: ${enemyPrompt}`
+                narration:
+                    `내 캐릭터: ${myPrompt}
+상대 캐릭터: ${enemyPrompt}
 
-               
+=========================
+🔥 AI 스킬 적합성 분석
+=========================
+내 스킬 TF 평가:
+${aiEval.myTF.join(" | ")}
+
+상대 스킬 TF 평가:
+${aiEval.enemyTF.join(" | ")}
+
+=========================
+🔥 추천 스킬 사용 순서
+=========================
+내 추천 순서: ${aiEval.myOrder}
+상대 추천 순서: ${aiEval.enemyOrder}
+`
             }
         ],
         myName: my.displayRawName || "",
@@ -51,23 +95,26 @@ async function runBattleLogic(myId, enemyId) {
 
 }
 
+/* =========================================================
+   🔥 Firebase Worker에서 호출되는 엔트리 포인트
+========================================================= */
 exports.processOneBattle = async (battleId, battleData) => {
     const ref = db.collection("battles").doc(battleId);
 
     try {
-        // 🔥 상태 변경
+        // 상태 변경
         await ref.update({
             status: "processing",
             startedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        // 🔥 myId / enemyId 기반으로 전투 수행
+        // 핵심 전투 로직 수행
         const result = await runBattleLogic(
-            battleData.myId,      // ⬅ 수정됨
+            battleData.myId,
             battleData.enemyId
         );
 
-        // 🔥 결과 저장 (applyElo가 읽는 필드 포함)
+        // 결과 저장
         await ref.update({
             status: "done",
 
@@ -89,9 +136,6 @@ exports.processOneBattle = async (battleId, battleData) => {
         });
 
         console.log(`[Battle #${battleId}] DONE → Winner: ${result.winnerId}`);
-
-      
-
 
     } catch (e) {
         console.error("processOneBattle error:", e);
