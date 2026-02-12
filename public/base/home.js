@@ -190,14 +190,21 @@ function renderList() {
 /* ===================================================
    FINAL 가짜 카드
 =================================================== */
-function injectFakeFinalCard(introText) {
+function injectFakeFinalCard(nameOrIntro) {
 
     const listEl = document.getElementById("charList");
     if (!listEl) return;
 
     if (document.getElementById("fake-final-card")) return;
 
-    const name = extractNameFromIntro(introText);
+    // 🔥 유저 입력 이름 우선 사용
+    let name = nameOrIntro;
+
+    // intro가 넘어온 경우 fallback 처리
+    if (!name || name.length > 30) {
+        name = extractNameFromIntro(nameOrIntro);
+    }
+
 
     const card = document.createElement("div");
     card.className = "char-card";
@@ -253,13 +260,28 @@ function startStoryCheckPolling() {
                         storyCheckInterval = 3000; // final 단계면 더 빠르게
                     }
 
-                    injectFakeFinalCard(data.intro);
+                    injectFakeFinalCard(data.rawName || data.intro);
+
                 }
 
                 if (wasFinalFlow && !data.ok) {
-                    location.reload();
+
+                    wasFinalFlow = false;
+
+                    // 🔥 polling 간격 10초 복구
+                    storyCheckInterval = 10000;
+
+                    // 🔥 캐시 제거
+                    sessionStorage.setItem("homeCalled", "false");
+                    sessionStorage.removeItem("homeCharacters");
+
+                    // 🔥 서버 재호출 (스크롤 유지)
+                    await loadMyCharactersFromServer();
+
                     return;
                 }
+
+
             }
 
         } catch (err) {
