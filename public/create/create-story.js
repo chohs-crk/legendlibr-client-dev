@@ -153,8 +153,22 @@ function renderStoryFromLog() {
 
     for (const entry of log) {
         if (entry.story) {
-            storyBox.textContent += entry.story + "\n\n";
+            const tokens = parseStreamForUI(entry.story);
+
+            for (const token of tokens) {
+                if (token.em) {
+                    const span = document.createElement("span");
+                    span.className = "story-em";
+                    span.textContent = token.char;
+                    storyBox.appendChild(span);
+                } else {
+                    storyBox.append(token.char);
+                }
+            }
+
+            storyBox.append("\n\n");
         }
+
         if (entry.choice) {
             storyBox.textContent += `> ${entry.choice}\n\n`;
         }
