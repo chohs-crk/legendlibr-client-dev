@@ -385,22 +385,33 @@
 
         (async function bootstrapApp() {
             try {
-                const me = await requireAuthOrRedirect();
+                await requireAuthOrRedirect();
 
                 const hash = location.hash.replace("#", "");
                 const initialPage = hash && document.getElementById("page-" + hash)
                     ? hash
                     : "home";
 
-                // 🔥 반드시 호출해야 함
-                if (window.showPage) {
-                    window.showPage(initialPage, { type: "tab" });
-                }
+                // 🔥 showPage 준비될 때까지 대기
+                const waitRouter = () =>
+                    new Promise(resolve => {
+                        const t = setInterval(() => {
+                            if (window.showPage) {
+                                clearInterval(t);
+                                resolve();
+                            }
+                        }, 10);
+                    });
+
+                await waitRouter();
+
+                window.showPage(initialPage, { type: "tab" });
 
             } catch (e) {
                 console.warn("인증 실패:", e.message);
             }
         })();
+
 
     </script>
 

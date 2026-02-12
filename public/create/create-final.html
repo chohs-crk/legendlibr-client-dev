@@ -50,7 +50,22 @@
             <div class="spinner"></div>
             <div>캐릭터의 이야기를 마무리하고 있습니다.</div>
             <div>잠시만 기다려 주세요.</div>
+
+            <!-- 🔥 홈 이동 버튼 추가 -->
+            <button id="btnGoHome"
+                    style="
+                margin-top:20px;
+                padding:8px 16px;
+                background:#ffffff22;
+                border:1px solid #fff;
+                color:#fff;
+                border-radius:6px;
+                cursor:pointer;
+            ">
+                홈으로 이동
+            </button>
         </div>
+
     </div>
 
     <script type="module">
@@ -74,7 +89,7 @@
 
                 // ✅ 이미 완료된 경우
                 if (j.status === "done") {
-                    sessionStorage.setItem("charactergenerating", "F");
+                  
                    
 
                     document.getElementById("loadingBox").innerHTML =
@@ -93,7 +108,7 @@
 
                 // ❌ 실패 (서버 정책상 재시도 불가)
                 if (!j.ok) {
-                    sessionStorage.setItem("charactergenerating", "F");
+             
 
                     document.getElementById("loadingBox").innerHTML =
                         `<div>캐릭터 생성이 종료되었습니다.</div>
@@ -111,8 +126,11 @@
                     `<div>캐릭터 생성이 완료되었습니다.</div>
                          <div>잠시 후 이동합니다.</div>`;
                 setTimeout(() => {
+                    sessionStorage.setItem("viewCharId", j.id);
                     sessionStorage.setItem("homeCalled", "false");
-                    location.href = "../base/index.html";
+
+                    // SPA 진입
+                    location.href = "../base/index.html#character-view";
                 }, 1200);
 
             } catch (err) {
@@ -127,9 +145,22 @@
                 }, 2500);
             }
         }
-        sessionStorage.setItem("charactergenerating", "T");
+       
 
         gen();
+
+        // 🔥 홈 이동 버튼 이벤트
+        const btnGoHome = document.getElementById("btnGoHome");
+        btnGoHome?.addEventListener("click", () => {
+
+            // 생성 플래그 종료
+           
+            sessionStorage.setItem("homeCalled", "false");
+
+            // 홈으로 이동
+            location.href = "../base/index.html";
+        });
+
     </script>
 </body>
 </html>
