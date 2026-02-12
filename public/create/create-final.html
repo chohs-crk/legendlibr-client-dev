@@ -74,18 +74,27 @@
 
                 // ✅ 이미 완료된 경우
                 if (j.status === "done") {
+                    sessionStorage.setItem("charactergenerating", "F");
+                   
+
                     document.getElementById("loadingBox").innerHTML =
                         `<div>캐릭터 생성이 완료되었습니다.</div>
-                             <div>잠시 후 홈으로 이동합니다.</div>`;
+                             <div>잠시 후 이동합니다.</div>`;
                     setTimeout(() => {
+                        sessionStorage.setItem("viewCharId", j.id);
                         sessionStorage.setItem("homeCalled", "false");
-                        location.href = "../base/index.html";
+
+                        // SPA 진입
+                        location.href = "../base/index.html#character-view";
                     }, 1200);
+
                     return;
                 }
 
                 // ❌ 실패 (서버 정책상 재시도 불가)
                 if (!j.ok) {
+                    sessionStorage.setItem("charactergenerating", "F");
+
                     document.getElementById("loadingBox").innerHTML =
                         `<div>캐릭터 생성이 종료되었습니다.</div>
                              <div>다시 생성할 수 있습니다.</div>
@@ -118,6 +127,7 @@
                 }, 2500);
             }
         }
+        sessionStorage.setItem("charactergenerating", "T");
 
         gen();
     </script>

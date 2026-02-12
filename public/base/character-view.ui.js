@@ -498,49 +498,13 @@ export function initCharacterViewUI() {
         const battle = battleCache[idx];
         if (!battle) return;
 
-        const enemyName = battle.enemyName || "전투 상세";
-        const sections = [];
-
-        /* =========================
-           1. 프롤로그
-        ========================= */
-        if (battle.prologue) {
-            sections.push(`▶ 전투 개시\n${battle.prologue}`);
-        }
-
-        /* =========================
-           2. 턴 로그 (스킬 단위)
-        ========================= */
-        const logs = battle.logs || [];
-
-        logs.forEach((log) => {
-            const skillA = log.skillAName || "공격";
-            const narration = log.narration || "";
-
-            sections.push(`▶ ${skillA}\n${narration}`);
+        // 🔥 오버레이 대신 SPA 페이지로 이동
+        showPage("battle-log", {
+            type: "push",
+            battle
         });
-
-        const finalText = sections.join("\n\n");
-
-        const enemyImg = resolveCharImage(battle.enemyImage);
-
-
-        openDetailDialog(
-            enemyName,
-            `
-  <div class="battle-hero">
-    <img src="${enemyImg}">
-    <div class="battle-hero-overlay"></div>
-  </div>
-
-  <div class="battle-story text-flow">
-    ${parseStoryText(finalText)}
-  </div>
-  `
-        );
-
-        
     }
+
 
 
     // 초기 로드

@@ -74,7 +74,7 @@ body {
     height: 100dvh;
     /* 🔥 핵심 변경점: X축 확장 금지 */
     overflow-x: hidden;
-    overflow-y: hidden; /* 기존 overflow: hidden 유지 */
+    /* overflow-y: hidden; 기존 overflow: hidden 유지 */
 
     display: flex;
     flex-direction: column;
@@ -115,7 +115,7 @@ body {
 
 /* 스크롤 컨테이너가 체인으로 바깥으로 튀지 않게 */
 .scroll-area {
-    overscroll-behavior-y: contain;
+
     -webkit-overflow-scrolling: touch;
 }
 .scroll-area {

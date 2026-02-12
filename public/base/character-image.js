@@ -183,7 +183,14 @@ export async function initCharacterImagePage() {
             })
         });
 
+        /* =========================
+           🔥 홈 캐시 강제 초기화
+        ========================= */
+        sessionStorage.removeItem("homeCharacters");
+        sessionStorage.setItem("homeCalled", "false");
+
         sessionStorage.setItem("viewCharId", charId);
         showPage("character-view");
     };
+
 }

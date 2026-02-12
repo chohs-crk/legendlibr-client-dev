@@ -1,5 +1,5 @@
 ﻿import { apiFetchUserMeta } from "/base/character-view.api.js";
-
+import { handleBackAction } from "/base/back-handler.js";
 /* =========================
    USER META
 ========================= */
@@ -142,7 +142,7 @@ export function initChrome(options = {}) {
     if (mode !== "resource-only" && btnBack && !btnBack.dataset.bound) {
         btnBack.dataset.bound = "1";
         btnBack.addEventListener("click", () => {
-            onBack ? onBack() : history.back();
+            handleBackAction();
         });
     }
 

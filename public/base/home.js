@@ -7,11 +7,21 @@ let characters = [];
 
 // ==== 생성 버튼 → 모달 열기 ====
 btnCreate?.addEventListener("click", () => {
-     resetCreationFlow();
+
+    /* =========================
+       🔥 홈 캐시 강제 초기화
+    ========================= */
+    sessionStorage.removeItem("homeCharacters");
+    sessionStorage.setItem("homeCalled", "false");
+
+    /* =========================
+       🔥 생성 플로우 초기화
+    ========================= */
+    resetCreationFlow();
+
     showPage("create");
-
-
 });
+
 // home.js 전용 API로 이전
 async function getMyCharacters() {
     const res = await apiFetch("/base/characters");
@@ -184,34 +194,70 @@ function renderList() {
 
 
 export async function initHomePage() {
+
     const me = await requireAuthOrRedirect();
+
+    const generating = sessionStorage.getItem("charactergenerating");
+
+    // 🔥 생성 중이면 캐시 무시하고 서버 체크 우선
+    if (generating === "T") {
+        const finished = await checkFinalSessionStatus();
+
+        if (finished) {
+            sessionStorage.setItem("charactergenerating", "F");
+            sessionStorage.setItem("homeCalled", "false");
+            location.reload();
+            return;
+        }
+
+        // 🔥 아직 생성 중이면 캐시 사용하지 않음
+        sessionStorage.setItem("homeCalled", "false");
+    }
 
     const homeCalled = sessionStorage.getItem("homeCalled");
 
     if (homeCalled === "true") {
-        // ✅ 세션 캐시 사용
         const cached = sessionStorage.getItem("homeCharacters");
         if (cached) {
-            try {
-                characters = JSON.parse(cached);
-            } catch (e) {
-                // ⚠️ 세션 데이터 손상 시 복구
-                console.warn("[home] invalid session cache, refetch");
-                sessionStorage.removeItem("homeCharacters");
-                sessionStorage.setItem("homeCalled", "false");
-                await loadMyCharactersFromServer();
-                return;
-            }
-
+            characters = JSON.parse(cached);
             applyCharCountUI();
             renderList();
             return;
         }
     }
 
-
-    // ❌ 캐시 없음 or 강제 갱신
     await loadMyCharactersFromServer();
+}
+
+async function checkFinalSessionStatus() {
+    try {
+        const res = await apiFetch("/create/story-check");
+
+        if (!res.ok) return false;
+
+        const data = await res.json();
+
+        // 🔥 세션이 없으면 생성 완료 or 종료 상태
+        if (!data.ok) {
+            return true;
+        }
+
+        // final 흐름이 아니면 이미 종료
+        if (data.flow !== "final") {
+            return true;
+        }
+
+        // final인데 called=true && resed=true 면 완료
+        if (data.called && data.resed) {
+            return true;
+        }
+
+        return false;
+
+    } catch (err) {
+        console.error("FINAL CHECK ERROR:", err);
+        return false;
+    }
 }
 
 

@@ -10,16 +10,7 @@ export async function initCreatePromptPage() {
     try {
         const res = await apiFetch("/create/story-check");
         const j = await res.json();
-        if (!j.ok && j.error === "CHARACTER_LIMIT_REACHED") {
-            alert("캐릭터는 최대 10명까지 생성할 수 있습니다.");
-            showPage("home");
-            return;
-        }
-
-        if (!j.ok) {
-            alert("서버 응답 오류: " + json.error);
-            return;
-        }
+       
 
         if (j.ok) {
             // 🔥 final + FF 인 경우만 final 이동

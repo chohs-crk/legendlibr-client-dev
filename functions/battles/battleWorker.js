@@ -1,9 +1,17 @@
 ﻿const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { defineSecret } = require("firebase-functions/params");   // ← 추가
+const OPENAI_KEY = defineSecret("OPENAI_KEY");                   // ← 추가
 const { admin, db } = require("../admin/admin");
 const { processOneBattle } = require("./processOneBattle");
 
 // 🔥 매 1분마다 실행
-exports.battleWorker = onSchedule("every 1 minutes", async () => {
+exports.battleWorker = onSchedule(
+    {
+        schedule: "every 1 minutes",
+        secrets: [OPENAI_KEY]
+    },
+    async () => {
+
     try {
         console.log("[battleWorker] 실행 시작");
 

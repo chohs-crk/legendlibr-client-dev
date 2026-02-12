@@ -246,6 +246,14 @@
                 </main>
             </section>
 
+            <section id="page-battle-log" class="page">
+                <main class="content">
+                    <div class="scroll-area">
+                        <h2>전투 기록</h2>
+                        <div id="battleLogContainer">(로드 중)</div>
+                    </div>
+                </main>
+            </section>
 
             <!-- ================= CHARACTER IMAGE ================= -->
             <section id="page-character-image" class="page">
@@ -362,66 +370,15 @@
             });
     </script>
     <script type="module">
-        const dialog = document.getElementById("detailDialog");
+        import { handleBackAction } from "/base/back-handler.js";
+
         const dialogBack = document.getElementById("dialogBack");
-
-        if (dialog && dialogBack) {
-            dialogBack.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // 🔥 character-view에서 정의한 정식 닫기 로직 사용
-                if (typeof window.__closeCharacterDetailDialog === "function") {
-                    window.__closeCharacterDetailDialog();
-                }
-            });
-
-        }
-
-        // dialog 열릴 때 SPA back 숨김 (UX 안정화)
-        dialog?.addEventListener("show", () => {
-            const spaBack = document.getElementById("btnBack");
-            if (spaBack) spaBack.style.display = "none";
-        });
-
-        // dialog 닫힐 때 SPA back 복구
-        dialog?.addEventListener("close", () => {
-            window.__updateBackBtn?.();
-        });
-   
+        dialogBack?.addEventListener("click", handleBackAction);
     </script>
-    
-    <script type="module">
-        /*
-        import { apiFetch } from "/base/api.js";
-
-        window.API = {
-            async getMyCharacters() {
-                const res = await apiFetch("/base/characters");
-                if (!res.ok) throw new Error("AUTH_FAIL");
-                return res.json();
-            },
-
-            async deleteCharacter(id) {
-                const res = await apiFetch(`/base/characters?id=${id}`, {
-                    method: "DELETE"
-                });
-                if (!res.ok) throw new Error("DELETE_FAIL");
-                return res.json();
-            },
-
-            async me() {
-                const res = await apiFetch("/base/me");
-                if (res.status === 401) return null;
-                if (!res.ok) throw new Error("SERVER_ERROR");
-                return res.json();
-            }
 
 
-        };
-        */
-    </script>
-    
+
+
 
     <script type="module">
         import { requireAuthOrRedirect } from "/base/auth.js";
@@ -430,29 +387,27 @@
             try {
                 const me = await requireAuthOrRedirect();
 
-                console.log("인증 성공:", me);
+                const hash = location.hash.replace("#", "");
+                const initialPage = hash && document.getElementById("page-" + hash)
+                    ? hash
+                    : "home";
 
-                // 인증 성공 후 SPA 시작
+                // 🔥 반드시 호출해야 함
                 if (window.showPage) {
-                    const hash = location.hash.replace("#", "");
-                    const initialPage = hash && document.getElementById("page-" + hash)
-                        ? hash
-                        : "home";
-
-                    window.showPage(initialPage, { replace: true });
-
+                    window.showPage(initialPage, { type: "tab" });
                 }
+
             } catch (e) {
-                // requireAuthOrRedirect 내부에서 이미 redirect 처리함
                 console.warn("인증 실패:", e.message);
             }
         })();
+
     </script>
 
 
-    <script type="module" src="/base/app-router.js"></script>
+
     <script type="module" src="/base/home.js"></script>
     <script type="module" src="/create/create.js"></script>
-
+    <script type="module" src="/base/app-router.js"></script>
 </body>
 </html>
