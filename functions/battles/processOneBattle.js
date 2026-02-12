@@ -36,7 +36,7 @@ async function generateBattleNarration({
     // SDK 설정
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-3.0-flash-lite"
+        model: "gemini-2.5-flash-lite",
     });
 
     const winnerName = winnerId === my.uid ? my.displayRawName : enemy.displayRawName;

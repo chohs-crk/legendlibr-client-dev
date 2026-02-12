@@ -21,10 +21,21 @@ export async function initCreatePromptPage() {
 
             // ❌ 그 외 세션 존재 → 생성 불가
             if (j.flow) {
-                alert("이미 진행 중인 캐릭터 생성이 있습니다.");
-                window.location.href = "/create/create-story.html";
-             
+
+                if (j.flow === "final") {
+                    alert("이미 최종 생성 단계에 있는 캐릭터가 있습니다.");
+                    return;
+                }
+
+                const go = confirm("진행 중인 생성이 있습니다.\n해당 단계로 이동하시겠습니까?");
+                if (go) {
+                    window.location.href = "/create/create-story.html";
+                    return;
+                } else {
+                    return; // 아무 것도 안 함
+                }
             }
+
         }
     } catch (e) {
         console.warn("story-check failed:", e);
@@ -84,9 +95,18 @@ export async function initCreatePromptPage() {
         const check = await checkRes.json();
 
         if (check.ok && check.flow) {
-            alert("이미 생성 중인 캐릭터가 있습니다.");
-            return;
+
+            if (check.flow === "final") {
+                alert("이미 최종 생성 단계에 있습니다.");
+                return;
+            }
+
+            const go = confirm("기존 생성 세션을 초기화하고 새로 시작하시겠습니까?");
+            if (!go) return;
+
+            // 🔥 서버에서 자동 삭제되므로 그냥 진행
         }
+
 
         // ⬇️ 기존 생성 로직 그대로
         const name = nameInput.value.trim();

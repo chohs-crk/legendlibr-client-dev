@@ -14,7 +14,7 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
     // SDK 초기화
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-3.0-flash-lite",
+        model: "gemini-2.5-flash-lite",
         // 🔥 JSON 응답 강제 설정
         generationConfig: {
             responseMimeType: "application/json",
