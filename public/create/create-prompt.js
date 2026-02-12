@@ -7,39 +7,7 @@ export async function initCreatePromptPage() {
     /* ==========================
        🔥 서버 생성 상태 확인
     ========================== */
-    try {
-        const res = await apiFetch("/create/story-check");
-        const j = await res.json();
-       
-
-        if (j.ok) {
-            // 🔥 final + FF 인 경우만 final 이동
-            if (j.isFinalFF) {
-                location.href = "/create/create-final.html";
-                return;
-            }
-
-            // ❌ 그 외 세션 존재 → 생성 불가
-            if (j.flow) {
-
-                if (j.flow === "final") {
-                    alert("이미 최종 생성 단계에 있는 캐릭터가 있습니다.");
-                    return;
-                }
-
-                const go = confirm("진행 중인 생성이 있습니다.\n해당 단계로 이동하시겠습니까?");
-                if (go) {
-                    window.location.href = "/create/create-story.html";
-                    return;
-                } else {
-                    return; // 아무 것도 안 함
-                }
-            }
-
-        }
-    } catch (e) {
-        console.warn("story-check failed:", e);
-    }
+   
 
 
     /* ==========================
@@ -84,7 +52,39 @@ export async function initCreatePromptPage() {
 
     $("#originName").textContent = originData.name;
     $("#regionName").textContent = regionName || "알 수 없음";
+    try {
+        const res = await apiFetch("/create/story-check");
+        const j = await res.json();
 
+
+        if (j.ok) {
+            // 🔥 final + FF 인 경우만 final 이동
+            if (j.isFinalFF) {
+                location.href = "/create/create-final.html";
+                return;
+            }
+
+            // ❌ 그 외 세션 존재 → 생성 불가
+            if (j.flow) {
+
+                if (j.flow === "final") {
+                    alert("이미 최종 생성 단계에 있는 캐릭터가 있습니다.");
+                    return;
+                }
+
+                const go = confirm("진행 중인 생성이 있습니다.\n해당 단계로 이동하시겠습니까?");
+                if (go) {
+                    window.location.href = "/create/create-story.html";
+                    return;
+                } else {
+                    return; // 아무 것도 안 함
+                }
+            }
+
+        }
+    } catch (e) {
+        console.warn("story-check failed:", e);
+    }
     const nameInput = $("#nameInput");
     const promptInput = $("#promptInput");
     const btnNext = $("#btnNext");
