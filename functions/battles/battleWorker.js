@@ -1,6 +1,6 @@
 ﻿const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");   // ← 추가
-const OPENAI_KEY = defineSecret("OPENAI_KEY");                   // ← 추가
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY"); // 추가
 const { admin, db } = require("../admin/admin");
 const { processOneBattle } = require("./processOneBattle");
 
@@ -8,7 +8,8 @@ const { processOneBattle } = require("./processOneBattle");
 exports.battleWorker = onSchedule(
     {
         schedule: "every 1 minutes",
-        secrets: [OPENAI_KEY]
+        secrets: [GEMINI_API_KEY],
+        timeoutSeconds: 120 // 🔥 120초로 늘려 안전성 확보
     },
     async () => {
 

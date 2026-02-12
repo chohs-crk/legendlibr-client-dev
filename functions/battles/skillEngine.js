@@ -16,17 +16,23 @@ function pickRandom3Skills(skills) {
     return arr;
 }
 
-// =======================================
-//  1. 스킬 순서 가중치
-// =======================================
-function calcOrderWeight(aiOrder, picked) {
-    const pickedOrder = picked.map((_, i) => i).join("");
+// 🔥 수정 1: 순서 가중치 로직 정상화
+function calcOrderWeight(aiOrder, pickedIdxs) {
+    // pickedIdxs는 [0, 1, 3] 같은 배열임
+    const pickedStr = pickedIdxs.join("");
 
-    if (pickedOrder === aiOrder.slice(0, 3)) return 1.2;
+    // 1. 완전 일치 (1.2): AI 추천의 앞부분과 정확히 일치 (예: AI "0132" / 유저 "013")
+    if (aiOrder.startsWith(pickedStr)) return 1.2;
 
+    // 2. 부분 일치 (1.1): 순서가 어느 정도 맞는 경우 (최소 2개 이상의 상대적 순서 일치)
     let hit = 0;
-    for (let c of pickedOrder) if (aiOrder.includes(c)) hit++;
-    if (hit >= 2) return 1.1;
+    for (let i = 0; i < pickedIdxs.length - 1; i++) {
+        // 현재 스킬이 다음 스킬보다 AI 추천 순서에서 앞에 있는지 확인
+        if (aiOrder.indexOf(pickedIdxs[i]) < aiOrder.indexOf(pickedIdxs[i + 1])) {
+            hit++;
+        }
+    }
+    if (hit >= 1) return 1.1;
 
     return 1.0;
 }
@@ -56,25 +62,23 @@ function addAuraEffect(caster, skill, usedTurn) {
     auraQueue.push({ caster, skill, usedTurn });
 }
 
-function updateAura(currentTurn) {
-    aura = {
+// 🔥 수정 2: Aura 상태를 외부(context)에서 받아 처리하도록 변경
+function updateAura(currentTurn, context) {
+    context.aura = {
         my: { AP: 0, BP: 0, AN: 0, BN: 0 },
         enemy: { AP: 0, BP: 0, AN: 0, BN: 0 }
     };
 
-    for (const item of auraQueue) {
+    for (const item of context.auraQueue) {
         const diff = currentTurn - item.usedTurn;
+        if (diff < 0 || diff >= item.skill.turns) continue;
 
-        if (diff < 0) continue;
-        if (diff >= item.skill.turns) continue; // 지속 끝
-
-        // diff 번째 weight 적용
         const vals = getImpactValues(item.skill, item.usedTurn, currentTurn, item.caster === "my");
 
-        aura[item.caster].AP += vals.AP;
-        aura[item.caster].BP += vals.BP;
-        aura[item.caster].AN += vals.AN;
-        aura[item.caster].BN += vals.BN;
+        context.aura[item.caster].AP += vals.AP;
+        context.aura[item.caster].BP += vals.BP;
+        context.aura[item.caster].AN += vals.AN;
+        context.aura[item.caster].BN += vals.BN;
     }
 }
 
@@ -93,20 +97,19 @@ function simulateTurn({
     myCombat,
     enemyCombat,
     myOrderWeight,
-    enemyOrderWeight
+    enemyOrderWeight,
+    context
 }) {
   
 
 
-    if (mySkill) addAuraEffect("my", mySkill, turn);
-    if (enemySkill) addAuraEffect("enemy", enemySkill, turn);
+    if (mySkill) context.auraQueue.push({ caster: "my", skill: mySkill, usedTurn: turn });
+    if (enemySkill) context.auraQueue.push({ caster: "enemy", skill: enemySkill, usedTurn: turn });
 
+    updateAura(turn, context);
 
-    // 이번 턴 포함 전체 지속효과 적용
-    updateAura(turn);
-
-    const totalMy = aura.my;
-    const totalEnemy = aura.enemy;
+    const totalMy = context.aura.my;
+    const totalEnemy = context.aura.enemy;
 
     // 🔥 턴 배율 (1턴:1, 2턴:1.1, 3턴:1.21)
     const turnMultiplier = Math.pow(1.1, turn - 1);

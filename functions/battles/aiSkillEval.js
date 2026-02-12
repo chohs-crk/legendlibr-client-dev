@@ -1,43 +1,47 @@
-﻿// functions/battle/ai/aiSkillEval.js
-const fetch = require("node-fetch");
+﻿// functions/battle/aiSkillEval.js
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { defineSecret } = require("firebase-functions/params");
 
-// 🔥 Firebase Functions v7 Secret
-const OPENAI_KEY = defineSecret("OPENAI_KEY");
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 module.exports.getSkillEvaluation = async function (my, enemy) {
-    const OPENAI_API_KEY = OPENAI_KEY.value();
+    const apiKey = GEMINI_API_KEY.value();
 
-    if (!OPENAI_API_KEY) {
-        throw new Error("OpenAI API KEY is missing!");
+    if (!apiKey) {
+        throw new Error("Gemini API KEY is missing!");
     }
 
+    // SDK 초기화
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+        model: "gemini-3.0-flash-lite",
+        // 🔥 JSON 응답 강제 설정
+        generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.15
+        }
+    });
 
     const prompt = buildPrompt(my, enemy);
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-            model: "gpt-4o-mini",
-            temperature: 0.15,
-            messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: prompt },
-            ],
-        }),
+    // 제미나이 형식의 콘텐츠 구성
+    const result = await model.generateContent({
+        contents: [
+            {
+                role: "user",
+                parts: [{ text: SYSTEM_PROMPT + "\n\n" + prompt }]
+            }
+        ]
     });
 
-    const json = await res.json();
+    const response = await result.response;
+    const text = response.text();
 
-    let raw = json?.choices?.[0]?.message?.content || "{}";
-    raw = raw.replace(/```json|```/g, "").trim();
-
-    return JSON.parse(raw);
+    // JSON 모드 사용 시 별도의 정규식(```json) 제거 없이 바로 파싱 가능
+    return JSON.parse(text);
 };
+
+/* SYSTEM_PROMPT 및 buildPrompt 로직은 기존 소스와 동일하게 유지 */
 
 /* =========================================================
    시스템 프롬프트
