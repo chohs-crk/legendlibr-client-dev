@@ -3,7 +3,7 @@
 전투 계산 방식
 
 hp 계산은 다음을 바탕으로 한다 
-기본값 100 worldscore*3 narrativescore 1~8까진 *2.5 9와10은 20 고정 rulebreak,dominant, meta score은 각각 1~5까지는0 6부턴 -1.35*e의 0.9(score-5)제곱 
+기본값 100 willscore*3, charmscore*3, worldscore*3 narrativescore 1~8까진 *2.5 9와10은 20 고정 rulebreak,dominant, meta score은 각각 1~5까지는0 6부턴 -1.35*e의 0.9(score-5)제곱 
 
 데미지 계산은 스킬 데미지와 누적 데미지로 나뉜다 데미지계산 (20+power)*(1+0.2log(combatscore))*(10+T의 개수)/(10+F의 개수)*1.1의 (턴 수-1)제곱 
 

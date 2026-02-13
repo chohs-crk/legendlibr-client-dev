@@ -6,7 +6,6 @@ import { apiFetch } from "/base/api.js";
 const API = {
     check: "/create/story-check",
     story1: "/create/story1",
-    story2: "/create/story2",
     story3: "/create/story3"
 };
 
@@ -470,7 +469,7 @@ async function startFlow() {
         // 🔴 final 진입 시 클라이언트 스토리 상태 정리
         sessionStorage.removeItem("story_log");
         sessionStorage.removeItem("choices_backup_story1");
-        sessionStorage.removeItem("choices_backup_story2");
+
         sessionStorage.removeItem("choices_backup_story3");
         sessionStorage.removeItem("currentSceneKey");
 

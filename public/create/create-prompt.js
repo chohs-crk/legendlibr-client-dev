@@ -23,7 +23,7 @@ export async function initCreatePromptPage() {
     function resetClientStorySession() {
         sessionStorage.removeItem("story_log");
         sessionStorage.removeItem("choices_backup_story1");
-        sessionStorage.removeItem("choices_backup_story2");
+     
         sessionStorage.removeItem("choices_backup_story3");
         sessionStorage.removeItem("aiIntro");
         sessionStorage.removeItem("currentSceneKey");
