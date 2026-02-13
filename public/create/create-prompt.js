@@ -97,9 +97,17 @@ export async function initCreatePromptPage() {
         if (check.ok && check.flow) {
 
             if (check.flow === "final") {
-                alert("이미 최종 생성 단계에 있습니다.");
-                return;
+
+                // 🔥 30초 초과 시 재생성 허용
+                if (check.canRecreateFinal) {
+                    const go = confirm("이전 최종 생성이 중단되었습니다.\n새로 생성하시겠습니까?");
+                    if (!go) return;
+                } else {
+                    alert("이미 최종 생성 단계에 있습니다.\n잠시 후 다시 시도해주세요.");
+                    return;
+                }
             }
+
 
             const go = confirm("기존 생성 세션을 초기화하고 새로 시작하시겠습니까?");
             if (!go) return;
