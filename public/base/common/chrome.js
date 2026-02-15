@@ -131,6 +131,13 @@ function applyFooterSafePadding() {
 window.addEventListener("resize", applyFooterSafePadding);
 window.addEventListener("orientationchange", applyFooterSafePadding);
 document.addEventListener("DOMContentLoaded", applyFooterSafePadding);
+window.__updateChromeResource = function (meta) {
+    const scrollEl = document.querySelector(".currency-item.scroll span");
+    const frameEl = document.querySelector(".currency-item.frame span");
+
+    if (scrollEl) scrollEl.textContent = Number(meta.scroll).toLocaleString();
+    if (frameEl) frameEl.textContent = Number(meta.frame).toLocaleString();
+};
 
 /* =========================
    INIT

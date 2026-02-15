@@ -151,12 +151,24 @@ export async function initCreatePromptPage() {
             const json = await res.json();
 
             if (!json.ok) {
+                if (json.error === "INSUFFICIENT_SCROLL") {
+                    alert("두루마리가 부족합니다.");
+                    return;
+                }
+
                 alert("서버 응답 오류: " + json.error);
                 return;
             }
 
-            // 🔥 SPA 이동으로 변경
+            // 🔥 userMeta 즉시 반영 (DB 재조회 방지)
+            if (json.userMeta) {
+                sessionStorage.setItem("userMeta", JSON.stringify(json.userMeta));
+                window.__updateChromeResource?.(json.userMeta);
+            }
+
+            // 🔥 이동
             window.location.href = "/create/create-story.html";
+
 
         } catch (err) {
             console.error(err);

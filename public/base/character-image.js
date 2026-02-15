@@ -153,6 +153,12 @@ export async function initCharacterImagePage() {
                 alert(data.error || "AI 이미지 생성 실패");
                 return;
             }
+            if (data.userMeta) {
+                sessionStorage.setItem("userMeta", JSON.stringify(data.userMeta));
+
+                // 🔥 상단 UI 즉시 반영
+                window.__updateChromeResource?.(data.userMeta);
+            }
 
             aiImages.push({ url: data.imageUrl });
             selectedImage = { type: "ai", key: "ai", url: data.imageUrl };

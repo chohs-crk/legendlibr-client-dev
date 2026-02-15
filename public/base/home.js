@@ -185,6 +185,7 @@ function renderList() {
 
         listEl.appendChild(card);
     });
+    listEl.style.opacity = "1";
 }
 
 /* ===================================================
@@ -194,6 +195,8 @@ function injectFakeFinalCard(nameOrIntro) {
 
     const listEl = document.getElementById("charList");
     if (!listEl) return;
+
+    listEl.style.opacity = "0.5";
 
     if (document.getElementById("fake-final-card")) return;
 
@@ -267,19 +270,30 @@ function startStoryCheckPolling() {
                 if (wasFinalFlow && !data.ok) {
 
                     wasFinalFlow = false;
-
-                    // 🔥 polling 간격 10초 복구
                     storyCheckInterval = 10000;
 
-                    // 🔥 캐시 제거
+                    // 🔥 현재 스크롤 위치 저장
+                    const scrollY = window.scrollY;
+
+                    // 🔥 화면 잠깐 고정 (깜빡임 방지)
+                    const html = document.documentElement;
+                    const prevScrollBehavior = html.style.scrollBehavior;
+                    html.style.scrollBehavior = "auto";
+
                     sessionStorage.setItem("homeCalled", "false");
                     sessionStorage.removeItem("homeCharacters");
 
-                    // 🔥 서버 재호출 (스크롤 유지)
+                    // 🔥 서버 재호출
                     await loadMyCharactersFromServer();
+
+                    // 🔥 스크롤 복원
+                    window.scrollTo(0, scrollY);
+
+                    html.style.scrollBehavior = prevScrollBehavior;
 
                     return;
                 }
+
 
 
             }
