@@ -224,11 +224,13 @@ async function renderOriginDetail(originName, ui) {
 
   <div class="region-actions">
       <button class="region-delete-btn"
-              style="display:${r.source === "user" ? "inline-block" : "none"}"
-
+              style="display:${r.source === "user" ? "inline-block" : "none"}">
+          ✕
+      </button>
       <button class="region-info-btn">i</button>
   </div>
 `;
+
 
 
 
