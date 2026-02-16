@@ -5,14 +5,33 @@ const { SYSTEM_PROMPT, buildTarotPrompt } = require("./maketarot.prompt");
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
-async function makeTarot({ myIntro, enemyIntro, battleLog, winnerName }) {
+async function makeTarot({
+    myIntro,
+    enemyIntro,
+    battleLog,
+    winnerName,
+    myOriginName,
+    myRegionName,
+    enemyOriginName,
+    enemyRegionName
+}) {
     const apiKey = GEMINI_API_KEY.value();
     if (!apiKey) throw new Error("Gemini API KEY missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const userPrompt = buildTarotPrompt({ myIntro, enemyIntro, battleLog, winnerName });
+    const userPrompt = buildTarotPrompt({
+        myIntro,
+        enemyIntro,
+        battleLog,
+        winnerName,
+        myOriginName,
+        myRegionName,
+        enemyOriginName,
+        enemyRegionName
+    });
+
 
     const result = await model.generateContent({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -42,7 +61,12 @@ async function makeTarot({ myIntro, enemyIntro, battleLog, winnerName }) {
     // ✅ 결과 분석 및 로깅 개선
     const response = result.response;
     const text = response.text();
+    const candidate = response.candidates?.[0];
 
+    // 🔒 토큰 초과/비정상 종료 방어
+    if (!candidate || candidate.finishReason === "MAX_TOKENS") {
+        throw new Error("TAROT_TRUNCATED");
+    }
     // 디버깅: 모델이 왜 멈췄는지 확인 (로그에서 finishReason 확인 필수)
     console.log("[TAROT_RESULT_META]", {
         finishReason: response.candidates[0].finishReason,

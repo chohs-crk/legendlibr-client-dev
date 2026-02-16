@@ -233,3 +233,25 @@ body.dialog-open .app .scroll-area {
         cursor: not-allowed;
         opacity: 0.85;
     }
+.region-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.region-meta {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.region-owner {
+    font-weight: 600;
+}
+.region-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.region-count {
+    opacity: 0.75;
+}

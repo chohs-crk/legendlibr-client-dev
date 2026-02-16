@@ -186,14 +186,50 @@ async function renderOriginDetail(originName, ui) {
         const row = document.createElement("div");
         row.className = "region-item";
         row.dataset.regionId = r.id;
+        const isDefault = r.id?.endsWith("_DEFAULT");
+
+        let ownerName = "";
+        let charCountText = "";
+
+        // 🔥 default가 아닐 때만 표시
+        if (!isDefault) {
+
+            // ownerchar가 map 구조일 경우
+            if (r.ownerchar && typeof r.ownerchar === "object") {
+                ownerName = r.ownerchar.name || "";
+            }
+
+            const charNum = Number.isFinite(Number(r.charnum))
+                ? Number(r.charnum)
+                : 0;
+
+            ownerName = ownerName || "대표 없음";
+            charCountText = `${charNum}명의 캐릭터 존재`;
+        }
+
         row.innerHTML = `
-  <span class="region-name">${r.name}</span>
+  <div class="region-main">
+      <div class="region-name">${r.name}</div>
+
+      ${!isDefault
+                ? `
+        <div class="region-meta">
+            <div class="region-owner">[${ownerName}]</div>
+            <div class="region-count">${charCountText}</div>
+        </div>
+        `
+                : ""
+            }
+  </div>
 
   <div class="region-actions">
-    <button class="region-delete-btn" style="display:${r.owner ? "inline-block" : "none"}">✕</button>
-    <button class="region-info-btn">i</button>
+      <button class="region-delete-btn"
+              style="display:${r.source === "user" ? "inline-block" : "none"}"
+
+      <button class="region-info-btn">i</button>
   </div>
 `;
+
 
 
 

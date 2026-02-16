@@ -165,7 +165,49 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                 enemyIntro: loser.promptRefined || "",
                 battleLog,
                 winnerName: winner.displayRawName || "",
+
+                myOriginName: winner.origin || "",
+                myRegionName: winner.region || "",
+
+                enemyOriginName: loser.origin || "",
+                enemyRegionName: loser.region || "",
             });
+            // 지명 포함 여부 검사
+            const forbidden = [
+                winner.origin,
+                winner.region,
+                loser.origin,
+                loser.region
+            ].filter(Boolean);
+
+            if (!tarotResult || typeof tarotResult !== "object") {
+                throw new Error("TAROT_INVALID_FORMAT");
+            }
+
+            if (
+                typeof tarotResult.myTarot !== "string" ||
+                typeof tarotResult.enemyTarot !== "string"
+            ) {
+                throw new Error("TAROT_INVALID_FORMAT");
+            }
+
+            for (const word of forbidden) {
+                if (
+                    tarotResult.myTarot.includes(word) ||
+                    tarotResult.enemyTarot.includes(word)
+                ) {
+                    throw new Error("TAROT_FORBIDDEN_NAME_USED");
+                }
+            }
+
+            if (
+                tarotResult.myTarot.length >= 12 ||
+                tarotResult.enemyTarot.length >= 12
+            ) {
+                throw new Error("TAROT_TOO_LONG");
+            }
+
+
 
             // 안전 검증(형식 깨지면 저장 금지)
             if (!tarotResult?.myTarot || !tarotResult?.enemyTarot) {
