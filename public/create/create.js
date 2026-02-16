@@ -210,16 +210,6 @@ async function renderOriginDetail(originName, ui) {
         row.innerHTML = `
   <div class="region-main">
       <div class="region-name">${r.name}</div>
-
-      ${!isDefault
-                ? `
-        <div class="region-meta">
-            <div class="region-owner">[${ownerName}]</div>
-            <div class="region-count">${charCountText}</div>
-        </div>
-        `
-                : ""
-            }
   </div>
 
   <div class="region-actions">
@@ -230,6 +220,8 @@ async function renderOriginDetail(originName, ui) {
       <button class="region-info-btn">i</button>
   </div>
 `;
+
+
 
 
 
@@ -254,11 +246,19 @@ async function renderOriginDetail(originName, ui) {
             e.stopPropagation();
 
             openWrap(`
-    <h3>${r.name}</h3>
-    <div class="text-flow">
-      ${r.detail}
-    </div>
-  `);
+  <h3 class="region-detail-title">${r.name}</h3>
+
+  <div class="region-detail-meta">
+    ${r.source === "user"
+                    ? `[${r.ownerchar?.name || "대표 없음"}] · ${r.charnum || 0}명의 캐릭터`
+                    : "기본 지역"}
+  </div>
+
+  <div class="text-flow region-detail-desc">
+    ${r.detail}
+  </div>
+`);
+
         });
         // ❌ region 삭제
         row.querySelector(".region-delete-btn")

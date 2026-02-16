@@ -100,7 +100,8 @@
                         sessionStorage.setItem("homeCalled", "false");
 
                         // SPA 진입
-                        location.href = "../base/index.html#character-view";
+                        location.href = `/character/${j.id}`;
+
                     }, 1200);
 
                     return;
@@ -116,7 +117,8 @@
                              <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
                     setTimeout(() => {
                         sessionStorage.setItem("homeCalled", "false");
-                        location.href = "../base/index.html";
+                        location.href = "/";
+
                     }, 2000);
                     return;
                 }
@@ -130,7 +132,9 @@
                     sessionStorage.setItem("homeCalled", "false");
 
                     // SPA 진입
-                    location.href = "../base/index.html#character-view";
+                    location.href = `/character/${j.id}`;
+
+
                 }, 1200);
 
             } catch (err) {
@@ -141,12 +145,13 @@
                          <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
                 setTimeout(() => {
                     sessionStorage.setItem("homeCalled", "false");
-                    location.href = "../base/index.html";
+                    location.href = "/";
+
                 }, 2500);
             }
         }
        
-
+        history.replaceState(null, "", "/create");
         gen();
 
         // 🔥 홈 이동 버튼 이벤트
@@ -158,7 +163,8 @@
             sessionStorage.setItem("homeCalled", "false");
 
             // 홈으로 이동
-            location.href = "../base/index.html";
+            location.href = "/";
+
         });
 
     </script>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LegendLibr</title>
+    <title>LoreFlood</title>
 
     <link rel="stylesheet" href="/stylesheet/base/common.css">
     <link rel="stylesheet" href="/stylesheet/base/chrome.css">
@@ -342,7 +342,8 @@
         <div class="top-bar dialog-topbar">
             <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
                 <svg class="stroke-icon" viewBox="0 0 24 24">
-                    <path d="M15 18l-6-6 6-6" />
+                    <path d="M14 6l-6 6 6 6" />
+
                 </svg>
             </button>
             <div class="top-spacer"></div>
@@ -388,15 +389,17 @@
 
     <script type="module">
         import { requireAuthOrRedirect } from "/base/auth.js";
+        import { parseInitialRoute } from "/base/app-router.js";
 
         (async function bootstrapApp() {
             try {
                 await requireAuthOrRedirect();
 
-                const hash = location.hash.replace("#", "");
-                const initialPage = hash && document.getElementById("page-" + hash)
-                    ? hash
-                    : "home";
+                // 🔥 router에서 export된 parseInitialRoute 사용
+                const initialPage = parseInitialRoute();
+
+                // 🔥 내부 네비게이션 스택 초기화
+                window.__appStack = [initialPage];
 
                 // 🔥 showPage 준비될 때까지 대기
                 const waitRouter = () =>
@@ -411,20 +414,18 @@
 
                 await waitRouter();
 
+                // 🔥 최초 페이지는 tab 타입으로
                 window.showPage(initialPage, { type: "tab" });
 
             } catch (e) {
                 console.warn("인증 실패:", e.message);
             }
         })();
-
-
     </script>
-
-
 
     <script type="module" src="/base/home.js"></script>
     <script type="module" src="/create/create.js"></script>
     <script type="module" src="/base/app-router.js"></script>
+
 </body>
 </html>

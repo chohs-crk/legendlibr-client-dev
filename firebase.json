@@ -8,10 +8,24 @@
     ],
     "rewrites": [
       {
+        "source": "/create",
+        "destination": "/create/create-story.html"
+      },
+
+      {
+        "source": "/character/**",
+        "destination": "/base/index.html"
+      },
+      {
+        "source": "/ranking",
+        "destination": "/base/index.html"
+      },
+      {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/base/index.html"
       }
     ]
+
   },
   "functions": [
     {
@@ -32,7 +46,7 @@
   ],
   "firestore": {
     "database": "(default)",
-    "location": "nam5",
+    "location": "asia-northeast3",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },

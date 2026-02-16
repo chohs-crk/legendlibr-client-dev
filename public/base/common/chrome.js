@@ -28,9 +28,16 @@ function updateBackButtonVisibility() {
     const btnBack = document.getElementById("btnBack");
     if (!btnBack) return;
 
-    const stack = window.__navStack || [];
-    btnBack.style.display = stack.length > 1 ? "" : "none";
+    const footerPages = ["home", "ranking", "journey", "setting"];
+    const current = window.__currentPageName;
+
+    if (!current || footerPages.includes(current)) {
+        btnBack.style.display = "none";
+    } else {
+        btnBack.style.display = "";
+    }
 }
+
 
 // 전역 공개
 window.__updateBackBtn = updateBackButtonVisibility;

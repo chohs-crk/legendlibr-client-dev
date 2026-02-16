@@ -62,6 +62,15 @@ export async function initCharacterImagePage() {
 
     const character = await res.json();
 
+    // 🔥 본인 확인
+    if (!character.isMine) {
+        alert("권한이 없습니다.");
+        showPage("character-view", {
+            type: "replace",
+            charId
+        });
+        return;
+    }
     selectedImage = character.image;
     aiImages = character.aiImages || [];
     imgEl.src = resolveCharImage(selectedImage);
@@ -196,7 +205,11 @@ export async function initCharacterImagePage() {
         sessionStorage.setItem("homeCalled", "false");
 
         sessionStorage.setItem("viewCharId", charId);
-        showPage("character-view");
+        showPage("character-view", {
+            type: "push",
+            charId: charId
+        });
+
     };
 
 }

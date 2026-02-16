@@ -1,27 +1,25 @@
-// /base/back-handler.js
+ï»¿export function handleBackAction() {
 
-export function handleBackAction() {
     const dialog = document.getElementById("detailDialog");
-   
-
-    // 1) dialog ¿­·Á ÀÖÀ¸¸é ´Ý±â
     if (dialog?.hasAttribute("open")) {
-        if (typeof window.__closeCharacterDetailDialog === "function") {
-            window.__closeCharacterDetailDialog();
-        } else {
-            dialog.removeAttribute("open");
-        }
+        dialog.removeAttribute("open");
         return;
     }
 
-    // 2) wrap overlay ¿­·Á ÀÖÀ¸¸é ´Ý±â
     const wrap = document.getElementById("wrapOverlay");
     if (wrap && getComputedStyle(wrap).display !== "none") {
         wrap.style.display = "none";
         return;
     }
 
+    const stack = window.__appStack;
 
-    // 3) ±× ¿Ü¿¡´Â SPA µÚ·Î°¡±â
-    history.back();
+    if (!stack || stack.length <= 1) return;
+
+    // í˜„ìž¬ ì œê±°
+    stack.pop();
+
+    const prev = stack[stack.length - 1];
+
+    window.showPage(prev, { fromPop: true });
 }

@@ -233,25 +233,25 @@ body.dialog-open .app .scroll-area {
         cursor: not-allowed;
         opacity: 0.85;
     }
-.region-main {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+
+.region-detail-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
-.region-meta {
-    font-size: 12px;
-    opacity: 0.8;
+.region-detail-meta {
+    font-size: 16px; /* ← 이름(22)과 본문(14~15) 사이 */
+    opacity: 0.85;
+    margin-bottom: 14px;
+    text-align: left;
+    letter-spacing: 0.2px;
 }
 
-.region-owner {
-    font-weight: 600;
-}
-.region-name {
-    font-weight: 600;
+.region-detail-desc {
     font-size: 14px;
+    line-height: 1.7;
 }
-
-.region-count {
-    opacity: 0.75;
+.region-detail-meta {
+    color: #bba8ff;
 }

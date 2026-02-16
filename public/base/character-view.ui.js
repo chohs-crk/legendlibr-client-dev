@@ -134,11 +134,13 @@ export function initCharacterViewUI() {
             const editIcon = document.getElementById("imageEditIcon");
 
             editIcon.style.display = "none";
-
+            imageBox.classList.toggle("disabled", !data.isMine);
             // 클릭은 항상 등록
             imageBox.onclick = () => {
                 if (!data.isMine) {
                     // 필요하면 여기서 토스트/알림 가능
+                   
+
                     return;
                 }
                 sessionStorage.setItem("viewCharId", id);

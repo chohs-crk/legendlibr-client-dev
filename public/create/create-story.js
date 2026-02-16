@@ -328,7 +328,8 @@ async function streamScene(flow, force = false) {
                 if (currentEvent === "error") {
                     alert("스토리 생성 중 오류가 발생했습니다.");
                     sessionStorage.removeItem("story_log");
-                    location.href = "../base/index.html";
+                    location.href = "/";
+
                     return;
                 }
 
@@ -464,7 +465,8 @@ async function startFlow() {
 
     if (!j.ok) {
         alert("캐릭터 생성이 종료되었습니다.\n새로 생성할 수 있습니다.");
-        location.href = "create-prompt.html";
+        location.href = "/";
+
         return;
     }
 
@@ -527,4 +529,5 @@ async function startFlow() {
 /* ================================
    START
 ================================ */
+history.replaceState(null, "", "/create");
 startFlow();
