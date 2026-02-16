@@ -21,6 +21,7 @@ const charIntro = document.getElementById("charIntro");
 /* ================================
    STATE
 ================================ */
+let completed = false;
 let currentSceneKey = null;
 let collectedChoices = [];
 let isPrinting = false;
@@ -197,6 +198,9 @@ function startPrinter(flow) {
     const tick = async () => {
         if (outputQueue.length === 0) {
             isPrinting = false;
+            if (completed && collectedChoices.length > 0) {
+                renderChoices();
+            }
             return;
         }
 
@@ -253,7 +257,7 @@ async function streamScene(flow, force = false) {
 
     choiceBox.innerHTML = "";
     infoArea.textContent = "AI 작성 중…";
-    let completed = false;
+ 
 
     const res = await apiFetch(API[flow], {
         method: "POST",
@@ -321,6 +325,12 @@ async function streamScene(flow, force = false) {
             if (line.startsWith("data:")) {
                 const payload = line.slice(5);
                 if (!payload) continue;
+                if (currentEvent === "error") {
+                    alert("스토리 생성 중 오류가 발생했습니다.");
+                    sessionStorage.removeItem("story_log");
+                    location.href = "../base/index.html";
+                    return;
+                }
 
                 if (currentEvent === "choices") {
                     try {
@@ -343,7 +353,7 @@ async function streamScene(flow, force = false) {
                 }
                 else if (currentEvent === "done") {
                     completed = true;
-                    renderChoices();
+           
                 }
                 else {
                     const clean = payload

@@ -160,3 +160,16 @@ window.addEventListener("popstate", () => {
     __isHandlingPopState = false;
     window.__updateBackBtn?.();
 });
+window.__startGlobalLoading = function () {
+    const el = document.getElementById("globalLoading");
+    if (el) el.style.display = "flex";
+
+    document.body.style.pointerEvents = "none";
+};
+
+window.__stopGlobalLoading = function () {
+    const el = document.getElementById("globalLoading");
+    if (el) el.style.display = "none";
+
+    document.body.style.pointerEvents = "auto";
+};

@@ -90,6 +90,8 @@ export async function initCreatePromptPage() {
     const btnNext = $("#btnNext");
 
     btnNext.onclick = async () => {
+        window.__startGlobalLoading?.();
+
         // 🔒 서버 세션 존재 여부 확인
         const checkRes = await apiFetch("/create/story-check");
         const check = await checkRes.json();
@@ -151,6 +153,8 @@ export async function initCreatePromptPage() {
             const json = await res.json();
 
             if (!json.ok) {
+                window.__stopGlobalLoading?.();
+
                 if (json.error === "INSUFFICIENT_SCROLL") {
                     alert("두루마리가 부족합니다.");
                     return;
@@ -159,6 +163,7 @@ export async function initCreatePromptPage() {
                 alert("서버 응답 오류: " + json.error);
                 return;
             }
+            window.__stopGlobalLoading?.();
 
             // 🔥 userMeta 즉시 반영 (DB 재조회 방지)
             if (json.userMeta) {
@@ -172,6 +177,8 @@ export async function initCreatePromptPage() {
 
         } catch (err) {
             console.error(err);
+            window.__stopGlobalLoading?.();
+
             alert("서버 요청 중 오류 발생");
         }
     };
