@@ -18,9 +18,4 @@ exports.updateRankingCache =
     require("./ranking/updateRankingCache")
         .updateRankingCache;
 
-/* ============================
-   🔥 전투 워커 (1분 → 내부 5초 x 12회)
-============================ */
-exports.battleWorker =
-    require("./battles/battleWorker")
-        .battleWorker;
+

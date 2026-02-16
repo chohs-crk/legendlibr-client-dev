@@ -37,30 +37,6 @@ function calcOrderWeight(aiOrder, pickedIdxs) {
     return 1.0;
 }
 
-// =======================================
-//  2. 지속효과 누적 (Aura)
-// =======================================
-
-// auraQueue = [
-//   { caster:'my', skill: {...}, usedTurn:1 },
-//   { caster:'enemy', skill:{...}, usedTurn:2 },
-//   ...
-// ]
-
-let auraQueue = [];
-
-// aura = 턴마다 계산되는 누적값
-let aura = {
-    my: { AP: 0, BP: 0, AN: 0, BN: 0 },
-    enemy: { AP: 0, BP: 0, AN: 0, BN: 0 }
-};
-
-function addAuraEffect(caster, skill, usedTurn) {
-    // skill 또는 weight 구조가 없을 경우 무시
-    if (!skill || !skill.turns || !Array.isArray(skill.weights)) return;
-
-    auraQueue.push({ caster, skill, usedTurn });
-}
 
 // 🔥 수정 2: Aura 상태를 외부(context)에서 받아 처리하도록 변경
 function updateAura(currentTurn, context) {

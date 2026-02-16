@@ -3,6 +3,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai"); // 🔥 추가
 const { defineSecret } = require("firebase-functions/params");
 const { admin, db } = require("../admin/admin");
+const { ORIGINS } = require("./origins");
 
 const { getSkillEvaluation } = require("./aiSkillEval");
 const { calcHP } = require("./calcBattle");
@@ -22,57 +23,142 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
    🔥 AI 전투 로그 생성 (Gemini 버전)
 ========================================================= */
 
-async function generateBattleNarration({
+async function generateBattleNarrationStream({
+    battleRef,
     my,
     enemy,
     myPicked,
     enemyPicked,
+    myTop2Idx,
+    enemyTop2Idx,
     turnLogs,
     winnerId
 }) {
     const apiKey = GEMINI_API_KEY.value();
     if (!apiKey) throw new Error("Gemini API KEY is missing!");
 
-    // SDK 설정
+    const myOriginName = ORIGINS[my.originId]?.name || "";
+    const enemyOriginName = ORIGINS[enemy.originId]?.name || "";
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-2.5-flash-lite"
     });
 
-    const winnerName = winnerId === my.uid ? my.displayRawName : enemy.displayRawName;
+    const winnerName =
+        winnerId === my.uid ? my.displayRawName : enemy.displayRawName;
 
     const userPrompt = buildUserPrompt({
         my,
         enemy,
+        myOriginName,
+        enemyOriginName,
         mySkills: myPicked,
         enemySkills: enemyPicked,
+        myTop2Idx,
+        enemyTop2Idx,
         openingType: pickOpening(),
         midResultType: evaluateBattleFlow(turnLogs),
         winnerName
     });
 
-    // Gemini 호출 방식 (SDK 사용)
-    const result = await model.generateContent({
+    const stream = await model.generateContentStream({
+        systemInstruction: {
+            parts: [{ text: SYSTEM_PROMPT }]
+        },
         contents: [
-            { role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userPrompt }] }
+            { role: "user", parts: [{ text: userPrompt }] }
         ],
         generationConfig: {
-            temperature: 0.85,
+            temperature: 0.8,
+            topP: 0.85,
+            maxOutputTokens: 1200
         }
     });
 
-    const response = await result.response;
-    return response.text() || "전투 기록 생성 실패.";
+    let buffer = "";
+    let fullText = "";
+
+    let lastFlushTime = Date.now();
+
+    const MIN_UPLOAD_SIZE = 300;        // 글자 최소 기준
+    const MIN_FLUSH_INTERVAL = 2500;    // 2.5초 최소 간격
+
+    async function flushChunk(text) {
+
+        fullText += text;
+
+        try {
+            await battleRef
+                .collection("logs")
+                .add({
+                    text,
+                    createdAt: admin.firestore.Timestamp.now()
+                });
+
+        } catch (e) {
+            console.error("[STREAM_WRITE_FAIL]", e.message);
+        }
+
+        lastFlushTime = Date.now();
+    }
+
+
+
+    
+
+
+
+    for await (const chunk of stream.stream) {
+        const part = chunk.text();
+        if (!part) continue;
+
+        buffer += part;
+
+        const now = Date.now();
+        const timePassed = now - lastFlushTime;
+
+        if (
+            buffer.length >= MIN_UPLOAD_SIZE &&
+            timePassed >= MIN_FLUSH_INTERVAL
+        ) {
+            await flushChunk(buffer);
+            buffer = "";
+        }
+
+    }
+
+
+    // 🔥 스트림 종료 후 남은 부분 업로드
+    if (buffer.trim().length > 0) {
+
+        const now = Date.now();
+        const timePassed = now - lastFlushTime;
+
+        if (timePassed < MIN_FLUSH_INTERVAL) {
+            // 남은 시간만큼 대기
+            await new Promise(r =>
+                setTimeout(r, MIN_FLUSH_INTERVAL - timePassed)
+            );
+        }
+
+        await flushChunk(buffer);
+    }
+
+    return fullText;
 }
 
-// ... runBattleLogic 및 processOneBattle exports 로직은 동일
+
+
 
 
 /* =========================================================
    🔥 실제 전투 로직
 ========================================================= */
 
-async function runBattleLogic(myId, enemyId) {
+async function runBattleLogic(battleId, myId, enemyId) {
+
+    const callStartTime = Date.now();
 
     const mySnap = await db.collection("characters").doc(myId).get();
     const enemySnap = await db.collection("characters").doc(enemyId).get();
@@ -141,30 +227,92 @@ async function runBattleLogic(myId, enemyId) {
     }
 
     let winnerId;
+    // 🔥 각 캐릭터가 가장 높은 데미지를 준 스킬 2개 인덱스 계산
+    function pickTop2SkillIdx(turnLogs, isMy) {
+        const arr = turnLogs.map((log, i) => ({
+            idx: i,
+            dmg: isMy ? log.my.totalDmg : log.enemy.totalDmg
+        }));
+
+        arr.sort((a, b) => b.dmg - a.dmg);
+        return arr.slice(0, 2).map(v => v.idx);
+    }
+
+    let myTop2Idx = null;
+    let enemyTop2Idx = null;
+
+    // 🔥 3턴 모두 진행한 경우만 Top2 계산
+    if (turnLogs.length === 3) {
+        myTop2Idx = pickTop2SkillIdx(turnLogs, true);
+        enemyTop2Idx = pickTop2SkillIdx(turnLogs, false);
+    }
+
+
+
 
     if (myHP > enemyHP) winnerId = myId;
     else if (enemyHP > myHP) winnerId = enemyId;
     else winnerId = Math.random() < 0.5 ? myId : enemyId;
 
-    const loserId = winnerId === myId ? enemyId : myId;
+const loserId = winnerId === myId ? enemyId : myId;
 
-    const narration = await generateBattleNarration({
+const battleRef = db.collection("battles").doc(battleId);
+
+// 🔥 승패 먼저 저장 (ELO는 아직 실행 안 됨)
+    await battleRef.update({
+        winnerId,
+        loserId,
+        status: "streaming",
+        finished: false
+    });
+
+
+    const battleLogicEndTime = Date.now();
+
+    const usedTurnCount = turnLogs.length;
+
+    
+
+ 
+
+let narration = "";
+try {
+    narration = await generateBattleNarrationStream({
+        battleRef,
         my,
         enemy,
-        myPicked,
-        enemyPicked,
+        myPicked: myPicked.slice(0, usedTurnCount),
+        enemyPicked: enemyPicked.slice(0, usedTurnCount),
+        myTop2Idx,
+        enemyTop2Idx,
         turnLogs,
         winnerId
     });
+} catch (streamErr) {
+    console.error("[STREAM_FAIL]", streamErr.message);
 
+    await battleRef.update({
+        status: "stream_error",
+        streamFailed: true
+    });
+}
+
+
+
+
+    const narrationEndTime = Date.now();
+    const logicTime = battleLogicEndTime - callStartTime;
+    const logTime = narrationEndTime - battleLogicEndTime;
+    const totalTime = narrationEndTime - callStartTime;
     return {
         winnerId,
         loserId,
-        narration,
         turnLogs,
         myName: my.displayRawName,
-        enemyName: enemy.displayRawName
+        enemyName: enemy.displayRawName,
+        timing: { logicTime, logTime, totalTime }
     };
+
 }
 
 
@@ -178,36 +326,29 @@ exports.processOneBattle = async (battleId, battleData) => {
 
     try {
 
-        await ref.update({
-            status: "processing",
-            startedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+     
 
         const result = await runBattleLogic(
+            battleId,
             battleData.myId,
             battleData.enemyId
         );
 
+
         await ref.update({
             status: "done",
             finished: true,
-            winnerId: result.winnerId,
-            loserId: result.loserId,
-            eloApplied: false,
+            tarotEligible: true,
 
-            logs: [
-                {
-                    skillAName: "전투 로그",
-                    narration: result.narration
-                }
-            ],
-
+        
+         
             turnLogs: result.turnLogs,
             myName: result.myName,
             enemyName: result.enemyName,
-
+            timing: result.timing,
             finishedAt: admin.firestore.FieldValue.serverTimestamp()
         });
+
 
     } catch (e) {
 

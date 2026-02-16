@@ -38,7 +38,13 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
     const text = response.text();
 
     // JSON 모드 사용 시 별도의 정규식(```json) 제거 없이 바로 파싱 가능
-    return JSON.parse(text);
+    try {
+        return JSON.parse(text.trim());
+    } catch (e) {
+        console.error("[SKILL_EVAL_PARSE_FAIL]", text);
+        throw e;
+    }
+
 };
 
 /* SYSTEM_PROMPT 및 buildPrompt 로직은 기존 소스와 동일하게 유지 */
