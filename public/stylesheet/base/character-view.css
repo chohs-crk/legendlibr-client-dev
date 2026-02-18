@@ -489,3 +489,8 @@
     pointer-events: none;
     opacity: 0.7;
 }
+.battle-date {
+    font-size: 12px;
+    opacity: 0.6;
+    margin-top: 4px;
+}

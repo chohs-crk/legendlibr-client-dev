@@ -405,18 +405,54 @@ export function initCharacterViewUI() {
 
  
     function formatBattleResult(battle) {
-        // 서버에서 result: "win"|"lose"|"draw" 등이 있으면 사용
-        if (battle.result === "win") return { text: "승", class: "win" };
-        if (battle.result === "lose") return { text: "패", class: "lose" };
-        if (battle.result === "draw") return { text: "무", class: "neutral" };
+        const myId =
+            sessionStorage.getItem("viewCharId") ||
+            new URLSearchParams(location.search).get("id");
+
+        if (!battle.finished) {
+            return { text: "진행중", class: "neutral" };
+        }
+
+        if (!battle.winnerId) {
+            return { text: "", class: "neutral" };
+        }
+
+        if (battle.winnerId === myId) {
+            return { text: "승", class: "win" };
+        }
+
+        if (battle.loserId === myId) {
+            return { text: "패", class: "lose" };
+        }
+
         return { text: "", class: "neutral" };
     }
 
+
     function formatBattleDate(battle) {
         if (!battle.createdAt) return "";
-        // 문자열이면 그대로, timestamp면 변환해서 쓰면 됨
-        return String(battle.createdAt);
+
+        let dateObj;
+
+        // Firestore Timestamp 형태
+        if (battle.createdAt.seconds && !isNaN(battle.createdAt.seconds)) {
+            dateObj = new Date(battle.createdAt.seconds * 1000);
+        }
+        // ISO 문자열 또는 일반 날짜
+        else {
+            dateObj = new Date(battle.createdAt);
+        }
+
+        if (isNaN(dateObj.getTime())) return "";
+
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(dateObj.getDate()).padStart(2, "0");
+
+        return `${y}.${m}.${d}`;
     }
+
+
 
     function getPageRange(current, total) {
         // 항상 5개 노출
@@ -483,14 +519,19 @@ export function initCharacterViewUI() {
 
           <!-- 하단: 텍스트 영역 -->
           <div class="battle-body">
-            <div class="battle-title-row">
-              <span class="battle-title-main">${enemyName} 전</span>
-              <span class="battle-title-result ${res.class}">${res.text}</span>
-            </div>
+           <div class="battle-title-row">
+  <span class="battle-title-main">${enemyName} 전</span>
+  <span class="battle-title-result ${res.class}">${res.text}</span>
+</div>
 
-            <div class="battle-sub">
-              ${preview}
-            </div>
+<div class="battle-date">
+  ${formatBattleDate(b)}
+</div>
+
+<div class="battle-sub">
+  ${preview}
+</div>
+
           </div>
 
         </div>

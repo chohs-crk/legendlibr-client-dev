@@ -81,40 +81,45 @@ function renderBattle(battle) {
     const enemyImg = resolveCharImage(battle.enemyImage);
     const logs = battle.logs || [];
 
-    const sections = logs.map((log, index) => {
-        let narration = log.text || "";
+    // 🔥 청크별 경계 개행 정리
+    const processed = logs.map((log, index) => {
+        let text = log.text || "";
 
-        // 🔥 첫 청크가 아니면 앞쪽 개행 제거
-        if (index > 0) {
-            narration = narration.replace(/^\r?\n+/, "");
+        const isFirst = index === 0;
+        const isLast = index === logs.length - 1;
+
+        if (!isFirst) {
+            text = text.replace(/^\r?\n+/, "");
         }
 
-        // 🔥 마지막 청크가 아니면 뒤쪽 개행 제거
-        if (index < logs.length - 1) {
-            narration = narration.replace(/\r?\n+$/, "");
+        if (!isLast) {
+            text = text.replace(/\r?\n+$/, "");
         }
 
-        return `
-        <div class="battle-section">
-            <div class="battle-text">
-                ${parseStoryText(narration)}
-            </div>
-        </div>
-    `;
+        return text;
     });
 
+    // 🔥 하나의 문자열로 합침 (문단 개행은 유지됨)
+    const fullText = processed.join("");
+
+    // 🔥 파싱
+    const parsed = parseStoryText(fullText);
 
     container.innerHTML = `
-        <div class="battle-log-header">
-            <img src="${enemyImg}" />
-            <h2>${battle.enemyName || "전투"}</h2>
-        </div>
+    <div class="battle-log-header">
+        <img src="${enemyImg}" />
+        <h2>${battle.enemyName || "전투"}</h2>
+    </div>
 
-        <div class="battle-log-body">
-            ${sections.join("")}
-
+    <div class="battle-log-body">
+        <div class="battle-section">
+            <div class="battle-text">
+                ${parsed}
+            </div>
         </div>
-    `;
+    </div>
+`;
+
 }
 
 /* =========================================================
