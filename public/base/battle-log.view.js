@@ -56,7 +56,10 @@ function cacheBattle(battle) {
     sessionStorage.setItem("battleCacheMap", JSON.stringify(map));
 }
 function connectBattleStream(battleId) {
-    const es = new EventSource(`/battle/battle-stream?id=${battleId}`);
+    const es = new EventSource(
+        `/base/battle-stream?id=${encodeURIComponent(battleId)}`
+    );
+
 
     es.onmessage = (e) => {
         const data = JSON.parse(e.data);
@@ -244,7 +247,8 @@ export async function initBattleLogPage(battleId) {
 
     cacheBattle(battle);
     renderBattle(battle);
-    if (battle.status === "process" || battle.status === "streaming") {
+    if (battle.status === "processing" || battle.status === "streaming") { 
+
         connectBattleStream(battleId);
     }
 }
