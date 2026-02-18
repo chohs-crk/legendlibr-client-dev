@@ -55,6 +55,33 @@ function cacheBattle(battle) {
 
     sessionStorage.setItem("battleCacheMap", JSON.stringify(map));
 }
+function connectBattleStream(battleId) {
+    const es = new EventSource(`/battle/battle-stream?id=${battleId}`);
+
+    es.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        // logs 업데이트
+        if (data.logs) {
+            const cached = getCachedBattle(battleId) || {};
+            cached.logs = data.logs;
+            cached.status = data.status;
+            cached.winnerId = data.winnerId;
+            cached.loserId = data.loserId;
+
+            cacheBattle(cached);
+            renderBattle(cached);
+        }
+
+        if (data.finished) {
+            es.close();
+        }
+    };
+
+    es.onerror = () => {
+        es.close();
+    };
+}
 
 /* =========================================================
    API 호출
@@ -68,6 +95,40 @@ async function fetchBattleById(id, onlyLogs = false) {
     if (!res.ok) return null;
 
     return await res.json();
+}
+function formatBattleResult(battle) {
+    const myId =
+        sessionStorage.getItem("viewCharId") ||
+        new URLSearchParams(location.search).get("charId");
+
+    if (!battle.winnerId) {
+        return { text: "진행중", class: "neutral" };
+    }
+
+    if (battle.winnerId === myId) {
+        return { text: "승", class: "win" };
+    }
+
+    if (battle.loserId === myId) {
+        return { text: "패", class: "lose" };
+    }
+
+    return { text: "", class: "neutral" };
+}
+
+function formatBattleDate(battle) {
+    if (!battle?.createdAt) return "";
+
+    const d = new Date(battle.createdAt);
+    if (isNaN(d.getTime())) return "";
+
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+
+    return `${y}.${m}.${day} ${hh}:${mm}`;
 }
 
 /* =========================================================
@@ -105,19 +166,25 @@ function renderBattle(battle) {
     // 🔥 파싱
     const parsed = parseStoryText(fullText);
 
+    const result = formatBattleResult(battle);
+    const dateStr = formatBattleDate(battle);
+
     container.innerHTML = `
     <div class="battle-log-header">
         <img src="${enemyImg}" />
-        <h2>${battle.enemyName || "전투"}</h2>
-    </div>
-
-    <div class="battle-log-body">
-        <div class="battle-section">
-            <div class="battle-text">
-                ${parsed}
+        <div class="battle-log-header-text">
+            <h2>${battle.enemyName || "전투"} 전</h2>
+            <div class="battle-log-meta">
+                <span class="battle-result ${result.class}">
+                    ${result.text}
+                </span>
+                <span class="battle-date">
+                    ${dateStr}
+                </span>
             </div>
         </div>
     </div>
+
 `;
 
 }
@@ -173,4 +240,7 @@ export async function initBattleLogPage(battleId) {
 
     cacheBattle(battle);
     renderBattle(battle);
+    if (battle.status === "process" || battle.status === "streaming") {
+        connectBattleStream(battleId);
+    }
 }

@@ -430,27 +430,20 @@ export function initCharacterViewUI() {
 
 
     function formatBattleDate(battle) {
-        if (!battle.createdAt) return "";
+        if (!battle?.createdAt) return "";
 
-        let dateObj;
-
-        // Firestore Timestamp 형태
-        if (battle.createdAt.seconds && !isNaN(battle.createdAt.seconds)) {
-            dateObj = new Date(battle.createdAt.seconds * 1000);
-        }
-        // ISO 문자열 또는 일반 날짜
-        else {
-            dateObj = new Date(battle.createdAt);
-        }
-
+        const dateObj = new Date(battle.createdAt);
         if (isNaN(dateObj.getTime())) return "";
 
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, "0");
         const d = String(dateObj.getDate()).padStart(2, "0");
+        const hh = String(dateObj.getHours()).padStart(2, "0");
+        const mm = String(dateObj.getMinutes()).padStart(2, "0");
 
-        return `${y}.${m}.${d}`;
+        return `${y}.${m}.${d} ${hh}:${mm}`;
     }
+
 
 
 

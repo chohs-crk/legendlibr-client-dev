@@ -313,9 +313,11 @@ try {
     await battleRef.update({
         status: "stream_error",
         streamFailed: true,
-        finished: true,           // ✅ ELO 트리거 활성화
-        tarotEligible: false      // ✅ 타로 비활성화
+        finished: true,
+        tarotEligible: false,
+        finishedAt: admin.firestore.Timestamp.now()   // 🔥 추가
     });
+
 
 }
 

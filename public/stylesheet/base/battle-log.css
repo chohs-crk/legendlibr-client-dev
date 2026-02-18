@@ -1,0 +1,39 @@
+﻿.battle-log-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+    .battle-log-header img {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        object-fit: cover;
+    }
+
+.battle-log-header-text h2 {
+    margin: 0;
+}
+
+.battle-log-meta {
+    margin-top: 4px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.battle-result.win {
+    color: #3ecf8e;
+}
+
+.battle-result.lose {
+    color: #ff5f5f;
+}
+
+.battle-result.neutral {
+    color: #aaa;
+}
+
+.battle-date {
+    margin-left: 12px;
+    font-size: 13px;
+}
