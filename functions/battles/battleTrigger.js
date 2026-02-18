@@ -101,9 +101,14 @@ async function startNextQueued() {
 /* ======================================================
    🔥 Firestore onCreate 트리거
 ====================================================== */
+const { defineSecret } = require("firebase-functions/params");
 
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 exports.onBattleCreated = onDocumentCreated(
-    "battles/{battleId}",
+    {
+        document: "battles/{battleId}",
+        secrets: [GEMINI_API_KEY],
+    },
     async (event) => {
 
         const battleId = event.params.battleId;

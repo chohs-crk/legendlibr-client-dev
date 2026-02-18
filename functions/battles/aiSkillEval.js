@@ -1,4 +1,4 @@
-﻿// functions/battle/aiSkillEval.js
+﻿// functions/battles/aiSkillEval.js
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { defineSecret } = require("firebase-functions/params");
 
@@ -6,45 +6,41 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 module.exports.getSkillEvaluation = async function (my, enemy) {
     const apiKey = GEMINI_API_KEY.value();
+    if (!apiKey) throw new Error("Gemini API KEY is missing!");
 
-    if (!apiKey) {
-        throw new Error("Gemini API KEY is missing!");
-    }
-
-    // SDK 초기화
     const genAI = new GoogleGenerativeAI(apiKey);
+
+    // 1. 모델 설정 단계에서 systemInstruction 분리
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
-        // 🔥 JSON 응답 강제 설정
-        generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.15
-        }
+        model: "gemini-2.5-flash-lite", // 혹은 사용 중인 정확한 모델명
+        systemInstruction: SYSTEM_PROMPT, // 시스템 프롬프트를 일로 옮깁니다.
     });
 
     const prompt = buildPrompt(my, enemy);
 
-    // 제미나이 형식의 콘텐츠 구성
     const result = await model.generateContent({
         contents: [
             {
                 role: "user",
-                parts: [{ text: SYSTEM_PROMPT + "\n\n" + prompt }]
+                parts: [{ text: prompt }]
             }
-        ]
+        ],
+        generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1, // 0.4에서 0.1로 하향 (일관성 및 속도 향상)
+            // thinking 관련 설정이 있다면 여기서 억제 가능 (모델 버전에 따라 다름)
+        }
     });
 
     const response = await result.response;
     const text = response.text();
 
-    // JSON 모드 사용 시 별도의 정규식(```json) 제거 없이 바로 파싱 가능
     try {
         return JSON.parse(text.trim());
     } catch (e) {
         console.error("[SKILL_EVAL_PARSE_FAIL]", text);
         throw e;
     }
-
 };
 
 /* SYSTEM_PROMPT 및 buildPrompt 로직은 기존 소스와 동일하게 유지 */
@@ -53,8 +49,8 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
    시스템 프롬프트
 ========================================================= */
 const SYSTEM_PROMPT = `
-너는 두 캐릭터의 특징(features), 서사(promptRefined), 그리고 스킬의 이름(name)과 짧은 설명(shortDesc)을 바탕으로
-각 스킬이 상대 캐릭터에게 얼마나 유효한지 판단하는 AI이다.
+너는 두 캐릭터의 특징, 서사, 그리고 스킬의 이름과 짧은 설명을 바탕으로
+각 스킬이 상대 캐릭터에게 얼마나 유효한지 빠르게 판단하는 AI이다.
 
 반드시 JSON ONLY를 출력한다.  
 문장, 이유, 설명, 코드블록, 추가 텍스트 금지.
@@ -64,7 +60,7 @@ const SYSTEM_PROMPT = `
 각 스킬에 대해 상대의 특징 5개를 기준으로 T/F 판단 5자리를 만든다.
 
 - T (True)
-  상대 특징과 직접적으로 상호작용하여 전투·전략적으로 긍정적 효과를 내는 경우
+  상대 특징에 대해 전투·전략적으로 긍정적 효과를 내는 경우
   예: 치명타 → "약점이 많은 적", 정보 교란 → "감정이 불안정한 적"
 
 - F (False)
@@ -125,7 +121,6 @@ ${mySkills}
 ${enemySkills}
 
 [출력 규칙]
-- 반드시 JSON만 출력
 - TF 배열 길이는 각각 4개
 - 각 TF는 5글자(T/F)
 - myOrder / enemyOrder는 0~3 숫자로 구성된 4자리 문자열

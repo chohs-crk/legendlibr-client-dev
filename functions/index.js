@@ -1,7 +1,10 @@
 ﻿const { setGlobalOptions } = require("firebase-functions/v2");
+setGlobalOptions({
+    cpu: 2
+});
 
 setGlobalOptions({
-    maxInstances: 10,
+    maxInstances: 500,
 });
 
 /* ============================
@@ -19,3 +22,15 @@ exports.updateRankingCache =
         .updateRankingCache;
 
 
+/* ============================
+ERROR BATTLE CLEANUP
+============================ */
+exports.cleanupBattleErrors =
+    require("./battles/cleanupBattleErrors")
+        .cleanupBattleErrors;
+/* ============================
+BATTLE TRIGGER
+============================ */
+exports.onBattleCreated =
+    require("./battles/battleTrigger")
+        .onBattleCreated;

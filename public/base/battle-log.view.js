@@ -99,7 +99,8 @@ function renderBattle(battle) {
         </div>
 
         <div class="battle-log-body">
-            ${sections.join("<hr>")}
+            ${sections.join("")}
+
         </div>
     `;
 }

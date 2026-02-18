@@ -78,7 +78,7 @@ async function generateBattleNarrationStream({
 
     let buffer = "";
     let fullText = "";
-
+    let previewSaved = false;
     let lastFlushTime = Date.now();
 
     const MIN_UPLOAD_SIZE = 300;        // 글자 최소 기준
@@ -96,12 +96,23 @@ async function generateBattleNarrationStream({
                     createdAt: admin.firestore.Timestamp.now()
                 });
 
-            // 🔥 previewText 업데이트 (마지막 200자 유지)
-            const previewText = fullText.slice(-200);
+    
+            if (!previewSaved) {
+                const PREVIEW_LEN = 180;
 
-            await battleRef.update({
-                previewText
-            });
+                const previewText =
+                    fullText.length > PREVIEW_LEN
+                        ? fullText.slice(0, PREVIEW_LEN)
+                        : fullText;
+
+                await battleRef.update({
+                    previewText
+                });
+
+                previewSaved = true;   // 🔥 한번 저장했으면 다시 안 함
+            }
+
+
 
 
         } catch (e) {
@@ -301,8 +312,11 @@ try {
 
     await battleRef.update({
         status: "stream_error",
-        streamFailed: true
+        streamFailed: true,
+        finished: true,           // ✅ ELO 트리거 활성화
+        tarotEligible: false      // ✅ 타로 비활성화
     });
+
 }
 
 
