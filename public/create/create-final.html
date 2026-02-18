@@ -130,6 +130,7 @@
                 setTimeout(() => {
                     sessionStorage.setItem("viewCharId", j.id);
                     sessionStorage.setItem("homeCalled", "false");
+                    sessionStorage.removeItem("finalStartedAt");
 
                     // SPA 진입
                     location.href = `/character/${j.id}`;
@@ -145,6 +146,7 @@
                          <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
                 setTimeout(() => {
                     sessionStorage.setItem("homeCalled", "false");
+                    sessionStorage.removeItem("finalStartedAt");
                     location.href = "/";
 
                 }, 2500);
@@ -152,6 +154,7 @@
         }
        
         history.replaceState(null, "", "/create");
+        sessionStorage.setItem("finalStartedAt", Date.now().toString());
         gen();
 
         // 🔥 홈 이동 버튼 이벤트
@@ -159,7 +162,7 @@
         btnGoHome?.addEventListener("click", () => {
 
             // 생성 플래그 종료
-           
+            sessionStorage.removeItem("finalStartedAt");
             sessionStorage.setItem("homeCalled", "false");
 
             // 홈으로 이동

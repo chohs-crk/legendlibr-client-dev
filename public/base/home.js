@@ -243,6 +243,18 @@ function startStoryCheckPolling() {
 
     if (storyCheckTimer) return;
 
+    const startedAt = Number(sessionStorage.getItem("finalStartedAt"));
+
+    if (!startedAt) return;
+
+    const elapsed = Date.now() - startedAt;
+
+    // 🔥 30초 초과 → 폴링 안 함
+    if (elapsed > 30000) {
+        sessionStorage.removeItem("finalStartedAt");
+        return;
+    }
+
     const poll = async () => {
 
         const homePage = document.getElementById("page-home");
@@ -257,58 +269,32 @@ function startStoryCheckPolling() {
                 const data = await res.json();
 
                 if (data.ok && data.flow === "final") {
-
-                    if (!wasFinalFlow) {
-                        wasFinalFlow = true;
-                        storyCheckInterval = 3000; // final 단계면 더 빠르게
-                    }
-
                     injectFakeFinalCard(data.rawName || data.intro);
-
                 }
 
-                if (wasFinalFlow && !data.ok) {
+                // 🔥 완료 감지
+                if (!data.ok) {
 
-                    wasFinalFlow = false;
-                    storyCheckInterval = 10000;
-
-                    // 🔥 현재 스크롤 위치 저장
-                    const scrollY = window.scrollY;
-
-                    // 🔥 화면 잠깐 고정 (깜빡임 방지)
-                    const html = document.documentElement;
-                    const prevScrollBehavior = html.style.scrollBehavior;
-                    html.style.scrollBehavior = "auto";
+                    sessionStorage.removeItem("finalStartedAt");
 
                     sessionStorage.setItem("homeCalled", "false");
                     sessionStorage.removeItem("homeCharacters");
 
-                    // 🔥 서버 재호출
                     await loadMyCharactersFromServer();
-
-                    // 🔥 스크롤 복원
-                    window.scrollTo(0, scrollY);
-
-                    html.style.scrollBehavior = prevScrollBehavior;
-
                     return;
                 }
-
-
-
             }
 
         } catch (err) {
             console.error("story-check error:", err);
         }
 
-        // 🔥 실행 끝나고 10초 후 다시 실행
-        storyCheckTimer = setTimeout(poll, storyCheckInterval);
+        storyCheckTimer = setTimeout(poll, 3000);
     };
 
-    // 🔥 즉시 1회 실행
     poll();
 }
+
 
 
 /* ===================================================

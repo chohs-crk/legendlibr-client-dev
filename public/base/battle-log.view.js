@@ -2,43 +2,12 @@
 import { apiFetch } from "/base/api.js";
 
 /* =========================================================
-   텍스트 파서
+   캐시
 ========================================================= */
-function parseStoryText(raw) {
-    if (!raw) return "";
-    let html = String(raw);
 
-    html = html.replace(/story-(em|talk|skill)\"?>/gi, "");
-    html = html.replace(/<span[^>]*>/gi, "");
-    html = html.replace(/<\/span>/gi, "");
-    html = html.replace(/&lt;\/?span[^&]*&gt;/gi, "");
-
-    html = html.replace(/\*\*(.+?)\*\*/g, (_, txt) =>
-        `<span class="story-em">${txt}</span>`
-    );
-
-    html = html.replace(/§([^§]+?)§/g, (_, txt) =>
-        `"${'<span class="story-talk">' + txt + "</span>"}"`
-    );
-
-    html = html.replace(/『(.+?)』/g, (_, txt) =>
-        `『<span class="story-skill">${txt}</span>』`
-    );
-
-    html = html.replace(/\r\n/g, "\n");
-    html = html.replace(/\n{2,}/g, "<br><br>");
-    html = html.replace(/\n/g, " ");
-
-    return html.trim();
-}
-
-/* =========================================================
-   캐시 처리
-========================================================= */
 function getCachedBattle(id) {
     const raw = sessionStorage.getItem("battleCacheMap");
     if (!raw) return null;
-
     try {
         const map = JSON.parse(raw);
         return map[id] || null;
@@ -50,205 +19,241 @@ function getCachedBattle(id) {
 function cacheBattle(battle) {
     const raw = sessionStorage.getItem("battleCacheMap");
     const map = raw ? JSON.parse(raw) : {};
-
     map[battle.id] = battle;
-
     sessionStorage.setItem("battleCacheMap", JSON.stringify(map));
-}
-function connectBattleStream(battleId) {
-    const es = new EventSource(
-        `/base/battle-stream?id=${encodeURIComponent(battleId)}`
-    );
-
-
-    es.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-
-        // logs 업데이트
-        if (data.logs) {
-            const cached = getCachedBattle(battleId) || {};
-            cached.logs = data.logs;
-            cached.status = data.status;
-            cached.winnerId = data.winnerId;
-            cached.loserId = data.loserId;
-
-            cacheBattle(cached);
-            renderBattle(cached);
-        }
-
-        if (data.finished) {
-            es.close();
-        }
-    };
-
-    es.onerror = () => {
-        es.close();
-    };
 }
 
 /* =========================================================
-   API 호출
+   API
 ========================================================= */
-async function fetchBattleById(id, onlyLogs = false) {
+
+async function fetchBattle(id, onlyLogs = false) {
     const url = onlyLogs
         ? `/base/battle-solo?id=${encodeURIComponent(id)}&onlyLogs=1`
         : `/base/battle-solo?id=${encodeURIComponent(id)}`;
 
     const res = await apiFetch(url);
     if (!res.ok) return null;
-
     return await res.json();
-}
-function formatBattleResult(battle) {
-    const myId =
-        sessionStorage.getItem("viewCharId") ||
-        new URLSearchParams(location.search).get("charId");
-
-    if (!battle.winnerId) {
-        return { text: "진행중", class: "neutral" };
-    }
-
-    if (battle.winnerId === myId) {
-        return { text: "승", class: "win" };
-    }
-
-    if (battle.loserId === myId) {
-        return { text: "패", class: "lose" };
-    }
-
-    return { text: "", class: "neutral" };
-}
-
-function formatBattleDate(battle) {
-    if (!battle?.createdAt) return "";
-
-    const d = new Date(battle.createdAt);
-    if (isNaN(d.getTime())) return "";
-
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-
-    return `${y}.${m}.${day} ${hh}:${mm}`;
 }
 
 /* =========================================================
-   렌더 함수
+   폴링 상태 머신
 ========================================================= */
+
+let pollCtx = null;
+
+function stopPolling() {
+    if (!pollCtx) return;
+    clearTimeout(pollCtx.timer);
+    clearTimeout(pollCtx.finalTimer);
+    pollCtx = null;
+}
+
+function startPolling(battleId) {
+
+    stopPolling();
+
+    pollCtx = {
+        battleId,
+        timer: null,
+        finalTimer: null,
+        startedAt: Date.now(),
+        streamErrorScheduled: false
+    };
+
+    tick();
+}
+
+async function tick() {
+
+    if (!pollCtx) return;
+
+    const { battleId } = pollCtx;
+
+    const res = await fetchBattle(battleId, false);
+    if (!res) return;
+
+    const cached = getCachedBattle(battleId) || {};
+    const merged = { ...cached, ...res, id: battleId };
+
+    cacheBattle(merged);
+    renderBattle(merged);
+
+    const status = merged.status;
+
+    /* ============================
+       종료 조건
+    ============================ */
+
+    if (status === "done") {
+        stopPolling();
+        return;
+    }
+
+    if (status === "error") {
+        stopPolling();
+        renderError(merged);
+        return;
+    }
+
+    if (status === "stream_error") {
+
+        if (!pollCtx.streamErrorScheduled) {
+
+            pollCtx.streamErrorScheduled = true;
+
+            const waitMs = typeof res.retryAfterMs === "number"
+                ? res.retryAfterMs
+                : 5500;
+
+            pollCtx.finalTimer = setTimeout(async () => {
+
+                const final = await fetchBattle(battleId, false);
+                if (final) {
+                    const finalMerged = {
+                        ...(getCachedBattle(battleId) || {}),
+                        ...final,
+                        id: battleId
+                    };
+                    cacheBattle(finalMerged);
+                    renderBattle(finalMerged);
+                }
+
+                stopPolling();
+
+            }, waitMs);
+        }
+
+        return;
+    }
+
+    /* ============================
+       오래된 queued 보호
+    ============================ */
+
+    if (
+        (status === "queued" || status === "processing") &&
+        Date.now() - pollCtx.startedAt > 180000
+    ) {
+        stopPolling();
+        renderStale(merged);
+        return;
+    }
+
+    /* ============================
+       다음 폴링
+    ============================ */
+
+    const delay = status === "streaming" ? 2000 : 3000;
+
+    pollCtx.timer = setTimeout(tick, delay);
+}
+
+/* =========================================================
+   렌더
+========================================================= */
+
+function renderError(battle) {
+    const container = document.getElementById("battleLogContainer");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="battle-empty">
+            전투 처리 중 문제가 발생했습니다.
+        </div>
+    `;
+}
+
+function renderStale(battle) {
+    const container = document.getElementById("battleLogContainer");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="battle-empty">
+            전투가 오래 대기 중입니다. 잠시 후 다시 확인해주세요.
+        </div>
+    `;
+}
+
 function renderBattle(battle) {
     const container = document.getElementById("battleLogContainer");
-
     if (!container) return;
 
     const enemyImg = resolveCharImage(battle.enemyImage);
     const logs = battle.logs || [];
 
-    // 🔥 청크별 경계 개행 정리
-    const processed = logs.map((log, index) => {
-        let text = log.text || "";
-
-        const isFirst = index === 0;
-        const isLast = index === logs.length - 1;
-
-        if (!isFirst) {
-            text = text.replace(/^\r?\n+/, "");
-        }
-
-        if (!isLast) {
-            text = text.replace(/\r?\n+$/, "");
-        }
-
-        return text;
-    });
-
-    // 🔥 하나의 문자열로 합침 (문단 개행은 유지됨)
-    const fullText = processed.join("");
-
-    // 🔥 파싱
-    const parsed = parseStoryText(fullText);
-
-    const result = formatBattleResult(battle);
-    const dateStr = formatBattleDate(battle);
+    const fullText = logs.map(l => l.text || "").join("");
 
     container.innerHTML = `
-    <div class="battle-log-header">
-        <img src="${enemyImg}" />
-        <div class="battle-log-header-text">
+        <div class="battle-log-header">
+            <img src="${enemyImg}" />
             <h2>${battle.enemyName || "전투"} 전</h2>
-            <div class="battle-log-meta">
-                <span class="battle-result ${result.class}">
-                    ${result.text}
-                </span>
-                <span class="battle-date">
-                    ${dateStr}
-                </span>
-            </div>
         </div>
-    </div>
-
-    <div class="battle-log-body text-flow">
-        ${parsed || "<div class='battle-empty'>로그 없음</div>"}
-    </div>
-`;
-
-
+        <div class="battle-log-body text-flow">
+            ${fullText || "<div class='battle-empty'>로그 없음</div>"}
+        </div>
+    `;
 }
 
 /* =========================================================
-   페이지 초기화
+   초기화
 ========================================================= */
+
 export async function initBattleLogPage(battleId) {
-    const container = document.getElementById("battleLogContainer");
 
     if (!battleId) {
         battleId = sessionStorage.getItem("viewBattleId");
     }
 
-    if (!battleId) {
-        container.innerHTML = "<div>전투 기록이 없습니다.</div>";
+    if (!battleId) return;
+
+    const cached = getCachedBattle(battleId);
+
+    /* ============================
+       캐시가 error면 서버 호출 안 함
+    ============================ */
+
+    if (cached?.status === "error") {
+        renderError(cached);
         return;
     }
 
-    let battle = getCachedBattle(battleId);
+    /* ============================
+       캐시가 done이면 logs만 조회
+    ============================ */
 
-    /* =========================================================
-       1️⃣ 캐릭터뷰 경유 (캐시 존재)
-    ========================================================== */
-    if (battle) {
+    if (cached?.status === "done") {
 
-        // 1단계: preview 먼저 렌더
-        renderBattle(battle);
+        renderBattle(cached);
 
-        // 2단계: logs만 서버에서 읽기
-        const logsOnly = await fetchBattleById(battleId, true);
-
-        if (logsOnly && logsOnly.logs) {
-            battle.logs = logsOnly.logs;
-            cacheBattle(battle);
-            renderBattle(battle);
+        const logsOnly = await fetchBattle(battleId, true);
+        if (logsOnly?.logs) {
+            cached.logs = logsOnly.logs;
+            cacheBattle(cached);
+            renderBattle(cached);
         }
 
         return;
     }
 
-    /* =========================================================
-       2️⃣ 공유 링크 직행
-    ========================================================== */
-    container.innerHTML = "<div>전투 기록 불러오는 중...</div>";
+    /* ============================
+       캐시 없으면 최초 조회
+    ============================ */
 
-    battle = await fetchBattleById(battleId);
+    let battle = cached;
 
     if (!battle) {
-        container.innerHTML = "<div>전투 기록을 불러올 수 없습니다.</div>";
-        return;
+
+        battle = await fetchBattle(battleId, false);
+        if (!battle) return;
+
+        cacheBattle(battle);
     }
 
-    cacheBattle(battle);
     renderBattle(battle);
-    if (battle.status === "processing" || battle.status === "streaming") { 
 
-        connectBattleStream(battleId);
+    if (battle.status !== "done" && battle.status !== "error") {
+        startPolling(battleId);
     }
 }
