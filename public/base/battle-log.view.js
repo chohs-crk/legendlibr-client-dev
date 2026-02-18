@@ -185,7 +185,11 @@ function renderBattle(battle) {
         </div>
     </div>
 
+    <div class="battle-log-body text-flow">
+        ${parsed || "<div class='battle-empty'>로그 없음</div>"}
+    </div>
 `;
+
 
 }
 
