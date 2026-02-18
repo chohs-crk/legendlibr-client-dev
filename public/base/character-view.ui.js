@@ -67,6 +67,15 @@ export function initCharacterViewUI() {
         return html.trim();
     }
 
+    function cacheBattle(battle) {
+        const key = "battleCacheMap";
+        const raw = sessionStorage.getItem(key);
+        const map = raw ? JSON.parse(raw) : {};
+
+        map[battle.id] = battle;
+
+        sessionStorage.setItem(key, JSON.stringify(map));
+    }
 
 
     function openDetailDialog(title, bodyHtml) {
@@ -326,6 +335,8 @@ export function initCharacterViewUI() {
             const battles = data.battles || [];
 
             battleCache = battles;
+            battles.forEach(cacheBattle);
+
             battleHasMore = !!data.hasMore;
 
            
@@ -503,8 +514,9 @@ export function initCharacterViewUI() {
         // 🔥 오버레이 대신 SPA 페이지로 이동
         showPage("battle-log", {
             type: "push",
-            battle
+            battleId: battle.id
         });
+
     }
 
 

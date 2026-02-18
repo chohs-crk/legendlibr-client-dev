@@ -8,6 +8,11 @@
     ],
     "rewrites": [
       {
+        "source": "/battle/**",
+        "destination": "/base/index.html"
+      },
+
+      {
         "source": "/create",
         "destination": "/create/create-story.html"
       },

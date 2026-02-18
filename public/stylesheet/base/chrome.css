@@ -38,7 +38,7 @@
         width: 26px;
         height: 26px;
         stroke: #e6dbff;
-        stroke-width: 1.8;
+        stroke-width: 1;
         transition: transform .15s ease, opacity .15s ease;
     }
 

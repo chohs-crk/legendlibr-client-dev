@@ -33,6 +33,12 @@ function buildPath(name, options = {}) {
 
     if (name === "home") return "/";
     if (name === "ranking") return "/ranking";
+    if (name === "battle-log") {
+        if (options?.battleId) {
+            return `/battle/${options.battleId}`;
+        }
+        return "/";
+    }
 
     if (name === "character-view") {
         const id =
@@ -52,6 +58,13 @@ function buildPath(name, options = {}) {
 ======================================= */
 export function parseInitialRoute() {
     const path = location.pathname;
+    if (path.startsWith("/battle/")) {
+        const id = path.split("/")[2];
+        if (id) {
+            sessionStorage.setItem("viewBattleId", id);
+            return "battle-log";
+        }
+    }
 
     if (path.startsWith("/character/")) {
         const id = path.split("/")[2];
@@ -189,7 +202,8 @@ window.showPage = async function (name, options = {}) {
         // 전투 로그
         if (name === "battle-log") {
             const m = await import("/base/battle-log.view.js");
-            await m.initBattleLogPage(options?.battle);
+            await m.initBattleLogPage(options?.battleId);
+
         }
     }
 
