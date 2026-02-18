@@ -449,7 +449,10 @@ export function initCharacterViewUI() {
         const logs = battle.logs || [];
         if (!logs.length) return "로그 없음";
         const last = logs[logs.length - 1];
-        const txt = typeof last.narration === "string" && last.narration.trim() ? last.narration : "로그 없음";
+        const txt = typeof last.text === "string"
+            ? last.text
+            : "로그 없음";
+
 
         return txt.length > 40 ? txt.slice(0, 40) + " ..." : txt;
     }
@@ -511,13 +514,14 @@ export function initCharacterViewUI() {
         const battle = battleCache[idx];
         if (!battle) return;
 
-        // 🔥 오버레이 대신 SPA 페이지로 이동
+        cacheBattle(battle); // 🔥 확실히 캐싱
+
         showPage("battle-log", {
             type: "push",
             battleId: battle.id
         });
-
     }
+
 
 
 

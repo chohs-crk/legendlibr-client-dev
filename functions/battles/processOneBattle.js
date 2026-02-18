@@ -96,6 +96,14 @@ async function generateBattleNarrationStream({
                     createdAt: admin.firestore.Timestamp.now()
                 });
 
+            // 🔥 previewText 업데이트 (마지막 200자 유지)
+            const previewText = fullText.slice(-200);
+
+            await battleRef.update({
+                previewText
+            });
+
+
         } catch (e) {
             console.error("[STREAM_WRITE_FAIL]", e.message);
         }
@@ -346,7 +354,8 @@ exports.processOneBattle = async (battleId, battleData) => {
             myName: result.myName,
             enemyName: result.enemyName,
             timing: result.timing,
-            finishedAt: admin.firestore.FieldValue.serverTimestamp()
+            finishedAt: admin.firestore.Timestamp.now()
+
         });
 
 
