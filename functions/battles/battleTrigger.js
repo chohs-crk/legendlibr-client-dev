@@ -108,6 +108,7 @@ exports.onBattleCreated = onDocumentCreated(
     {
         document: "battles/{battleId}",
         secrets: [GEMINI_API_KEY],
+        minInstances: 1
     },
     async (event) => {
 

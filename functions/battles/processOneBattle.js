@@ -176,6 +176,7 @@ async function generateBattleNarrationStream({
 ========================================================= */
 
 async function runBattleLogic(battleId, myId, enemyId) {
+    console.log("COLD START CHECK", process.uptime());
 
     const callStartTime = Date.now();
 
