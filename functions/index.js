@@ -4,7 +4,7 @@ setGlobalOptions({
 });
 
 setGlobalOptions({
-    maxInstances: 500,
+    maxInstances: 200,
 });
 
 /* ============================

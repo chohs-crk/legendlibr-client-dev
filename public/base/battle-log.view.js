@@ -81,16 +81,28 @@ function renderBattle(battle) {
     const enemyImg = resolveCharImage(battle.enemyImage);
     const logs = battle.logs || [];
 
-    const sections = logs.map(log => {
-        const narration = log.text || "";
+    const sections = logs.map((log, index) => {
+        let narration = log.text || "";
+
+        // 🔥 첫 청크가 아니면 앞쪽 개행 제거
+        if (index > 0) {
+            narration = narration.replace(/^\r?\n+/, "");
+        }
+
+        // 🔥 마지막 청크가 아니면 뒤쪽 개행 제거
+        if (index < logs.length - 1) {
+            narration = narration.replace(/\r?\n+$/, "");
+        }
+
         return `
-            <div class="battle-section">
-                <div class="battle-text">
-                    ${parseStoryText(narration)}
-                </div>
+        <div class="battle-section">
+            <div class="battle-text">
+                ${parseStoryText(narration)}
             </div>
-        `;
+        </div>
+    `;
     });
+
 
     container.innerHTML = `
         <div class="battle-log-header">
