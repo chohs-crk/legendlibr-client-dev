@@ -99,8 +99,14 @@ window.showPage = async function (name, options = {}) {
     const {
         fromPop = false,
         type = "push",
-        charId = null
+        charId = null,
+        battleId = null
     } = options;
+
+
+
+    const newPath = buildPath(name, { charId, battleId });
+
 
     /* ========== 기존 페이지 onHide ========== */
     if (currentPageName && pageHooks[currentPageName]?.onHide) {
@@ -122,7 +128,7 @@ window.showPage = async function (name, options = {}) {
 
     if (!fromPop) {
 
-        const newPath = buildPath(name, { charId });
+        const newPath = buildPath(name, { charId, battleId });
 
         // 🔥 footer 이동
         if (type === "tab") {
