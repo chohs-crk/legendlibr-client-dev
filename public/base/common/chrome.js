@@ -28,15 +28,17 @@ function updateBackButtonVisibility() {
     const btnBack = document.getElementById("btnBack");
     if (!btnBack) return;
 
-    const footerPages = ["home", "ranking", "journey", "setting"];
-    const current = window.__currentPageName;
+    const stack = window.__appStack || [];
 
-    if (!current || footerPages.includes(current)) {
+    // 🔥 stack 기반 판단
+    if (stack.length <= 1) {
         btnBack.style.display = "none";
-    } else {
-        btnBack.style.display = "";
+        return;
     }
+
+    btnBack.style.display = "";
 }
+
 
 
 // 전역 공개

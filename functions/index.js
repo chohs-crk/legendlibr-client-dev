@@ -1,11 +1,10 @@
 ﻿const { setGlobalOptions } = require("firebase-functions/v2");
 setGlobalOptions({
-    cpu: 2
+    cpu: 1,
+    maxInstances: 50,
+    region: "asia-northeast3"
 });
 
-setGlobalOptions({
-    maxInstances: 200,
-});
 
 /* ============================
    BATTLE ELO 처리

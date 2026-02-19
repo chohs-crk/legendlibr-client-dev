@@ -42,8 +42,10 @@ async function generateBattleNarrationStream({
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite"
+        model: "gemini-2.5-flash-lite",
+        systemInstruction: SYSTEM_PROMPT   // 🔥 여기로 이동
     });
+
 
     const winnerName =
         winnerId === my.uid ? my.displayRawName : enemy.displayRawName;
@@ -63,9 +65,6 @@ async function generateBattleNarrationStream({
     });
 
     const stream = await model.generateContentStream({
-        systemInstruction: {
-            parts: [{ text: SYSTEM_PROMPT }]
-        },
         contents: [
             { role: "user", parts: [{ text: userPrompt }] }
         ],
@@ -76,13 +75,14 @@ async function generateBattleNarrationStream({
         }
     });
 
+
     let buffer = "";
     let fullText = "";
     let previewSaved = false;
     let lastFlushTime = Date.now();
 
     const MIN_UPLOAD_SIZE = 300;        // 글자 최소 기준
-    const MIN_FLUSH_INTERVAL = 2500;    // 2.5초 최소 간격
+    const MIN_FLUSH_INTERVAL = 1000;    // 2.5초 최소 간격
 
     async function flushChunk(text) {
 
@@ -150,19 +150,9 @@ async function generateBattleNarrationStream({
 
     // 🔥 스트림 종료 후 남은 부분 업로드
     if (buffer.trim().length > 0) {
-
-        const now = Date.now();
-        const timePassed = now - lastFlushTime;
-
-        if (timePassed < MIN_FLUSH_INTERVAL) {
-            // 남은 시간만큼 대기
-            await new Promise(r =>
-                setTimeout(r, MIN_FLUSH_INTERVAL - timePassed)
-            );
-        }
-
-        await flushChunk(buffer);
+        await flushChunk(buffer);   // 🔥 즉시 write
     }
+
 
     return fullText;
 }
@@ -176,7 +166,6 @@ async function generateBattleNarrationStream({
 ========================================================= */
 
 async function runBattleLogic(battleId, myId, enemyId) {
-    console.log("COLD START CHECK", process.uptime());
 
     const callStartTime = Date.now();
 

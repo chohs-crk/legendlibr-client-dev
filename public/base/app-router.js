@@ -24,7 +24,26 @@ const pages = [
     "character-image",
     "battle-log"
 ];
+/* =======================================
+   PAGE OPTIONS
+======================================= */
+const pageOptions = {
+    home: {
+        reinitOnBack: true
+    },
+    ranking: {
+        reinitOnBack: false
+    },
+    "character-view": {
+        reinitOnBack: false
+    },
+    "battle-log": {
+        reinitOnBack: false
+    }
+};
+
 window.__appStack = [];
+
 
 /* =======================================
    PATH BUILDING (🔥 핵심)
@@ -51,6 +70,18 @@ function buildPath(name, options = {}) {
 
     // 나머지는 전부 루트
     return "/";
+}
+function scrollToTop() {
+    const activePage = document.querySelector(".page.active");
+    if (!activePage) return;
+
+    const scrollArea = activePage.querySelector(".scroll-area");
+
+    if (scrollArea) {
+        scrollArea.scrollTop = 0;
+    } else {
+        window.scrollTo(0, 0);
+    }
 }
 
 /* =======================================
@@ -126,34 +157,31 @@ window.showPage = async function (name, options = {}) {
 
     page.classList.add("active");
 
-    if (!fromPop) {
+    const newPath = buildPath(name, { charId, battleId });
 
-        const newPath = buildPath(name, { charId, battleId });
+    const currentPath = location.pathname;
 
-        // 🔥 footer 이동
-        if (type === "tab") {
+    /* =========================================
+       URL 동기화 (🔥 항상 동일하게 처리)
+    ========================================= */
 
-            window.__appStack = [name];
-
+    // tab 이동
+    if (type === "tab") {
+        if (currentPath !== newPath) {
             history.replaceState({ page: name }, "", newPath);
         }
+    }
 
-        // 🔥 일반 push 이동
+    // 일반 이동
+    else {
+        if (currentPath !== newPath) {
+            history.pushState({ page: name }, "", newPath);
+        }
         else {
-
-            const stack = window.__appStack;
-            const existingIndex = stack.lastIndexOf(name);
-
-            if (existingIndex !== -1) {
-                // 🔥 이미 존재 → 그 위치까지 자르기
-                stack.splice(existingIndex + 1);
-                history.replaceState({ page: name }, "", newPath);
-            } else {
-                stack.push(name);
-                history.pushState({ page: name }, "", newPath);
-            }
+            history.replaceState({ page: name }, "", newPath);
         }
     }
+
 
 
 
@@ -162,17 +190,17 @@ window.showPage = async function (name, options = {}) {
     /* =======================================
        PAGE INIT
     ======================================= */
-    if (!fromPop) {
+    const shouldInit =
+        !fromPop ||
+        pageOptions[name]?.reinitOnBack === true;
 
-        // 항상 상단 스크롤
-        try {
-            const scrollArea = document.querySelector(".scroll-area");
-            if (scrollArea) {
-                scrollArea.scrollTo({ top: 0, behavior: "auto" });
-            } else {
-                window.scrollTo({ top: 0, behavior: "auto" });
-            }
-        } catch { }
+    // 스크롤은 push 이동일 때만
+    if (!fromPop) {
+        scrollToTop();
+        requestAnimationFrame(scrollToTop);
+    }
+
+    if (shouldInit) {
 
         // 홈
         if (name === "home") await initHomePage();
@@ -230,16 +258,25 @@ window.showPage = async function (name, options = {}) {
 ======================================= */
 window.addEventListener("popstate", () => {
 
-    const page = parseInitialRoute();
+    const path = location.pathname;
+    let battleId = null;
+    let charId = null;
 
-    // 🔥 스택 재동기화
-    if (window.__appStack.length === 0) {
-        window.__appStack = [page];
-    } else {
-        window.__appStack[window.__appStack.length - 1] = page;
+    if (path.startsWith("/battle/")) {
+        battleId = path.split("/")[2];
     }
 
-    window.showPage(page, { fromPop: true });
+    if (path.startsWith("/character/")) {
+        charId = path.split("/")[2];
+    }
+
+    const page = parseInitialRoute();
+
+    window.showPage(page, {
+        fromPop: true,
+        battleId,
+        charId
+    });
 });
 
 

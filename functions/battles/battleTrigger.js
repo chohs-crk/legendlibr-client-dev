@@ -107,8 +107,9 @@ const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 exports.onBattleCreated = onDocumentCreated(
     {
         document: "battles/{battleId}",
+        region: "asia-northeast3",   // 🔥 추가
         secrets: [GEMINI_API_KEY],
-        minInstances: 1
+       // minInstances: 1
     },
     async (event) => {
 

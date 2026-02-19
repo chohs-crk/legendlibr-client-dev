@@ -415,8 +415,24 @@
 
                 await waitRouter();
 
-                // 🔥 최초 페이지는 tab 타입으로
-                window.showPage(initialPage, { type: "tab" });
+                const path = location.pathname;
+                let battleId = null;
+                let charId = null;
+
+                if (path.startsWith("/battle/")) {
+                    battleId = path.split("/")[2];
+                }
+
+                if (path.startsWith("/character/")) {
+                    charId = path.split("/")[2];
+                }
+
+                window.showPage(initialPage, {
+                    type: "tab",
+                    battleId,
+                    charId
+                });
+
 
             } catch (e) {
                 console.warn("인증 실패:", e.message);
