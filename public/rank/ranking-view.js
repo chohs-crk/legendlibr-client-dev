@@ -18,26 +18,40 @@ export async function initRankingPage() {
     listEl.innerHTML = ""; // 로딩 문구 제거
 
     ranking.forEach(item => {
+        const goCharacter = () => {
+            if (!item.charId) return;
+
+            sessionStorage.setItem("viewCharId", item.charId);
+
+            window.showPage("character-view", {
+                type: "push",
+                charId: item.charId
+            });
+        };
+
         if (item.rank <= 3) {
             const card = document.createElement("div");
-            card.className = "rank-card top-rank";
+            card.className = "rank-card top-rank clickable";
             card.innerHTML = `
-                <div class="rank-bg" style="background-image:url('${resolveRankImage(item)}')"></div>
-                <div class="rank-overlay">
-                  <div class="rank-num">${item.rank}</div>
-                  <div class="rank-name">${item.name}</div>
-                </div>
-            `;
+            <div class="rank-bg" style="background-image:url('${resolveRankImage(item)}')"></div>
+            <div class="rank-overlay">
+              <div class="rank-num">${item.rank}</div>
+              <div class="rank-name">${item.name}</div>
+            </div>
+        `;
+            card.addEventListener("click", goCharacter);
             listEl.appendChild(card);
         } else {
             const row = document.createElement("div");
-            row.className = "rank-row normal-rank";
+            row.className = "rank-row normal-rank clickable";
             row.innerHTML = `
-                <div class="rank-num">${item.rank}</div>
-                <div class="rank-name">${item.name}</div>
-                <img class="rank-img" src="${resolveRankImage(item)}">
-            `;
+            <div class="rank-num">${item.rank}</div>
+            <div class="rank-name">${item.name}</div>
+            <img class="rank-img" src="${resolveRankImage(item)}">
+        `;
+            row.addEventListener("click", goCharacter);
             listEl.appendChild(row);
         }
     });
+
 }

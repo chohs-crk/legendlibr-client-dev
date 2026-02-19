@@ -48,7 +48,7 @@ function renderBattleCharList(chars) {
         btn.onclick = async () => {
             // 선택 캐릭터 변경
             sessionStorage.setItem("battleCharId", c.id);
-
+       
             // UI 반영
             toggleBtn.textContent = `선택: ${btn.textContent}`;
             listEl.style.display = "none";
@@ -175,21 +175,45 @@ export async function initBattlePage(isRetry = false) {
                     if (!res.ok) {
                         startBtn.disabled = false;
 
-                        // 🔥 서버 에러메시지 상세 표시
+                        if (data.error === "ENEMY_DELETED") {
+
+                            const battleCharId = sessionStorage.getItem("battleCharId");
+                            if (battleCharId) {
+                                sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
+                            }
+
+
+                            startBtn.textContent = "상대가 사라졌습니다. 재매칭 중...";
+
+                            setTimeout(async () => {
+                                await initBattlePage(true);
+                            }, 800);
+
+                            return;
+                        }
+
                         startBtn.textContent =
                             `실패 (${res.status}): ${data.error || "UNKNOWN_ERROR"}`;
-
                         return;
                     }
+
 
                     startBtn.textContent =
                         `전투 대기열 등록됨 (${data.battleId})`;
 
                 } catch (err) {
                     startBtn.disabled = false;
+                    startBtn.textContent = "네트워크 오류. 홈으로 이동합니다...";
 
-                    // 🔥 네트워크 오류도 표시
-                    startBtn.textContent = `네트워크 오류: ${err.message}`;
+                    const battleCharId = sessionStorage.getItem("battleCharId");
+                    if (battleCharId) {
+                        sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
+                    }
+
+
+                    setTimeout(() => {
+                        window.showPage("home", { type: "tab" });
+                    }, 800);
                 }
             };
 

@@ -1,6 +1,7 @@
-﻿import { apiFetchUserMeta } from "/base/character-view.api.js";
-import { handleBackAction } from "/base/back-handler.js";
+﻿import { apiFetch } from "/base/api.js";
 
+import { handleBackAction } from "/base/back-handler.js";
+//✅
 /* =========================
    USER META
 ========================= */
@@ -11,13 +12,15 @@ async function ensureUserMeta() {
         catch { sessionStorage.removeItem("userMeta"); }
     }
 
-    const res = await apiFetchUserMeta();
+    const res = await apiFetch("/base/user-meta"); // ✅ 직접 호출
+
     if (!res.ok) throw new Error("user-meta fetch failed");
 
     const meta = await res.json();
     sessionStorage.setItem("userMeta", JSON.stringify(meta));
     return meta;
 }
+
 
 /* =========================
    BACK BUTTON VISIBILITY

@@ -1,11 +1,11 @@
 ﻿// /base/app-router.js
-
-import { initHomePage } from "/base/home.js";
-import { initCharacterViewPage } from "/base/character-view.view.js";
+//✅
+import { initHomePage } from "./home.js";
+import { initCharacterViewPage } from "./char-view/character-view.view.js";
 import { initCreatePromptPage } from "/create/create-prompt.js";
 import { initRankingPage } from "/rank/ranking-view.js";
-import { initJourneyPage } from "/base/journey.js";
-import { initSettingPage } from "/base/setting.js";
+import { initJourneyPage } from "./journey.js";
+import { initSettingPage } from "./setting.js";
 import { initCreateRegionPage } from "/create/create-region.js";
 
 /* =======================================
@@ -29,11 +29,24 @@ const pages = [
    PAGE OPTIONS
 ======================================= */
 const pageOptions = {
-    home: { reinitOnBack: true },
-    ranking: { reinitOnBack: false },
-    "character-view": { reinitOnBack: false },
-    "battle-log": { reinitOnBack: false }
+    home: {
+        reinitOnBack: true,
+        scrollTopOnBack: true
+    },
+    ranking: {
+        reinitOnBack: false,
+        scrollTopOnBack: true
+    },
+    "character-view": {
+        reinitOnBack: false,
+        scrollTopOnBack: false
+    },
+    "battle-log": {
+        reinitOnBack: false,
+        scrollTopOnBack: false
+    }
 };
+
 
 /* =======================================
    APP HISTORY (🔥 앱 내부 뒤로가기 전용)
@@ -219,15 +232,19 @@ window.showPage = async function (name, options = {}) {
         }
         history.pushState({ page: name }, "", newPath);
     }
+    const pageOpt = pageOptions[name] || {};
 
-    // ====== 스크롤 ======
-    if (!fromPop) {
+    const shouldInit =
+        !fromPop || pageOpt.reinitOnBack === true;
+
+    const shouldScrollTop =
+        !fromPop || pageOpt.scrollTopOnBack === true;
+
+    if (shouldScrollTop) {
         scrollToTop();
         requestAnimationFrame(scrollToTop);
     }
 
-    // ====== INIT ======
-    const shouldInit = !fromPop || pageOptions[name]?.reinitOnBack === true;
 
     if (shouldInit) {
         if (name === "home") await initHomePage();
@@ -327,13 +344,15 @@ window.__appBack = function () {
 
             const top = stack[stack.length - 1];
             window.showPage(top.name, {
+                fromPop: true,
                 type: "replace",
                 charId: top.charId || null,
                 battleId: top.battleId || null
             });
+
             return;
         }
-        // target 못 찾으면 일반 pop
+
     }
 
     // 일반 back: 1단계 pop
@@ -342,10 +361,12 @@ window.__appBack = function () {
 
     const prev = stack[stack.length - 1];
     window.showPage(prev.name, {
+        fromPop: true,
         type: "replace",
         charId: prev.charId || null,
         battleId: prev.battleId || null
     });
+
 };
 
 /* =======================================

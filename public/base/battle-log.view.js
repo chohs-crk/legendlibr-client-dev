@@ -1,6 +1,6 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
-
+//✅
 /* =========================================================
    캐시
 ========================================================= */

@@ -106,3 +106,23 @@
     border-radius: 10px;
     object-fit: cover;
 }
+/* ===============================
+   CLICKABLE EFFECT
+=============================== */
+
+.clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+    .clickable:hover {
+        transform: translateY(-2px);
+    }
+
+    .clickable:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+.rank-card.top-rank.clickable:hover {
+    box-shadow: 0 0 0 2px rgba(140, 90, 255, 0.9), 0 6px 18px rgba(0, 0, 0, 0.4);
+}

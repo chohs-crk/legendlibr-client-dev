@@ -396,12 +396,8 @@
             try {
                 await requireAuthOrRedirect();
 
-                // 🔥 router에서 export된 parseInitialRoute 사용
-                const initialPage = parseInitialRoute();
+                const route = parseInitialRoute(); // { name, charId?, battleId? }
 
-             
-
-                // 🔥 showPage 준비될 때까지 대기
                 const waitRouter = () =>
                     new Promise(resolve => {
                         const t = setInterval(() => {
@@ -414,35 +410,24 @@
 
                 await waitRouter();
 
-                const path = location.pathname;
-                let battleId = null;
-                let charId = null;
-
-                if (path.startsWith("/battle/")) {
-                    battleId = path.split("/")[2];
-                }
-
-                if (path.startsWith("/character/")) {
-                    charId = path.split("/")[2];
-                }
                 history.replaceState(
-                    { page: initialPage, root: true },
+                    { page: route.name },
                     "",
                     location.pathname
                 );
 
-                window.showPage(initialPage, {
+                window.showPage(route.name, {
                     type: "tab",
-                    battleId,
-                    charId
+                    charId: route.charId || null,
+                    battleId: route.battleId || null
                 });
-
 
             } catch (e) {
                 console.warn("인증 실패:", e.message);
             }
         })();
     </script>
+
 
     <script type="module" src="/base/home.js"></script>
     <script type="module" src="/create/create.js"></script>

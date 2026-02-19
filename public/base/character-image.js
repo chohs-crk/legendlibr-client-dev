@@ -199,16 +199,36 @@ export async function initCharacterImagePage() {
         });
 
         /* =========================
-           🔥 홈 캐시 강제 초기화
+           🔥 home 캐시 있으면 image만 갱신
         ========================= */
-        sessionStorage.removeItem("homeCharacters");
-        sessionStorage.setItem("homeCalled", "false");
+        const cached = sessionStorage.getItem("homeCharacters");
+
+        if (cached) {
+            const arr = JSON.parse(cached);
+
+            const updated = arr.map(c => {
+                if (c.id === charId) {
+                    return {
+                        ...c,
+                        image: selectedImage
+                    };
+                }
+                return c;
+            });
+
+            sessionStorage.setItem(
+                "homeCharacters",
+                JSON.stringify(updated)
+            );
+        }
 
         sessionStorage.setItem("viewCharId", charId);
+
         showPage("character-view", {
             type: "push",
             charId: charId
         });
+
 
     };
 

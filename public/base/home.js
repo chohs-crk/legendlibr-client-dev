@@ -62,26 +62,17 @@ async function loadMyCharactersFromServer() {
     try {
         const data = await getMyCharacters();
 
-        characters = data.characters || [];
+        characters = (data.characters || []).map(c => ({
+            ...c,
+            isMine: true
+        }));
 
         sessionStorage.setItem(
             "homeCharacters",
             JSON.stringify(characters)
         );
+
         sessionStorage.setItem("homeCalled", "true");
-
-        const battleCharId = sessionStorage.getItem("battleCharId");
-
-        if (battleCharId === characters.id) {
-            sessionStorage.removeItem("battleCharId");
-
-            if (characters.length > 0) {
-                sessionStorage.setItem(
-                    "battleCharId",
-                    characters[0].id
-                );
-            }
-        }
 
         applyCharCountUI(data.charCount);
         renderList();
