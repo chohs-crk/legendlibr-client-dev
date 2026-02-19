@@ -9,3 +9,10 @@ export function apiFetchBattlesList(charId, page, pageSize) {
         `/base/battles-list?charId=${encodeURIComponent(charId)}&page=${page}&pageSize=${pageSize}`
     );
 }
+export function apiFetchRegionMeta(regionId) {
+    return apiFetch("/base/region-meta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ regionId })
+    });
+}

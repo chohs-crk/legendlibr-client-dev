@@ -2,7 +2,9 @@
 import { resolveCharImage } from "../common/image-util.js";
 import { parseStoryText } from "../common/story-parser.js";
 
-import { apiFetchCharacterById } from "./character-view.api.js";
+import { apiFetchCharacterById, apiFetchRegionMeta } from "./character-view.api.js";
+
+
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
 
@@ -44,6 +46,10 @@ export function initCharacterViewUI() {
         pageSize: BATTLE_PAGE_SIZE
     });
     function applyCharacterData(data) {
+        const originName = data.origin || "-";
+        const regionName = data.region || "-"
+        const regionId = data.regionId || "";
+
         /* ===== 이미지 수정 권한 처리 ===== */
         const imageBox = document.getElementById("charImageBox");
         const editIcon = document.getElementById("imageEditIcon");
@@ -89,9 +95,18 @@ export function initCharacterViewUI() {
             <div class="info-grid">
                 <div class="info-cell">
                     <div class="label">지역</div>
-                    <div class="value">
-                        ${data.origin || "-"} - ${data.region || "-"}
-                    </div>
+                   <div class="value">
+  <span class="clickable-preview" id="originInfoBtn" role="button" tabindex="0"
+        style="display:inline-flex; align-items:center; text-decoration:underline;">
+    ${originName}
+  </span>
+  <span style="opacity:0.7; padding:0 6px;">-</span>
+  <span class="clickable-preview" id="regionInfoBtn" role="button" tabindex="0"
+        style="display:inline-flex; align-items:center; text-decoration:underline;">
+    ${regionName}
+  </span>
+</div>
+
                 </div>
 
                 <div class="info-cell">
@@ -117,6 +132,61 @@ export function initCharacterViewUI() {
             </div>
         `;
         }
+        const originBtn = document.getElementById("originInfoBtn");
+        const regionBtn = document.getElementById("regionInfoBtn");
+
+        originBtn?.addEventListener("click", () => {
+            const wrap = document.getElementById("regionInfoWrap");
+            const content = document.getElementById("regionInfoContent");
+
+            content.innerHTML = `
+        <h3>${originName}</h3>
+        <p>${data.originDesc || "설명 없음"}</p>
+    `;
+            wrap.classList.add("active");
+        });
+
+        regionBtn?.addEventListener("click", async () => {
+            const wrap = document.getElementById("regionInfoWrap");
+            const contentEl = document.getElementById("regionInfoContent");
+
+            // 1️⃣ 먼저 기본 정보 표시 (즉시)
+            contentEl.innerHTML = `
+        <h3>${regionName}</h3>
+        <div style="color:#999; margin-bottom:8px;">불러오는 중...</div>
+        <div>${data.regionDetail || ""}</div>
+    `;
+            wrap.classList.add("active");
+
+            // 2️⃣ default면 끝
+            if (!regionId || regionId.endsWith("_DEFAULT")) {
+                contentEl.innerHTML = `
+            <h3>${regionName}</h3>
+            <div style="color:#999;">기본 지역</div>
+            <div>${data.regionDetail || ""}</div>
+        `;
+                return;
+            }
+
+            // 3️⃣ ownerchar + charnum만 호출
+            try {
+                const res = await apiFetchRegionMeta(regionId);
+                const json = await res.json();
+
+                if (!json.ok) return;
+
+                contentEl.innerHTML = `
+            <h3>${regionName}</h3>
+            <div style="margin-bottom:8px;">
+                [${json.ownerchar || "대표 없음"}] · ${json.charnum || 0}명의 캐릭터
+            </div>
+            <div>${data.regionDetail || ""}</div>
+        `;
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
 
         // 스토리/스킬 캐시
         fullStoryText = data.fullStory || "(스토리 없음)";

@@ -494,3 +494,26 @@
     opacity: 0.6;
     margin-top: 4px;
 }
+.clickable-preview {
+    padding: 4px 10px;
+    border: 1px solid #523369;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #1a1024, #140c1d);
+    color: #d9c6ff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+    .clickable-preview:hover {
+        background: linear-gradient(145deg, #23133a, #1b0f2a);
+        border-color: #6e3fa3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(82,51,105,0.6);
+    }
+
+    .clickable-preview:active {
+        transform: translateY(0px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.6) inset;
+    }
