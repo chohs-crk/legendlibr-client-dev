@@ -28,10 +28,10 @@ function updateBackButtonVisibility() {
     const btnBack = document.getElementById("btnBack");
     if (!btnBack) return;
 
-    const stack = window.__appStack || [];
+    const state = history.state;
 
-    // 🔥 stack 기반 판단
-    if (stack.length <= 1) {
+    // root 페이지면 back 숨김
+    if (!state || state.root === true) {
         btnBack.style.display = "none";
         return;
     }

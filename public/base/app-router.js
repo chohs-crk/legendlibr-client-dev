@@ -42,7 +42,7 @@ const pageOptions = {
     }
 };
 
-window.__appStack = [];
+
 
 
 /* =======================================
@@ -52,25 +52,24 @@ function buildPath(name, options = {}) {
 
     if (name === "home") return "/";
     if (name === "ranking") return "/ranking";
+
     if (name === "battle-log") {
         if (options?.battleId) {
             return `/battle/${options.battleId}`;
         }
-        return "/";
+        return location.pathname; // 🔥 fallback
     }
 
     if (name === "character-view") {
-        const id =
-            options?.charId ||
-            sessionStorage.getItem("viewCharId");
-
-        if (id) return `/character/${id}`;
-        return "/";
+        if (options?.charId) {
+            return `/character/${options.charId}`;
+        }
+        return location.pathname; // 🔥 fallback
     }
 
-    // 나머지는 전부 루트
     return "/";
 }
+
 function scrollToTop() {
     const activePage = document.querySelector(".page.active");
     if (!activePage) return;
@@ -161,24 +160,25 @@ window.showPage = async function (name, options = {}) {
 
     const currentPath = location.pathname;
 
-    /* =========================================
-       URL 동기화 (🔥 항상 동일하게 처리)
-    ========================================= */
-
-    // tab 이동
+    // tab 이동 (footer)
     if (type === "tab") {
         if (currentPath !== newPath) {
-            history.replaceState({ page: name }, "", newPath);
+            history.replaceState(
+                { page: name, root: true },
+                "",
+                newPath
+            );
         }
     }
 
-    // 일반 이동
+    // 일반 내부 이동
     else {
         if (currentPath !== newPath) {
-            history.pushState({ page: name }, "", newPath);
-        }
-        else {
-            history.replaceState({ page: name }, "", newPath);
+            history.pushState(
+                { page: name, root: false },
+                "",
+                newPath
+            );
         }
     }
 
