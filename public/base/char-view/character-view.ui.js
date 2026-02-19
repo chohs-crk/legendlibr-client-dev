@@ -1,10 +1,8 @@
 ﻿// /base/char-view/character-view.ui.js//✅
 import { resolveCharImage } from "../common/image-util.js";
 import { parseStoryText } from "../common/story-parser.js";
-
+import { openWrap } from "/base/common/ui-wrap.js";
 import { apiFetchCharacterById, apiFetchRegionMeta } from "./character-view.api.js";
-
-
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
 
@@ -136,56 +134,50 @@ export function initCharacterViewUI() {
         const regionBtn = document.getElementById("regionInfoBtn");
 
         originBtn?.addEventListener("click", () => {
-            const wrap = document.getElementById("regionInfoWrap");
-            const content = document.getElementById("regionInfoContent");
-
-            content.innerHTML = `
+            openWrap(`
         <h3>${originName}</h3>
-        <p>${data.originDesc || "설명 없음"}</p>
-    `;
+        <div class="region-detail-meta">기원</div>
+        <div class="text-flow">
+            ${data.originDesc || "설명 없음"}
+        </div>
+    `);
+        });
+
             wrap.classList.add("active");
         });
 
         regionBtn?.addEventListener("click", async () => {
-            const wrap = document.getElementById("regionInfoWrap");
-            const contentEl = document.getElementById("regionInfoContent");
 
-            // 1️⃣ 먼저 기본 정보 표시 (즉시)
-            contentEl.innerHTML = `
-        <h3>${regionName}</h3>
-        <div style="color:#999; margin-bottom:8px;">불러오는 중...</div>
-        <div>${data.regionDetail || ""}</div>
-    `;
-            wrap.classList.add("active");
-
-            // 2️⃣ default면 끝
+            // default region
             if (!regionId || regionId.endsWith("_DEFAULT")) {
-                contentEl.innerHTML = `
+                openWrap(`
             <h3>${regionName}</h3>
-            <div style="color:#999;">기본 지역</div>
-            <div>${data.regionDetail || ""}</div>
-        `;
+            <div class="region-detail-meta">기본 지역</div>
+            <div class="text-flow">${data.regionDetail || ""}</div>
+        `);
                 return;
             }
 
-            // 3️⃣ ownerchar + charnum만 호출
             try {
-                const res = await apiFetchRegionMeta(regionId);
+                const res = await apiFetchRegionsByOrigin(originId);
                 const json = await res.json();
+                const region = json?.regions?.find(r => r.id === regionId);
 
-                if (!json.ok) return;
-
-                contentEl.innerHTML = `
+                openWrap(`
             <h3>${regionName}</h3>
-            <div style="margin-bottom:8px;">
-                [${json.ownerchar || "대표 없음"}] · ${json.charnum || 0}명의 캐릭터
+            <div class="region-detail-meta">
+                [${region?.ownerchar?.name || "대표 없음"}] · ${region?.charnum || 0}명의 캐릭터
             </div>
-            <div>${data.regionDetail || ""}</div>
-        `;
+            <div class="text-flow">
+                ${region?.detail || data.regionDetail || ""}
+            </div>
+        `);
+
             } catch (e) {
-                console.error(e);
+                openWrap(`<p>지역 정보를 불러오지 못했습니다.</p>`);
             }
         });
+
 
 
         // 스토리/스킬 캐시
