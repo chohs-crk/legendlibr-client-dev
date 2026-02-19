@@ -157,7 +157,7 @@ window.showPage = async function (name, options = {}) {
 
     page.classList.add("active");
 
-    const newPath = buildPath(name, { charId, battleId });
+
 
     const currentPath = location.pathname;
 
