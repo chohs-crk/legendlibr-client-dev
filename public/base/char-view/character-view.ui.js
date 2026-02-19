@@ -2,7 +2,8 @@
 import { resolveCharImage } from "../common/image-util.js";
 import { parseStoryText } from "../common/story-parser.js";
 import { openWrap } from "/base/common/ui-wrap.js";
-import { apiFetchCharacterById, apiFetchRegionMeta } from "./character-view.api.js";
+import { apiFetchCharacterById, apiFetchRegionMeta, apiDownloadRegion } from "./character-view.api.js";
+
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
 
@@ -143,8 +144,7 @@ export function initCharacterViewUI() {
     `);
         });
 
-            wrap.classList.add("active");
-        });
+          
 
         regionBtn?.addEventListener("click", async () => {
 
@@ -159,24 +159,61 @@ export function initCharacterViewUI() {
             }
 
             try {
-                const res = await apiFetchRegionsByOrigin(originId);
+                const res = await apiFetchRegionMeta(regionId);
                 const json = await res.json();
-                const region = json?.regions?.find(r => r.id === regionId);
+
+                if (!json.ok) {
+                    openWrap(`<p>지역 정보를 불러오지 못했습니다.</p>`);
+                    return;
+                }
 
                 openWrap(`
-            <h3>${regionName}</h3>
-            <div class="region-detail-meta">
-                [${region?.ownerchar?.name || "대표 없음"}] · ${region?.charnum || 0}명의 캐릭터
-            </div>
-            <div class="text-flow">
-                ${region?.detail || data.regionDetail || ""}
-            </div>
-        `);
+    <h3>${regionName}</h3>
+
+    <div class="region-detail-meta">
+        [${json.ownerchar || "대표 없음"}] · ${json.charnum || 0}명의 캐릭터
+    </div>
+
+    <div class="text-flow region-wrap-desc">
+        ${data.regionDetail || ""}
+    </div>
+
+    <button id="regionDownloadBtn" class="region-wrap-download-btn">
+        다운로드
+    </button>
+`);
+                setTimeout(() => {
+                    const btn = document.getElementById("regionDownloadBtn");
+                    if (!btn) return;
+
+                    btn.addEventListener("click", async () => {
+                        try {
+                            const res = await apiDownloadRegion(regionId);
+                            const json = await res.json();
+
+                            if (!json.ok) {
+                                if (json.error === "ALREADY_DOWNLOADED") {
+                                    alert("이미 다운로드한 지역입니다.");
+                                } else {
+                                    alert("다운로드 실패");
+                                }
+                                return;
+                            }
+
+                            alert("지역을 다운로드했습니다.");
+
+                        } catch (e) {
+                            alert("서버 오류");
+                        }
+                    });
+                }, 0);
+
 
             } catch (e) {
                 openWrap(`<p>지역 정보를 불러오지 못했습니다.</p>`);
             }
         });
+
 
 
 

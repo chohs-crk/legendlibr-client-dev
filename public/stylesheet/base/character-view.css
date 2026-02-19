@@ -494,26 +494,34 @@
     opacity: 0.6;
     margin-top: 4px;
 }
-.clickable-preview {
-    padding: 4px 10px;
-    border: 1px solid #523369;
-    border-radius: 6px;
-    background: linear-gradient(145deg, #1a1024, #140c1d);
-    color: #d9c6ff;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+/* ===============================
+   REGION WRAP POPUP ONLY
+=============================== */
+
+.region-wrap-desc {
+    margin-bottom: 16px;
 }
 
-    .clickable-preview:hover {
-        background: linear-gradient(145deg, #23133a, #1b0f2a);
-        border-color: #6e3fa3;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(82,51,105,0.6);
+.region-wrap-download-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #523369;
+    background: linear-gradient(145deg, #1a1024, #140c1d);
+    color: #e2ccff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
+
+    .region-wrap-download-btn:hover {
+        transform: translateY(-2px);
+        border-color: #6f40a6;
+        box-shadow: 0 6px 14px rgba(82,51,105,0.6);
     }
 
-    .clickable-preview:active {
-        transform: translateY(0px);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.6) inset;
+    .region-wrap-download-btn:active {
+        transform: translateY(0);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
     }

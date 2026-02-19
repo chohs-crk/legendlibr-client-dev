@@ -16,3 +16,10 @@ export function apiFetchRegionMeta(regionId) {
         body: JSON.stringify({ regionId })
     });
 }
+export function apiDownloadRegion(regionId) {
+    return apiFetch("/base/region-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ regionId })
+    });
+}
