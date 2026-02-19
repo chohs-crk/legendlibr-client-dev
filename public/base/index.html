@@ -425,6 +425,11 @@
                 if (path.startsWith("/character/")) {
                     charId = path.split("/")[2];
                 }
+                history.replaceState(
+                    { page: initialPage, root: true },
+                    "",
+                    location.pathname
+                );
 
                 window.showPage(initialPage, {
                     type: "tab",

@@ -179,7 +179,11 @@ function renderList() {
             sessionStorage.setItem("viewCharId", c.id);
 
             if (window.showPage) {
-                window.showPage("character-view");
+                window.showPage("character-view", {
+                    type: "push",
+                    charId: c.id
+                });
+
             }
         });
 

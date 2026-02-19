@@ -1,4 +1,6 @@
-﻿export function handleBackAction() {
+﻿// /base/back-handler.js
+
+export function handleBackAction() {
 
     const dialog = document.getElementById("detailDialog");
     if (dialog?.hasAttribute("open")) {
@@ -12,7 +14,6 @@
         return;
     }
 
-    if (history.length > 1) {
-        history.back();
-    }
+    // ✅ 앱 내부 back만 사용 (브라우저 밖 이동 금지)
+    window.__appBack?.();
 }

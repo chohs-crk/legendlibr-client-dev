@@ -1,16 +1,14 @@
 ﻿import { apiFetchUserMeta } from "/base/character-view.api.js";
 import { handleBackAction } from "/base/back-handler.js";
+
 /* =========================
    USER META
 ========================= */
 async function ensureUserMeta() {
     const cached = sessionStorage.getItem("userMeta");
     if (cached) {
-        try {
-            return JSON.parse(cached);
-        } catch {
-            sessionStorage.removeItem("userMeta");
-        }
+        try { return JSON.parse(cached); }
+        catch { sessionStorage.removeItem("userMeta"); }
     }
 
     const res = await apiFetchUserMeta();
@@ -23,23 +21,33 @@ async function ensureUserMeta() {
 
 /* =========================
    BACK BUTTON VISIBILITY
+   - 앱 스택이 1이면 숨김 (루트)
+   - footer로 home/ranking/journey/setting 오면 stack reset -> 숨김 (요구사항 5)
+   - 새탭으로 battle/character/ranking 들어오면 stack 1 -> 숨김 (요구사항 2/5)
 ========================= */
+function getAppStackLen() {
+    try {
+        const raw = sessionStorage.getItem("__appStackV1");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.length : 0;
+    } catch {
+        return 0;
+    }
+}
+
 function updateBackButtonVisibility() {
     const btnBack = document.getElementById("btnBack");
     if (!btnBack) return;
 
-    const state = history.state;
+    const len = getAppStackLen();
 
-    // root 페이지면 back 숨김
-    if (!state || state.root === true) {
+    if (len <= 1) {
         btnBack.style.display = "none";
         return;
     }
 
     btnBack.style.display = "";
 }
-
-
 
 // 전역 공개
 window.__updateBackBtn = updateBackButtonVisibility;
@@ -115,7 +123,7 @@ function initFooter() {
         btn.dataset.bound = "1";
         btn.addEventListener("click", () => {
             if (cfg.page) {
-                // 🔥 footer 이동은 tab 이동
+                // ✅ footer는 tab 이동(=앱 스택 리셋)
                 window.showPage?.(cfg.page, { type: "tab" });
             } else {
                 alert("상점은 아직 준비 중입니다!");
@@ -140,10 +148,10 @@ function applyFooterSafePadding() {
 window.addEventListener("resize", applyFooterSafePadding);
 window.addEventListener("orientationchange", applyFooterSafePadding);
 document.addEventListener("DOMContentLoaded", applyFooterSafePadding);
+
 window.__updateChromeResource = function (meta) {
     const scrollEl = document.querySelector(".currency-item.scroll span");
     const frameEl = document.querySelector(".currency-item.frame span");
-
     if (scrollEl) scrollEl.textContent = Number(meta.scroll).toLocaleString();
     if (frameEl) frameEl.textContent = Number(meta.frame).toLocaleString();
 };
@@ -152,7 +160,7 @@ window.__updateChromeResource = function (meta) {
    INIT
 ========================= */
 export function initChrome(options = {}) {
-    const { mode = "back+resource", onBack } = options;
+    const { mode = "back+resource" } = options;
     const btnBack = document.getElementById("btnBack");
 
     if (mode !== "resource-only" && btnBack && !btnBack.dataset.bound) {
