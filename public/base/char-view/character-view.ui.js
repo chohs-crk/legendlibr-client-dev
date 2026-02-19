@@ -95,12 +95,12 @@ export function initCharacterViewUI() {
                 <div class="info-cell">
                     <div class="label">지역</div>
                    <div class="value">
-  <span class="clickable-preview" id="originInfoBtn" role="button" tabindex="0"
+  <span class="region-chip" id="originInfoBtn" role="button" tabindex="0"
         style="display:inline-flex; align-items:center; text-decoration:underline;">
     ${originName}
   </span>
   <span style="opacity:0.7; padding:0 6px;">-</span>
-  <span class="clickable-preview" id="regionInfoBtn" role="button" tabindex="0"
+  <span class="region-chip" id="regionInfoBtn" role="button" tabindex="0"
         style="display:inline-flex; align-items:center; text-decoration:underline;">
     ${regionName}
   </span>
