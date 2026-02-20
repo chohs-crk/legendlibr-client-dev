@@ -562,14 +562,27 @@
     margin-top: 4px;
 }
 
+/* 승자 */
 .elo-plus {
-    color: #4caf50;
+    color: #ffffff;
+    text-shadow: 0 0 6px #9800FF, 0 0 10px rgba(152,0,255,0.6);
 }
 
+/* 패자 */
 .elo-minus {
-    color: #f44336;
+    color: #ffffff;
+    text-shadow: 0 0 6px #ff5f5f, 0 0 10px rgba(255,95,95,0.6);
 }
+
+
 
 .elo-zero {
     color: #888;
+}
+.battle-item.win {
+    border: 2px solid #3ecf8e;
+}
+
+.battle-item.lose {
+    border: 2px solid #ff5f5f;
 }

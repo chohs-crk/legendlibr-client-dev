@@ -1,6 +1,7 @@
 ﻿// /base/char-view/character-view.battle.js//✅
 import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetchBattlesList } from "./character-view.api.js";
+import { parseStoryText } from "/base/common/story-parser.js";
 
 /**
  * 전투 기록 탭 모듈
@@ -200,9 +201,27 @@ export function initBattleModule({
         if (!logs.length) return "로그 없음";
 
         const last = logs[logs.length - 1];
-        const txt = typeof last?.text === "string" ? last.text : "로그 없음";
-        return txt.length > 40 ? txt.slice(0, 40) + " ..." : txt;
+        const raw = typeof last?.text === "string" ? last.text : "로그 없음";
+
+        const parsed = parseStoryText(raw);
+
+        // 텍스트 길이 계산용 (태그 제거)
+        const plain = parsed.replace(/<[^>]+>/g, "");
+
+        if (plain.length <= 80) {
+            return parsed; // 🔥 HTML 그대로 반환
+        }
+
+        // 잘릴 길이 계산
+        const ratio = 80 / plain.length;
+        const cutIndex = Math.floor(parsed.length * ratio);
+
+        // HTML 유지한 채 자르기
+        return parsed.slice(0, cutIndex) + " ...";
+
     }
+
+
 
     function renderBattleList(battles) {
         if (!content) return;
@@ -224,24 +243,41 @@ export function initBattleModule({
                     const isAttacker = b.myId === myId;
 
                     const opponentId = isAttacker ? b.enemyId : b.myId; //더미
-                    const opponentName = isAttacker ? b.enemyName : b.myName;
-                    const opponentImage = isAttacker ? b.enemyImage : b.myImage;
+                    const opponentName = isAttacker
+                        ? (b.enemyName || "상대")
+                        : (b.myName || "상대");
+
+                    const opponentImage = isAttacker
+                        ? (b.enemyImage || null)
+                        : (b.myImage || null);
+
 
                     // 내 elo 변동
                     const myDelta = isAttacker ? b.myEloDelta : b.enemyEloDelta;
 
-                    const deltaText = Number.isFinite(myDelta)
-                        ? (myDelta > 0 ? `+${myDelta}` : `${myDelta}`)
-                        : "";
+                    const delta = Number.isFinite(myDelta) ? myDelta : null;
+
+                    const deltaText =
+                        delta === null
+                            ? ""
+                            : delta > 0
+                                ? `+${delta}`
+                                : `${delta}`;
 
                     const deltaClass =
-                        myDelta > 0 ? "elo-plus"
-                            : myDelta < 0 ? "elo-minus"
-                                : "elo-zero";
+                        delta === null
+                            ? ""
+                            : delta > 0
+                                ? "elo-plus"
+                                : delta < 0
+                                    ? "elo-minus"
+                                    : "elo-zero";
+
 
 
                     return `
-<div class="battle-item clickable-preview">
+<div class="battle-item clickable-preview ${res.class}">
+
 
   <div class="battle-thumb">
     <img src="${resolveCharImage(opponentImage)}" alt="">

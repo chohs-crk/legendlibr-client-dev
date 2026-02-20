@@ -84,3 +84,82 @@
 .card-elo {
     font-size: 14px;
 }
+/* 승자 카드 */
+.battle-card.winner {
+    border: 1px solid #9800FF;
+    background: linear-gradient(145deg,#2a1040,#1a0830);
+}
+
+/* 패자 카드 */
+.battle-card.loser {
+    border: 1px solid #523369;
+    background: linear-gradient(145deg,#1a0f20,#120816);
+}
+/* ===============================
+   ELO COLOR (BATTLE LOG)
+=============================== */
+
+.card-elo {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.battle-card.winner .card-elo {
+    background: rgba(152,0,255,0.25);
+    color: #ffffff;
+    border: 1px solid #9800FF;
+    transform: translateY(-1px);
+}
+
+.battle-card.loser .card-elo {
+    background: rgba(82,51,105,0.25);
+    color: #ffffff;
+    border: 1px solid #523369;
+}
+
+
+
+/* 혹시 neutral 상태 대비 */
+.card-elo.elo-zero {
+    color: #888;
+}
+
+/* 승자 카드 glow */
+.battle-card.winner {
+    border: 1px solid #9800FF;
+    background: linear-gradient(145deg,#2a1040,#1a0830);
+    box-shadow: 0 0 18px rgba(152,0,255,0.5);
+}
+
+@keyframes battleGlowPulse {
+    from {
+        box-shadow: 0 0 10px rgba(152,0,255,0.4);
+    }
+
+    to {
+        box-shadow: 0 0 25px rgba(152,0,255,0.9);
+    }
+}
+/* 배틀 로그 전체 배경 완전 검정 */
+#page-battle-log .content {
+    background: #000 !important;
+}
+
+/* 텍스트 영역 중앙 80% */
+.battle-log-body {
+    width: 80%;
+    margin: 0 auto;
+    font-size: 1.3em; /* 약 30% 증가 */
+    line-height: 1.8;
+}
+.battle-log-body {
+    white-space: normal;
+}
+    .battle-log-body br {
+        display: block;
+        content: "";
+        margin: 0.6em 0;
+    }

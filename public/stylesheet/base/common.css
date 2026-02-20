@@ -187,3 +187,26 @@ body {
     /* overflow: hidden; ← 삭제 */
     overflow: visible;
 }
+/* 기존 코드 (character-view.css에 이미 있음) */
+.story-em {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ✅ 추가: story-parser.js가 생성하는 클래스들 */
+.story-talk {
+    color: #ffd6f5;
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(255, 120, 220, 0.25);
+}
+
+.story-skill {
+    color: #caa7ff;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(143, 75, 255, 0.55);
+    background: rgba(20, 18, 33, 0.55);
+    box-shadow: 0 2px 8px rgba(120, 60, 255, 0.18);
+    white-space: nowrap; /* 스킬명 뭉개짐 방지(선택) */
+}
