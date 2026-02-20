@@ -484,8 +484,8 @@ async function startFlow() {
 
         sessionStorage.removeItem("choices_backup_story3");
         sessionStorage.removeItem("currentSceneKey");
+        location.href = "/creating";
 
-        location.href = "create-final.html";
         return;
     }
 
@@ -531,3 +531,4 @@ async function startFlow() {
 ================================ */
 history.replaceState(null, "", "/create");
 startFlow();
+//⚠️

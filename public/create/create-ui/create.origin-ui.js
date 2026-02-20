@@ -1,25 +1,25 @@
-/**
+ï»¿/**
  * create.origin-ui.js
- * - ±â¿ø(Origin) Ä«µå UI ·»´õ¸µ
- * - Å¬¸¯/Å°º¸µå ÀÌº¥Æ® ¹ÙÀÎµù
- * - ¼±ÅÃ UI Åä±Û + È®Àå ¿µ¿ª ÂüÁ¶ ¹İÈ¯
+ * - ê¸°ì›(Origin) ì¹´ë“œ UI ë Œë”ë§
+ * - í´ë¦­/í‚¤ë³´ë“œ ì´ë²¤íŠ¸ ë°”ì¸ë”©
+ * - ì„ íƒ UI í† ê¸€ + í™•ì¥ ì˜ì—­ ì°¸ì¡° ë°˜í™˜
  */
 
 /**
- * origin ¸ñ·ÏÀ» DOM¿¡ ·»´õ¸µÇÕ´Ï´Ù.
- * - ±âÁ¸ ÄÚµå´Â append¸¸ Çß±â ¶§¹®¿¡ SPA ÀçÁøÀÔ ½Ã Áßº¹µÉ ¼ö ÀÖ¾î, ¿©±â¼­´Â ±âº»ÀûÀ¸·Î ºñ¿ó´Ï´Ù.
+ * origin ëª©ë¡ì„ DOMì— ë Œë”ë§í•©ë‹ˆë‹¤.
+ * - ê¸°ì¡´ ì½”ë“œëŠ” appendë§Œ í–ˆê¸° ë•Œë¬¸ì— SPA ì¬ì§„ì… ì‹œ ì¤‘ë³µë  ìˆ˜ ìˆì–´, ì—¬ê¸°ì„œëŠ” ê¸°ë³¸ì ìœ¼ë¡œ ë¹„ì›ë‹ˆë‹¤.
  */
 export function renderOriginList(originListEl, ORIGINS_FRONT) {
     if (!originListEl) return;
 
-    // Áßº¹ ·»´õ ¹æÁö
+    // ì¤‘ë³µ ë Œë” ë°©ì§€
     originListEl.innerHTML = "";
 
     Object.values(ORIGINS_FRONT).forEach((origin) => {
         const item = document.createElement("div");
         item.className = "origin-item";
         item.dataset.value = origin.id;
-        item.dataset.bg = `/images/origin/${String(origin.id).toLowerCase()}.jpg`; // ±ÔÄ¢ ±â¹İ
+        item.dataset.bg = `/images/origin/${String(origin.id).toLowerCase()}.jpg`; // ê·œì¹™ ê¸°ë°˜
 
         item.innerHTML = `
       <div class="origin-image">
@@ -31,8 +31,8 @@ export function renderOriginList(originListEl, ORIGINS_FRONT) {
         <div class="region-list"></div>
 
         <div class="origin-actions">
-          <button class="btn secondary">Áö¿ª Ãß°¡ÇÏ±â</button>
-          <button class="btn primary btn-next" disabled>´ÙÀ½</button>
+          <button class="btn secondary">ì§€ì—­ ì¶”ê°€í•˜ê¸°</button>
+          <button class="btn primary btn-next" disabled>ë‹¤ìŒ</button>
         </div>
       </div>
     `;
@@ -42,10 +42,10 @@ export function renderOriginList(originListEl, ORIGINS_FRONT) {
 }
 
 /**
- * origin ¾ÆÀÌÅÛ¿¡ ÀÌº¥Æ®¸¦ ¹ÙÀÎµùÇÕ´Ï´Ù.
- * - Å¬¸¯
- * - Å°º¸µå(Enter/Space)
- * - ¹è°æ ÀÌ¹ÌÁö Àû¿ë
+ * origin ì•„ì´í…œì— ì´ë²¤íŠ¸ë¥¼ ë°”ì¸ë”©í•©ë‹ˆë‹¤.
+ * - í´ë¦­
+ * - í‚¤ë³´ë“œ(Enter/Space)
+ * - ë°°ê²½ ì´ë¯¸ì§€ ì ìš©
  */
 export function bindOriginEvents(originListEl, { onSelectOrigin }) {
     if (!originListEl) return;
@@ -53,17 +53,17 @@ export function bindOriginEvents(originListEl, { onSelectOrigin }) {
     const items = originListEl.querySelectorAll(".origin-item");
 
     items.forEach((el) => {
-        // Å¬¸¯
+        // í´ë¦­
         el.addEventListener("click", () => onSelectOrigin?.(el));
 
-        // Å°º¸µå Á¢±Ù¼º
+        // í‚¤ë³´ë“œ ì ‘ê·¼ì„±
         el.addEventListener("keyup", (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 onSelectOrigin?.(el);
             }
         });
 
-        // ¹è°æ ÀÌ¹ÌÁö Àû¿ë
+        // ë°°ê²½ ì´ë¯¸ì§€ ì ìš©
         const bg = el.dataset.bg;
         const img = el.querySelector(".origin-image");
         if (img && bg) {
@@ -73,7 +73,7 @@ export function bindOriginEvents(originListEl, { onSelectOrigin }) {
 }
 
 /**
- * ¼±ÅÃµÈ origin UI Ç¥½Ã¸¦ °»½ÅÇÕ´Ï´Ù.
+ * ì„ íƒëœ origin UI í‘œì‹œë¥¼ ê°±ì‹ í•©ë‹ˆë‹¤.
  */
 export function setSelectedOriginItem(originListEl, selectedEl) {
     if (!originListEl || !selectedEl) return;
@@ -86,7 +86,7 @@ export function setSelectedOriginItem(originListEl, selectedEl) {
 }
 
 /**
- * origin Ä«µå ³»ºÎ¿¡¼­ È®Àå ¿µ¿ª(¼³¸í/Áö¿ª/¹öÆ°)À» ½±°Ô Ã£±â À§ÇÑ ÇïÆÛ
+ * origin ì¹´ë“œ ë‚´ë¶€ì—ì„œ í™•ì¥ ì˜ì—­(ì„¤ëª…/ì§€ì—­/ë²„íŠ¼)ì„ ì‰½ê²Œ ì°¾ê¸° ìœ„í•œ í—¬í¼
  */
 export function getExpandArea(originItemEl) {
     return {
@@ -98,10 +98,11 @@ export function getExpandArea(originItemEl) {
 }
 
 /**
- * ÆäÀÌÁö ³» ¸ğµç next ¹öÆ°À» ºñÈ°¼ºÈ­
+ * í˜ì´ì§€ ë‚´ ëª¨ë“  next ë²„íŠ¼ì„ ë¹„í™œì„±í™”
  */
 export function disableAllNextButtons(root = document) {
     root.querySelectorAll(".btn-next").forEach((btn) => {
         btn.disabled = true;
     });
 }
+//âš ï¸
