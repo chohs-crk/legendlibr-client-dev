@@ -12,7 +12,7 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
 
     // 1. 모델 설정 단계에서 systemInstruction 분리
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-lite",   // 🔥 변경
+        model: "gemini-2.5-flash-lite",   // 🔥 변경
         systemInstruction: SYSTEM_PROMPT,
     });
 

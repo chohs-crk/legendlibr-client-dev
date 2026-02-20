@@ -218,32 +218,56 @@ export function initBattleModule({
                 .map((b) => {
                     const res = formatBattleResult(b);
                     const preview = formatBattlePreviewLine(b);
-                    const enemyName = b.enemyName || "전투";
-                    const enemyImg = resolveCharImage(b.enemyImage);
+                    const myId = getMyCharId();
+
+                    // 내가 공격자인지 수비자인지 판별
+                    const isAttacker = b.myId === myId;
+
+                    const opponentId = isAttacker ? b.enemyId : b.myId; //더미
+                    const opponentName = isAttacker ? b.enemyName : b.myName;
+                    const opponentImage = isAttacker ? b.enemyImage : b.myImage;
+
+                    // 내 elo 변동
+                    const myDelta = isAttacker ? b.myEloDelta : b.enemyEloDelta;
+
+                    const deltaText = Number.isFinite(myDelta)
+                        ? (myDelta > 0 ? `+${myDelta}` : `${myDelta}`)
+                        : "";
+
+                    const deltaClass =
+                        myDelta > 0 ? "elo-plus"
+                            : myDelta < 0 ? "elo-minus"
+                                : "elo-zero";
+
 
                     return `
-                            <div class="battle-item clickable-preview">
-                                <div class="battle-thumb">
-                                    <img src="${enemyImg}" alt="">
-                                    <div class="battle-thumb-overlay"></div>
-                                </div>
+<div class="battle-item clickable-preview">
 
-                                <div class="battle-body">
-                                    <div class="battle-title-row">
-                                        <span class="battle-title-main">${enemyName} 전</span>
-                                        <span class="battle-title-result ${res.class}">${res.text}</span>
-                                    </div>
+  <div class="battle-thumb">
+    <img src="${resolveCharImage(opponentImage)}" alt="">
+  </div>
 
-                                    <div class="battle-date">
-                                        ${formatBattleDate(b)}
-                                    </div>
+  <div class="battle-body">
+    <div class="battle-title-row">
+      <span class="battle-title-main">${opponentName} 전</span>
+      <span class="battle-title-result ${res.class}">${res.text}</span>
+    </div>
 
-                                    <div class="battle-sub">
-                                        ${preview}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+    <div class="battle-elo ${deltaClass}">
+      ${deltaText}
+    </div>
+
+    <div class="battle-date">
+      ${formatBattleDate(b)}
+    </div>
+
+    <div class="battle-sub">
+      ${preview}
+    </div>
+  </div>
+</div>
+`;
+
                 })
                 .join("")}
             </div>

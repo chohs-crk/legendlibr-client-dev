@@ -87,21 +87,34 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                     const eloB = typeof loser.rankScore === "number" ? loser.rankScore : 1000;
 
                     const { win, lose } = calcEloDelta(eloA, eloB);
+                    const winnerAfter = eloA + win;
+                    const loserAfter = Math.max(0, eloB - lose);
 
                     tx.update(winnerRef, {
-                        rankScore: eloA + win,
+                        rankScore: winnerAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
                     });
 
                     tx.update(loserRef, {
-                        rankScore: Math.max(0, eloB - lose),
+                        rankScore: loserAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
                     });
 
                     tx.update(battleRef, {
                         eloApplied: true,
                         eloAppliedAt: admin.firestore.FieldValue.serverTimestamp(),
+
+                        elo: {
+                            winnerBefore: eloA,
+                            winnerAfter,
+                            winnerDelta: win,
+
+                            loserBefore: eloB,
+                            loserAfter,
+                            loserDelta: -lose
+                        }
                     });
+
                 });
             } catch (err) {
                 console.error("[ELO_APPLY_FAIL]", err?.message || String(err));

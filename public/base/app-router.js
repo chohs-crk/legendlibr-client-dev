@@ -87,17 +87,26 @@ function buildPath(name, options = {}) {
 
     if (name === "battle-log") {
         if (options?.battleId) return `/battle/${options.battleId}`;
-        return "/"; // battleId 없으면 홈으로
+        return "/";
     }
 
     if (name === "character-view") {
         if (options?.charId) return `/character/${options.charId}`;
-        return "/"; // charId 없으면 홈으로
+        return "/";
     }
 
-    // 나머지는 루트 SPA
+    // ✅ 핵심: 이미지 편집은 URL을 캐릭터 뷰와 동일하게 유지
+    if (name === "character-image") {
+        if (options?.charId) return `/character/${options.charId}`;
+        // charId 없으면 세션 기반으로도 캐릭터 뷰 URL 유지 시도
+        const sid = sessionStorage.getItem("viewCharId");
+        if (sid) return `/character/${sid}`;
+        return "/";
+    }
+
     return "/";
 }
+
 
 /* =======================================
    PATH → PAGE PARSE (🔥 새탭/새로고침)
@@ -167,12 +176,18 @@ function makeEntry(name, { charId = null, battleId = null } = {}) {
    ROUTER CORE
 ======================================= */
 window.showPage = async function (name, options = {}) {
-    const {
+    // ✅ charId를 보정해야 해서 let으로 받는다
+    let {
         fromPop = false,
         type = "push",        // "push" | "tab" | "replace"
         charId = null,
         battleId = null
     } = options;
+
+    // ✅ character-image는 보통 viewCharId를 이미 갖고 있으니 그걸 사용
+    if (name === "character-image" && !charId) {
+        charId = sessionStorage.getItem("viewCharId") || null;
+    }
 
     const newPath = buildPath(name, { charId, battleId });
 

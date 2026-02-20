@@ -180,21 +180,69 @@ function renderBattle(battle) {
     const container = document.getElementById("battleLogContainer");
     if (!container) return;
 
-    const enemyImg = resolveCharImage(battle.enemyImage);
-    const logs = battle.logs || [];
+    const myDelta = battle.myEloDelta;
+    const enemyDelta = battle.enemyEloDelta;
 
+    function deltaText(v) {
+        if (!Number.isFinite(v)) return "";
+        return v > 0 ? `+${v}` : `${v}`;
+    }
+
+    function deltaClass(v) {
+        if (!Number.isFinite(v)) return "";
+        if (v > 0) return "elo-plus";
+        if (v < 0) return "elo-minus";
+        return "elo-zero";
+    }
+
+    const logs = battle.logs || [];
     const fullText = logs.map(l => l.text || "").join("");
 
     container.innerHTML = `
-        <div class="battle-log-header">
-            <img src="${enemyImg}" />
-            <h2>${battle.enemyName || "전투"} 전</h2>
+    <div class="battle-vs-wrapper">
+
+      <div class="battle-card" data-id="${battle.myId}">
+        <div class="card-image">
+          <img src="${resolveCharImage(battle.myImage)}" />
         </div>
-        <div class="battle-log-body text-flow">
-            ${fullText || "<div class='battle-empty'>로그 없음</div>"}
+        <div class="card-name">${battle.myName}</div>
+        <div class="card-elo ${deltaClass(myDelta)}">
+          ${deltaText(myDelta)}
         </div>
-    `;
+      </div>
+
+      <div class="battle-vs-text">VS</div>
+
+      <div class="battle-card" data-id="${battle.enemyId}">
+        <div class="card-image">
+          <img src="${resolveCharImage(battle.enemyImage)}" />
+        </div>
+        <div class="card-name">${battle.enemyName}</div>
+        <div class="card-elo ${deltaClass(enemyDelta)}">
+          ${deltaText(enemyDelta)}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="battle-log-body text-flow">
+      ${fullText || "<div class='battle-empty'>로그 없음</div>"}
+    </div>
+  `;
+
+    // 🔥 클릭 시 캐릭터 프로필 이동
+    document.querySelectorAll(".battle-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const id = card.dataset.id;
+            if (!id) return;
+            showPage("character-view", {
+                type: "push",
+                id
+            });
+        });
+    });
 }
+
 
 /* =========================================================
    초기화
