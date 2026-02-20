@@ -1,4 +1,7 @@
 ﻿import { parseStoryText } from "/base/common/story-parser.js";
+import { formatStoryWithDialogue } from "/base/common/story-format.js";
+
+
 //✅
 export function renderStoryPreview({
     content,
@@ -27,8 +30,11 @@ export function renderStoryPreview({
         .addEventListener("click", () => {
             openDetailDialog(
                 "전체 스토리",
-                parseStoryText(fullStoryText)
+                parseStoryText(
+                    formatStoryWithDialogue(fullStoryText)
+                )
             );
+
         });
 }
 

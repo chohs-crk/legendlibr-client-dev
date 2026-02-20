@@ -1,70 +1,14 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
 import { parseStoryText } from "/base/common/story-parser.js";
+import { formatStoryWithDialogue } from "/base/common/story-format.js";
+
 function markEloAnimated(battleId) {
     sessionStorage.setItem(`eloAnimated_${battleId}`, "1");
 }
 
 function isEloAnimated(battleId) {
     return sessionStorage.getItem(`eloAnimated_${battleId}`) === "1";
-}
-function formatBattleText(text) {
-    if (!text) return "";
-
-    const blocks = [];
-    const dialogueRegex = /§[^§]*§/g;
-
-    let lastIndex = 0;
-    let match;
-
-    while ((match = dialogueRegex.exec(text)) !== null) {
-        const before = text.slice(lastIndex, match.index);
-        pushSentences(before, blocks);
-        blocks.push({ type: "dialogue", text: match[0] });
-        lastIndex = dialogueRegex.lastIndex;
-    }
-
-    pushSentences(text.slice(lastIndex), blocks);
-
-    let result = "";
-    let sentenceGroupCount = 0;
-
-    for (const block of blocks) {
-
-        if (block.type === "dialogue") {
-            sentenceGroupCount = 0;
-
-            result = result.replace(/\n+$/, "");
-            result += "\n\n" + block.text + "\n\n";
-            continue;
-        }
-
-        sentenceGroupCount++;
-        result += block.text;
-
-        if (!result.endsWith("\n")) {
-            result += "\n";
-        }
-
-        if (sentenceGroupCount % 2 === 0) {
-            result += "\n";
-        }
-    }
-
-    return result
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-}
-
-function pushSentences(text, blocks) {
-    const sentences = text
-        .split(/(?<!\d)(?<=[.!?。！？])\s+/)
-        .map(s => s.trim())
-        .filter(Boolean);
-
-    for (const s of sentences) {
-        blocks.push({ type: "sentence", text: s });
-    }
 }
 
 
@@ -313,7 +257,8 @@ function renderBattle(battle) {
     const rawText = logs.map(l => l?.text || "").join("\n");
 
     // 🔥 fullText 변형 전에 포맷 적용
-    const formattedRaw = formatBattleText(rawText);
+    const formattedRaw = formatStoryWithDialogue(rawText);
+
 
     const fullText = parseStoryText(formattedRaw);
 

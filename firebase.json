@@ -11,6 +11,7 @@
         "source": "/creating",
         "destination": "/create/create-final.html"
       },
+
       {
         "source": "/battle/**",
         "destination": "/base/index.html"
