@@ -1,0 +1,38 @@
+<section class="page" id="page-character-view">
+<main class="page-body">
+<div class="scroll-area">
+<!-- 캐릭터 이미지 -->
+<div class="char-image-box clickable" id="charImageBox">
+<img id="charImage" src="/images/base/base_01.png"/>
+<!-- 교체 아이콘 -->
+<div class="image-edit-icon" id="imageEditIcon">
+<svg class="stroke-icon" viewbox="0 0 24 24">
+<path d="M4 20h4l10-10-4-4L4 16z"></path>
+<path d="M14 6l4 4"></path>
+</svg>
+</div>
+<div class="char-name-overlay" id="charName">(이름)</div>
+</div>
+<!-- 사각형 정보 -->
+<div class="info-box" id="charIntroBox">
+                            (정보 불러오는 중...)
+                        </div>
+<!-- 탭 -->
+<div class="tab-bar">
+<button class="tab-btn active" id="tabStory">스토리</button>
+<button class="tab-btn" id="tabSkill">스킬</button>
+<button class="tab-btn" id="tabBattle">전투 기록</button>
+</div>
+<!-- 탭 내용 -->
+<div class="content-box" id="content">(불러오는 중...)</div>
+<!-- 전투 기록 페이지네이션 -->
+<div class="pager" id="battlePager" style="display:none;">
+<button class="pager-btn" id="btnPrevPage">&lt;</button>
+<div class="pager-pages" id="battlePageNumbers"></div>
+<button class="pager-btn" id="btnNextPage">&gt;</button>
+</div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+</main>
+</section>

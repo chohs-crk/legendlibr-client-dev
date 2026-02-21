@@ -1,449 +1,91 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LoreFlood</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LoreFlood</title>
 
-    <link rel="stylesheet" href="/stylesheet/base/common.css">
-    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
-    <link rel="stylesheet" href="/stylesheet/base/index.css">
-    <link rel="stylesheet" href="/stylesheet/base/rank.css">
-    <link rel="stylesheet" href="/stylesheet/base/character-view.css">
-    <link rel="stylesheet" href="/stylesheet/base/character-image.css">
-    <link rel="stylesheet" href="/stylesheet/base/journey.css">
-    <link rel="stylesheet" href="/stylesheet/base/battle-log.css">
-    <link rel="stylesheet" href="/stylesheet/base/confirm.css">
-    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
-    <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
-    <link rel="stylesheet" href="/stylesheet/create/create-compose.css">
-    <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
+  <link rel="stylesheet" href="/stylesheet/base/common.css">
+  <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+  <link rel="stylesheet" href="/stylesheet/base/index.css">
+  <link rel="stylesheet" href="/stylesheet/base/rank.css">
+  <link rel="stylesheet" href="/stylesheet/base/character-view.css">
+  <link rel="stylesheet" href="/stylesheet/base/character-image.css">
+  <link rel="stylesheet" href="/stylesheet/base/journey.css">
+  <link rel="stylesheet" href="/stylesheet/base/battle-log.css">
+  <link rel="stylesheet" href="/stylesheet/base/confirm.css">
+  <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+  <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
+  <link rel="stylesheet" href="/stylesheet/create/create-compose.css">
+  <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
 
-    <style>
-        .page {
-            display: none;
-            /* 🔥 추가: 페이지 자체가 컨테이너 역할을 하므로 높이와 축 설정 필요 */
-            height: 100%;
-            flex-direction: column;
-        }
-
-            .page.active {
-                /* 🔥 변경: block -> flex */
-                display: flex;
-            }
-    </style>
+  <style>
+    /* page는 partial(section) 단위로 로드되며, router가 active만 토글 */
+    .page {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+    }
+    .page.active {
+      display: flex;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="bg-root">
-        <div class="bg-frame"></div>
+  <div class="bg-root">
+    <div class="bg-frame"></div>
 
-        <div class="app">
-            <div id="globalLoading" class="loading-overlay" style="display:none;">
-                <div class="loading-box">
-                    <div class="spinner"></div>
-                    <p>처리 중입니다…</p>
-                </div>
-            </div>
-
-            <!-- 🔒 chrome는 단 한 번 -->
-            <div id="chrome-root"></div>
-
-            <!-- ================= HOME ================= -->
-            <section id="page-home" class="page active">
-                <!-- home.html의 main/content/footer 부분만 복사 -->
-                <main class="content">
-                    <div class="bar"></div>
-                    <div class="scroll-area">
-                        <div id="charList" class="list"></div>
-                    </div>
-                </main>
-
-                <div class="footer-stack">
-                    <button id="btnCreate" class="btn-create">생성하기</button>
-                </div>
-            </section>
-
-            <!-- ================= JOURNEY ================= -->
-            <section id="page-journey" class="page">
-                <div class="content">
-                    <div class="bar"></div>
-                    <div class="scroll-area">
-                        <h2>여정 선택</h2>
-                        <button id="btnBattle" class="journey-card battle">⚔ 전투 시작</button>
-                        <button id="btnRaid" class="journey-card raid">🌀 레이드 시작</button>
-                    </div>
-                </div>
-            </section>
-            <!-- ================= BATTLE ================= -->
-            <section id="page-battle" class="page">
-                <main class="content">
-                    <!-- ================= BATTLE CHARACTER SELECT ================= -->
-                    <div class="battle-char-select">
-                        <button id="battleCharToggle" class="accordion-btn">
-                            캐릭터 선택
-                        </button>
-
-                        <div id="battleCharList" class="accordion-body" style="display:none;"></div>
-                    </div>
-
-                    <div class="bar"></div>
-
-                    <div class="scroll-area">
-                        <h2>전투 매칭 중</h2>
-
-                        <div id="battleStatus">
-                            상대를 탐색 중입니다...
-                        </div>
-
-                        <button id="btnBattleStart"
-                                class="btn primary"
-                                style="display:none; margin-top:12px;">
-                            ⚔ 배틀 시작
-                        </button>
-
-
-                        <!-- 디버그용 -->
-                        <pre id="battleDebug"
-                             style="white-space:pre-wrap; font-size:12px; opacity:0.7;"></pre>
-                    </div>
-                </main>
-            </section>
-
-            <!-- ================= SETTING ================= -->
-            <section id="page-setting" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-                        <h2>설정</h2>
-                        <button id="btnLogout" class="btn danger">로그아웃</button>
-                    </div>
-                </main>
-            </section>
-
-            <!-- ================= CREATE ================= -->
-            <section id="page-create" class="page">
-                <div class="content">
-                    <div class="scroll-area">
-                        <div id="originList"></div>
-                    </div>
-                </div>
-            </section>
-            <!-- ================= CREATE REGION ================= -->
-            <section id="page-create-region" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-                        <div class="compose-wrap">
-
-                            <h1>새 지역 만들기</h1>
-
-                            <div class="field">
-                                <span class="label">기원</span>
-                                <div id="regionOriginName" class="value-box"></div>
-                            </div>
-
-                            <div class="field">
-                                <span class="label">지역 이름</span>
-                                <input id="regionNameInput"
-                                       type="text"
-                                       maxlength="20"
-                                       placeholder="예) 패왕곡 북단" />
-                            </div>
-
-                            <div class="field">
-                                <span class="label">지역 설명</span>
-                                <textarea id="regionDetailInput"
-                                          maxlength="500"
-                                          placeholder="이 지역의 분위기, 전설 등을 적어주세요"></textarea>
-                            </div>
-
-                            <div class="actions">
-                                <button class="btn secondary" id="btnRegionCancel">취소</button>
-                                <button class="btn primary" id="btnRegionCreate">생성</button>
-                            </div>
-
-                        </div>
-                    </div>
-                </main>
-            </section>
-
-            <!-- ================= CREATE PROMPT ================= -->
-            <section id="page-create-prompt" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-
-                        <!-- create-prompt.html 안의 실제 내용 복사 -->
-                        <h2 class="page-title">캐릭터 이름과 설명</h2>
-
-                        <div class="info-line">
-                            <span class="label">기원</span>
-                            <span class="value" id="originName"></span>
-                        </div>
-
-                        <div class="info-line">
-                            <span class="label">지역</span>
-                            <span class="value" id="regionName"></span>
-                        </div>
-
-                        <input id="nameInput" placeholder="캐릭터 이름" />
-
-<textarea id="promptInput"
-          placeholder="캐릭터에 대한 간단한 설명을 적어주세요"></textarea>
-
-                        <button id="btnNext" class="btn primary">다음</button>
-
-
-                    </div>
-                </main>
-            </section>
-
-            <!-- ================= RANKING ================= -->
-            <section id="page-ranking" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-                        <div id="rankingList" class="ranking-list"></div>
-                    </div>
-                </main>
-            </section>
-
-
-            <!-- ================= CHARACTER VIEW ================= -->
-            <section id="page-character-view" class="page">
-                <main class="page-body">
-                    <div class="scroll-area">
-
-                        <!-- 캐릭터 이미지 -->
-                        <div class="char-image-box clickable" id="charImageBox">
-                            <img id="charImage" src="/images/base/base_01.png">
-
-                            <!-- 교체 아이콘 -->
-                            <div class="image-edit-icon" id="imageEditIcon">
-                                <svg viewBox="0 0 24 24" class="stroke-icon">
-                                    <path d="M4 20h4l10-10-4-4L4 16z" />
-                                    <path d="M14 6l4 4" />
-                                </svg>
-                            </div>
-
-                            <div class="char-name-overlay" id="charName">(이름)</div>
-                        </div>
-
-                        <!-- 사각형 정보 -->
-                        <div id="charIntroBox" class="info-box">
-                            (정보 불러오는 중...)
-                        </div>
-
-                        <!-- 탭 -->
-                        <div class="tab-bar">
-                            <button class="tab-btn active" id="tabStory">스토리</button>
-                            <button class="tab-btn" id="tabSkill">스킬</button>
-                            <button class="tab-btn" id="tabBattle">전투 기록</button>
-                        </div>
-
-                        <!-- 탭 내용 -->
-                        <div class="content-box" id="content">(불러오는 중...)</div>
-
-                        <!-- 전투 기록 페이지네이션 -->
-                        <div class="pager" id="battlePager" style="display:none;">
-                            <button class="pager-btn" id="btnPrevPage">&lt;</button>
-                            <div class="pager-pages" id="battlePageNumbers"></div>
-                            <button class="pager-btn" id="btnNextPage">&gt;</button>
-                        </div>
-                        <div class="bar"></div>
-                        <div class="bar"></div>
-                    </div>
-                </main>
-            </section>
-
-            <section id="page-battle-log" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-                        <h2>전투 기록</h2>
-                        <div id="battleLogContainer">(로드 중)</div>
-                    </div>
-                </main>
-            </section>
-
-            <!-- ================= CHARACTER IMAGE ================= -->
-            <section id="page-character-image" class="page">
-                <main class="content">
-                    <div class="scroll-area">
-
-                        <h2 class="page-title">이미지 변경</h2>
-
-                        <div class="char-image-box">
-                            <img id="currentImage" src="/images/base/base_01.png">
-                        </div>
-
-                        <div class="image-selector grid" id="imageGrid">
-                            <img data-type="default" data-key="base_01" src="/images/base/base_01.png">
-                            <img data-type="preset" data-key="warrior_01" src="/images/preset/warrior_01.png">
-                            <img data-type="preset" data-key="mage_01" src="/images/preset/mage_01.png">
-                            <img data-type="preset" data-key="rogue_01" src="/images/preset/rogue_01.png">
-
-                            <div class="ai-slot" id="aiSlot">
-                                <div class="ai-slot-inner">
-                                    <span class="ai-plus">＋</span>
-                                    <span class="ai-text">AI 이미지 생성</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="action-bar">
-                            <button class="btn apply-btn" id="btnApply">적용</button>
-                        </div>
-
-                    </div>
-                </main>
-
-                <!-- AI 생성 오버레이 -->
-                <div class="ai-overlay" id="aiOverlay" style="display:none;">
-                    <div class="ai-modal">
-                        <h3>AI 이미지 생성</h3>
-                        <div class="model-tags">
-                            <button class="model-btn active" data-model="together_qwen">
-                                Qwen (5원)
-                            </button>
-
-                            <button class="model-btn" data-model="together_flux2">
-                                Flux (20원)
-                            </button>
-
-                            <button class="model-btn" data-model="gemini">
-                                Nano Banana (40원)
-                            </button>
-                        </div>
-                        <textarea id="aiPromptInput"
-                                  placeholder="캐릭터 이미지에 반영하고 싶은 분위기나 인상을 적어주세요"></textarea>
-
-                        <div class="style-tags">
-                            <button class="style-btn" data-style="anime2d">2D 애니메이션</button>
-                            <button class="style-btn" data-style="real3d">3D 사실적</button>
-                            <button class="style-btn" data-style="watercolor">수채화</button>
-                            <button class="style-btn" data-style="darkfantasy">다크 판타지</button>
-                            <button class="style-btn" data-style="pixel">픽셀 아트</button>
-                        </div>
-
-                        <div class="ai-modal-actions">
-                            <button id="btnAICancel">취소</button>
-                            <button id="btnAIGenerate" disabled>생성</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 로딩 오버레이 -->
-                <div id="loadingOverlay" class="loading-overlay" style="display:none;">
-                    <div class="loading-box">
-                        <div class="spinner"></div>
-                        <p>AI 이미지 생성 중입니다…</p>
-                    </div>
-                </div>
-            </section>
-
-
+    <div class="app">
+      <!-- 전역 로딩 -->
+      <div id="globalLoading" class="loading-overlay" style="display:none;">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <p>처리 중입니다…</p>
         </div>
+      </div>
 
+      <!-- 🔒 chrome는 단 한 번 -->
+      <div id="chrome-root"></div>
 
+      <!-- ✅ 모든 page section은 여기로 partial 마운트 -->
+      <div id="pages-root"></div>
     </div>
-    <div id="confirmOverlay" class="ui-confirm-overlay">
-        <div class="ui-confirm">
-            <div id="confirmText"></div>
-            <div class="ui-confirm-actions" id="confirmActions"></div>
-        </div>
+  </div>
+
+  <!-- 전역 confirm -->
+  <div id="confirmOverlay" class="ui-confirm-overlay">
+    <div class="ui-confirm">
+      <div id="confirmText"></div>
+      <div class="ui-confirm-actions" id="confirmActions"></div>
     </div>
-    <!-- ================= CHARACTER VIEW DIALOG ================= -->
-    <dialog id="detailDialog" class="plain-dialog">
+  </div>
 
-        <div class="top-bar dialog-topbar">
-            <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
-                <svg class="stroke-icon" viewBox="0 0 24 24">
-                    <path d="M14 6l-6 6 6 6" />
-
-                </svg>
-            </button>
-            <div class="top-spacer"></div>
-        </div>
-
-        <div class="dlg">
-            <div class="dlg-body story-box text-flow" id="detailBody"></div>
-        </div>
-
-    </dialog>
-    <!-- ================= REGION DETAIL WRAP (SPA 공용) ================= -->
-    <div id="wrapOverlay" class="ui-wrap-overlay" style="display:none;">
-        <div class="ui-wrap">
-            <div class="ui-wrap-body" id="wrapBody"></div>
-            <button class="ui-wrap-close" id="wrapClose">닫기</button>
-        </div>
+  <!-- 전역 dialog (부모가 display:none 이 되면 dialog가 안 뜨는 이슈 방지용으로 page 밖에 둠) -->
+  <dialog id="detailDialog" class="plain-dialog">
+    <div class="top-bar dialog-topbar">
+      <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M14 6l-6 6 6 6" />
+        </svg>
+      </button>
+      <div class="top-spacer"></div>
     </div>
 
-    <!-- chrome 로드 -->
-    <script type="module">
-        fetch("/base/common/chrome.html")
-            .then(r => r.text())
-            .then(html => {
-                document.getElementById("chrome-root").innerHTML = html;
-                return import("/base/common/chrome.js");
-            })
-            .then(m => {
-                // ✅ back 버튼은 "표시 여부"만 navStack으로 제어하고,
-                // ✅ 클릭 동작은 바인딩되도록 resource-only를 쓰지 않는다
-                m.initChrome({ mode: "back+resource" });
-            });
-    </script>
-    <script type="module">
-        import { handleBackAction } from "/base/back-handler.js";
+    <div class="dlg">
+      <div class="dlg-body story-box text-flow" id="detailBody"></div>
+    </div>
+  </dialog>
 
-        const dialogBack = document.getElementById("dialogBack");
-        dialogBack?.addEventListener("click", handleBackAction);
-    </script>
+  <!-- 전역 wrap overlay -->
+  <div id="wrapOverlay" class="ui-wrap-overlay" style="display:none;">
+    <div class="ui-wrap">
+      <div class="ui-wrap-body" id="wrapBody"></div>
+      <button class="ui-wrap-close" id="wrapClose">닫기</button>
+    </div>
+  </div>
 
-
-
-
-
-    <script type="module">
-        import { requireAuthOrRedirect } from "/base/auth.js";
-        import { parseInitialRoute } from "/base/app-router.js";
-
-        (async function bootstrapApp() {
-            try {
-                await requireAuthOrRedirect();
-
-                const route = parseInitialRoute(); // { name, charId?, battleId? }
-
-                const waitRouter = () =>
-                    new Promise(resolve => {
-                        const t = setInterval(() => {
-                            if (window.showPage) {
-                                clearInterval(t);
-                                resolve();
-                            }
-                        }, 10);
-                    });
-
-                await waitRouter();
-
-                history.replaceState(
-                    { page: route.name },
-                    "",
-                    location.pathname
-                );
-
-                window.showPage(route.name, {
-                    type: "tab",
-                    charId: route.charId || null,
-                    battleId: route.battleId || null
-                });
-
-            } catch (e) {
-                console.warn("인증 실패:", e.message);
-            }
-        })();
-    </script>
-
-
-    <script type="module" src="/base/home.js"></script>
-    <script type="module" src="/create/create.js"></script>
-    <script type="module" src="/base/app-router.js"></script>
-
+  <!-- ✅ 부트스트랩 (chrome 로드, auth, partial 마운트, 초기 라우팅) -->
+  <script type="module" src="/base/router/bootstrap.js"></script>
 </body>
 </html>
