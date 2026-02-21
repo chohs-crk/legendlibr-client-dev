@@ -1,8 +1,8 @@
-export function formatStoryWithDialogue(text) {
+﻿export function formatStoryWithDialogue(text) {
     if (!text) return "";
 
     const blocks = [];
-    const dialogueRegex = /��[^��]*��/g;
+    const dialogueRegex = /§[^§]*§/g; // ✅ FIX
 
     let lastIndex = 0;
     let match;
@@ -20,11 +20,14 @@ export function formatStoryWithDialogue(text) {
     let sentenceGroupCount = 0;
 
     for (const block of blocks) {
-
         if (block.type === "dialogue") {
             sentenceGroupCount = 0;
+
+            // 직전 개행 제거 후 대사 앞뒤는 정확히 \n\n
             result = result.replace(/\n+$/, "");
-            result += "\n\n" + block.text + "\n\n";
+            if (result.length > 0) result += "\n\n";
+
+            result += block.text + "\n\n";
             continue;
         }
 
@@ -41,8 +44,8 @@ export function formatStoryWithDialogue(text) {
 
 function pushSentences(text, blocks) {
     const sentences = text
-        .split(/(?<!\d)(?<=[.!?������])\s+/)
-        .map(s => s.trim())
+        .split(/(?<!\d)(?<=[.!?。！？])\s+/) // ✅ FIX
+        .map((s) => s.trim())
         .filter(Boolean);
 
     for (const s of sentences) {
