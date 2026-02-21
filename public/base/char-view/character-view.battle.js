@@ -203,22 +203,28 @@ export function initBattleModule({
         const last = logs[logs.length - 1];
         const raw = typeof last?.text === "string" ? last.text : "로그 없음";
 
-        const parsed = parseStoryText(raw);
+        // 1️⃣ 먼저 순수 텍스트 기준으로 줄이기
+        const MAX_LEN = 80;
 
-        // 텍스트 길이 계산용 (태그 제거)
-        const plain = parsed.replace(/<[^>]+>/g, "");
+        // 줄바꿈 정리
+        const normalized = raw.replace(/\r\n/g, "\n").trim();
 
-        if (plain.length <= 80) {
-            return parsed; // 🔥 HTML 그대로 반환
+        if (normalized.length <= MAX_LEN) {
+            return parseStoryText(normalized);
         }
 
-        // 잘릴 길이 계산
-        const ratio = 80 / plain.length;
-        const cutIndex = Math.floor(parsed.length * ratio);
+        // 단어 중간에서 끊기지 않게 자르기
+        let sliced = normalized.slice(0, MAX_LEN);
 
-        // HTML 유지한 채 자르기
-        return parsed.slice(0, cutIndex) + " ...";
+        const lastSpace = sliced.lastIndexOf(" ");
+        if (lastSpace > 40) {
+            sliced = sliced.slice(0, lastSpace);
+        }
 
+        // 2️⃣ 잘린 텍스트를 다시 parser에 넣는다
+        const safeHtml = parseStoryText(sliced);
+
+        return safeHtml + " ...";
     }
 
 

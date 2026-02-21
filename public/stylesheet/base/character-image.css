@@ -131,3 +131,22 @@
         box-shadow: 0 0 6px rgba(154, 120, 255, 0.7);
         transform: scale(1.05);
     }
+.model-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.model-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #523369;
+    background: #1a1024;
+    color: #d9c6ff;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+    .model-btn.active {
+        background: #523369;
+    }

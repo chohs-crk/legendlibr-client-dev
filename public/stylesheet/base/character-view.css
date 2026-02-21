@@ -54,7 +54,8 @@
     border-radius: 14px;
     padding: 14px;
     flex: 1;
-    overflow: unset;
+    overflow: visible; /* 🔥 반드시 visible */
+    position: relative; /* 🔥 추가 */
     -webkit-overflow-scrolling: touch;
     min-height: 0;
 }
@@ -273,11 +274,7 @@
 
 
 
-/* 스토리 미리보기 클릭 가능 표시 */
-.clickable-preview {
-    cursor: pointer;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
+
 
 /* battle-item은 transform 금지 */
 .battle-item.clickable-preview:hover {
@@ -288,15 +285,24 @@
 .battle-item.clickable-preview:active {
     transform: none;
 }
-.battle-item {
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
-    position: relative;
-    z-index: 0;
-}
+
 
     .battle-item:hover {
         box-shadow: 0 10px 26px rgba(120,60,255,0.35);
     }
+
+.battle-item {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid rgba(143,75,255,0.55);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
 .story-preview {
     position: relative;
     padding: 14px;
@@ -352,11 +358,7 @@
     background: linear-gradient( to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.75) 100% );
 }
 
-/* 전투 본문 */
-.battle-story {
-    color: #ffffff;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-}
+
 /* ===============================
    BATTLE LIST
 =============================== */
@@ -367,17 +369,12 @@
     gap: 12px;
 }
 
-/* 전투 카드 */
-.battle-item {
-    border-radius: 16px;
-    overflow: hidden;
-    background: rgba(0,0,0,0.55);
-    border: 2px solid rgba(143,75,255,0.55);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+.battle-body {
+    padding: 12px 14px 14px;
+    flex-shrink: 0; /* 🔥 추가 */
 }
-
-/* 상단 이미지 */
 .battle-thumb {
+    flex-shrink: 0;
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 7;
@@ -396,10 +393,9 @@
     background: linear-gradient( to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.75) 100% );
 }
 
-/* 본문 */
-.battle-body {
-    padding: 12px 14px 14px;
-}
+
+
+
 
 /* 제목 줄 */
 .battle-title-row {

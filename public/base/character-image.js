@@ -1,5 +1,23 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
+const MODEL_PRICE_MAP = {
+    together_qwen: 5,
+    together_flux2: 20,
+    gemini: 40
+};
+
+function updateGenerateButtonPrice() {
+    const price = MODEL_PRICE_MAP[selectedModel] || 0;
+    btnAIGenerate.textContent = `생성 (${price}원)`;
+}
+/**
+ * AI 이미지 생성 모델 선택값 (프론트 → 백엔드로 그대로 전달)
+ * - gemini: 기존 Nano Banana(=Gemini 이미지)
+ * - together_flux2: Together API - FLUX.2(dev) (※ Together Serverless에 "FLUX.2-schnell"은 없어서 dev로 매핑)
+ * - together_qwen: Together API - Qwen Image
+ * - together_flux1_schnell: Together API - FLUX.1(schnell) (옵션)
+ */
+const DEFAULT_AI_MODEL = "together_flux2";
 
 export async function initCharacterImagePage() {
     /* =========================
@@ -32,6 +50,7 @@ export async function initCharacterImagePage() {
     let selectedImage = null;
     let aiImages = [];
     let selectedStyle = null;
+    let selectedModel = DEFAULT_AI_MODEL;
 
     imgEl.src = "";
     grid.querySelectorAll(".ai-image-item").forEach(el => el.remove());
@@ -47,8 +66,34 @@ export async function initCharacterImagePage() {
                 .forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             selectedStyle = btn.dataset.style;
+            selectedModel = btn.dataset.model;
+            updateGenerateButtonPrice();
         };
     });
+
+    /* =========================
+       모델 버튼 (Together / Gemini)
+       - HTML에 .model-btn 이 없으면(아직 UI 미적용) DEFAULT_AI_MODEL로 동작
+    ========================= */
+    function setActiveModelButton(modelValue) {
+        document.querySelectorAll(".model-btn").forEach(b => b.classList.remove("active"));
+        const btn = document.querySelector(`.model-btn[data-model="${modelValue}"]`);
+        if (btn) btn.classList.add("active");
+    }
+
+    document.querySelectorAll(".model-btn").forEach(btn => {
+        btn.classList.remove("active");
+        btn.onclick = () => {
+            document.querySelectorAll(".model-btn")
+                .forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            selectedModel = btn.dataset.model || DEFAULT_AI_MODEL;
+            updateGenerateButtonPrice();
+        };
+    });
+
+    // 초기 기본 모델 버튼 활성화(버튼이 있는 경우에만)
+    setActiveModelButton(selectedModel);
 
     /* =========================
        캐릭터 정보 로드
@@ -127,6 +172,15 @@ export async function initCharacterImagePage() {
     aiSlot.onclick = () => {
         aiPromptInput.value = "";
         selectedStyle = null;
+
+        // 모달 열 때마다 기본 모델로 리셋하고 싶으면 아래 1줄 유지
+        // (사용자가 마지막 선택값을 유지하고 싶으면 이 줄을 제거)
+        selectedModel = DEFAULT_AI_MODEL;
+
+        // 버튼 UI가 있다면 상태도 같이 리셋
+        document.querySelectorAll(".style-btn").forEach(b => b.classList.remove("active"));
+        setActiveModelButton(selectedModel);
+
         btnAIGenerate.disabled = true;
         aiOverlay.style.display = "flex";
     };
@@ -153,7 +207,8 @@ export async function initCharacterImagePage() {
                 body: JSON.stringify({
                     id: charId,
                     prompt: aiPromptInput.value.trim(),
-                    style: selectedStyle
+                    style: selectedStyle,
+                    model: selectedModel
                 })
             });
 

@@ -285,8 +285,10 @@ function renderBattle(battle) {
           <img src="${resolveCharImage(enemyImage)}" />
         </div>
         <div class="card-name">${enemyName}</div>
-       <div class="card-elo ${deltaClass(enemyDelta)}" data-delta="${enemyDelta ?? ""}">
-</div>
+      ${Number.isFinite(enemyDelta) ? `
+  <div class="card-elo ${deltaClass(enemyDelta)}" data-delta="${enemyDelta}">
+  </div>
+` : ``}
       </div>
 
     </div>
