@@ -36,29 +36,33 @@ export function getPartialUrl(name) {
    PATH BUILDING (복사/새탭 URL 고정)
 ======================================= */
 export function buildPath(name, options = {}) {
-  if (name === "home") return "/";
-  if (name === "ranking") return "/ranking";
+    if (name === "home") return "/";
 
-  if (name === "battle-log") {
-    if (options?.battleId) return `/battle/${options.battleId}`;
+    // 동적 ID 페이지
+    if (name === "battle-log") {
+        if (options?.battleId) return `/battle/${options.battleId}`;
+        return "/";
+    }
+
+    if (name === "character-view") {
+        if (options?.charId) return `/character/${options.charId}`;
+        return "/";
+    }
+
+    if (name === "character-image") {
+        if (options?.charId) return `/character/${options.charId}`;
+        const sid = sessionStorage.getItem("viewCharId");
+        if (sid) return `/character/${sid}`;
+        return "/";
+    }
+
+    // ✅ 여기부터 핵심
+    // PAGES에 등록된 일반 페이지는 자동으로 /pageName
+    if (PAGES.includes(name)) {
+        return `/${name}`;
+    }
+
     return "/";
-  }
-
-  if (name === "character-view") {
-    if (options?.charId) return `/character/${options.charId}`;
-    return "/";
-  }
-
-  // ✅ 핵심: 이미지 편집은 URL을 캐릭터 뷰와 동일하게 유지
-  if (name === "character-image") {
-    if (options?.charId) return `/character/${options.charId}`;
-    // charId 없으면 세션 기반으로도 캐릭터 뷰 URL 유지 시도
-    const sid = sessionStorage.getItem("viewCharId");
-    if (sid) return `/character/${sid}`;
-    return "/";
-  }
-
-  return "/";
 }
 
 /* =======================================

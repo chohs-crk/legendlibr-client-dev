@@ -6,10 +6,7 @@ const MODEL_PRICE_MAP = {
     gemini: 50
 };
 
-function updateGenerateButtonPrice() {
-    const price = MODEL_PRICE_MAP[selectedModel] || 0;
-    btnAIGenerate.textContent = `생성 (${price}원)`;
-}
+
 /**
  * AI 이미지 생성 모델 선택값 (프론트 → 백엔드로 그대로 전달)
  * - gemini: 기존 Nano Banana(=Gemini 이미지)
@@ -51,6 +48,10 @@ export async function initCharacterImagePage() {
     let aiImages = [];
     let selectedStyle = null;
     let selectedModel = DEFAULT_AI_MODEL;
+    function updateGenerateButtonPrice() {
+        const price = MODEL_PRICE_MAP[selectedModel] || 0;
+        btnAIGenerate.textContent = `생성 (${price}원)`;
+    }
 
     imgEl.src = "";
     grid.querySelectorAll(".ai-image-item").forEach(el => el.remove());
