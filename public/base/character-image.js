@@ -42,17 +42,47 @@ export async function initCharacterImagePage() {
     grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
 
     // 스타일 버튼
+    function setActiveStyleButton(styleKeyOrNull) {
+        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
+
+        const selector = styleKeyOrNull
+            ? `.style-btn[data-style="${styleKeyOrNull}"]`
+            : `.style-btn[data-style=""]`; // 설정 안함 버튼
+
+        const btn = document.querySelector(selector);
+        if (btn) btn.classList.add("active");
+    }
+
     document.querySelectorAll(".style-btn").forEach((btn) => {
-        btn.classList.remove("active");
         btn.onclick = () => {
             document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
-            selectedStyle = btn.dataset.style;
-            // 스타일 버튼에 model이 붙어있다면 그 값 사용
+
+            // ✅ ""(설정 안함) → null
+            selectedStyle = btn.dataset.style || null;
+
             if (btn.dataset.model) selectedModel = btn.dataset.model;
             updateGenerateButtonPrice();
         };
     });
+
+    // AI 모달 열기
+    aiSlot.onclick = () => {
+        aiPromptInput.value = "";
+
+        selectedStyle = null;
+        setActiveStyleButton(null); // ✅ 기본값: 설정 안함(=AI style)
+
+        selectedModel = DEFAULT_AI_MODEL;
+        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
+        setActiveStyleButton(null);
+
+        setActiveModelButton(selectedModel);
+        updateGenerateButtonPrice();
+
+        btnAIGenerate.disabled = true;
+        aiOverlay.style.display = "flex";
+    };
 
     // 모델 버튼
     function setActiveModelButton(modelValue) {

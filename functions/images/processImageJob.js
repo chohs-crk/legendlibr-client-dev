@@ -20,13 +20,35 @@ const TOGETHER_KEY = defineSecret("TOGETHER_KEY");
 /* =========================
    스타일/구도
 ========================= */
-const STYLE_PROMPTS = {
-    anime2d: "2D anime style, cel shading",
-    real3d: "realistic 3D render, physically based materials",
-    watercolor: "watercolor illustration, soft bleeding edges",
-    darkfantasy: "dark fantasy, moody lighting, high contrast",
-    pixel: "pixel art, retro game style"
+const STYLE_PRESETS = {
+    anime2d: {
+        tags: ["2D anime", "clean lineart", "cel shading", "vibrant colors"],
+        sentence: "2D anime illustration with clean line art and crisp cel shading, vibrant colors."
+    },
+    real3d: {
+        tags: ["realistic 3D render", "physically based materials", "cinematic lighting", "high detail"],
+        sentence: "Realistic 3D render with physically based materials, high detail, and cinematic lighting."
+    },
+    watercolor: {
+        tags: ["watercolor illustration", "soft bleeding edges", "paper texture", "gentle gradients"],
+        sentence: "Watercolor illustration with soft bleeding edges, paper texture, and gentle gradients."
+    },
+    darkfantasy: {
+        tags: ["dark fantasy", "moody lighting", "high contrast", "dramatic shadows"],
+        sentence: "Dark fantasy illustration with moody lighting, high contrast, and dramatic shadows."
+    },
+    pixel: {
+        tags: ["pixel art", "retro game style", "limited palette", "crisp pixels"],
+        sentence: "Pixel art in a retro game style with crisp pixels and a limited color palette."
+    }
 };
+
+const ALLOWED_STYLE_KEYS = new Set(Object.keys(STYLE_PRESETS));
+
+function normalizeStyleKey(v) {
+    const s = typeof v === "string" ? v.trim() : "";
+    return ALLOWED_STYLE_KEYS.has(s) ? s : null;
+}
 
 const CHARACTER_FOCUS_PROMPT = `
 Single character portrait
@@ -102,33 +124,84 @@ async function markError(jobRef, jobData, code, message, extra = {}) {
 ========================= */
 async function buildImagePromptAndScore(input, openaiKey) {
     const systemPrompt = `
-You are a professional image prompt engineer for RPG character illustrations.
+You are a professional image prompt engineer.
+
+[Input]
+You will receive a JSON object with:
+- promptRefined (string)
+- fullStory (string, optional)
+- userPrompt (string)
+- styleKey (string|null)  // user-selected preset key or null
+- modelKey (string)       // for context only
+
+[FitScore Evaluation]
+
+You must evaluate how well the userPrompt visually and thematically fits with:
+
+1) promptRefined (core character concept)
+2) fullStory (character background, tone, world context)
+
+FitScore definition:
+- 90~100: Extremely well aligned. Strong thematic, visual, and narrative consistency.
+- 70~89: Mostly aligned. Minor tone differences but acceptable.
+- 40~69: Partially aligned. Noticeable mismatch in tone, style, or concept.
+- 1~39: Poorly aligned. Contradicts character identity or world setting.
+
+Important:
+- Evaluate thematic consistency.
+- Evaluate visual consistency.
+- Penalize contradiction (e.g., holy knight described in fullStory but userPrompt requests neon cyberpunk clown).
+- Score must be between 1 and 100.
 
 [Safety]
 - Do not generate sexual content involving minors.
 - Avoid explicit sexual content, extreme gore, hate, or illegal content.
-- If user requests disallowed content, raise safetyScore.
+- If user requests disallowed content, set safetyScore high (0~100).
 
-[Role]
-- The character must always be the visual focus.
-- The background must support the character but never overpower it.
+[Goal]
+Create image prompts where the MAIN SUBJECT is always the visual focus.
+The subject can be human, animal, creature, object, abstract concept, or environment.
+Do NOT force a human if the request is not about a person.
 
-[Tasks]
-1. Generate a CHARACTER prompt
-2. Generate a BACKGROUND prompt
-3. Score evaluation
-   - fitScore: 1~100
-   - safetyScore: 0~100
+[Output formats]
+You MUST output BOTH:
+1) tags: for Flux-style prompting (short phrases, NOT full sentences)
+   - Each tag is 1~5 words, English only
+   - No commas inside a tag
+2) sentence: for sentence-style prompting (English sentences)
+
+[Sections]
+You MUST produce these sections:
+- subject (main subject description)
+- background (supporting scene, never overpower the subject)
+- composition (camera, framing, focus, perspective)
+- style (rendering style suggestion; even if styleKey exists, still generate an AI style suggestion)
 
 [Strict Rules]
 - Output MUST be English
-- JSON only
+- JSON only (no markdown, no extra text)
+- Keep tags lists compact (8~25 tags per section)
+
+Return JSON with this exact shape:
+
+[Context Usage Rules]
+- fullStory describes the character's lore, personality, and world setting.
+- promptRefined describes the core visual identity.
+- userPrompt is a requested modification or addition.
+
+You must check if userPrompt logically fits within the established character world.
 
 {
-  "characterPrompt": "...",
-  "backgroundPrompt": "...",
-  "fitScore": 1~100,
-  "safetyScore": 0~100
+  "subjectType": "human|animal|creature|object|abstract|environment",
+  "sections": {
+    "subject": { "tags": ["..."], "sentence": "..." },
+    "background": { "tags": ["..."], "sentence": "..." },
+    "composition": { "tags": ["..."], "sentence": "..." },
+    "style": { "tags": ["..."], "sentence": "..." }
+  },
+  "negative": { "tags": ["..."], "sentence": "..." },
+  "fitScore": 0,
+  "safetyScore": 0
 }
 `;
 
@@ -349,20 +422,77 @@ exports.processImageJob = onDocumentCreated(
                 return;
             }
 
-            // 3) 최종 프롬프트 조립
-            const finalPrompt = `
-[CHARACTER]
-${promptResult.characterPrompt}
+            function asTags(v) {
+                return Array.isArray(v) ? v.map(x => String(x || "").trim()).filter(Boolean) : [];
+            }
+            function asSentence(v) {
+                return typeof v === "string" ? v.trim() : "";
+            }
+            function joinTags(list) {
+                return list.map(s => s.trim()).filter(Boolean).join(", ");
+            }
 
-[BACKGROUND]
-${promptResult.backgroundPrompt}
+            function buildFinalPrompt({ promptResult, modelInfo, jobStyleKey }) {
+                const isFlux = modelInfo.provider === "together"; // Flux 계열(현재 together_*)
 
-[COMPOSITION]
-${CHARACTER_FOCUS_PROMPT}
+                const sections = promptResult?.sections || {};
+                const subject = { tags: asTags(sections.subject?.tags), sentence: asSentence(sections.subject?.sentence) };
+                const background = { tags: asTags(sections.background?.tags), sentence: asSentence(sections.background?.sentence) };
+                const composition = { tags: asTags(sections.composition?.tags), sentence: asSentence(sections.composition?.sentence) };
 
-[STYLE]
-${STYLE_PROMPTS[job.style] || ""}
-`.trim();
+                const aiStyle = { tags: asTags(sections.style?.tags), sentence: asSentence(sections.style?.sentence) };
+
+                const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
+                const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
+
+                const appliedStyle = stylePreset
+                    ? { tags: stylePreset.tags, sentence: stylePreset.sentence }
+                    : aiStyle;
+
+                let finalPrompt, format;
+                if (isFlux) {
+                    // Flux: "word, word" 느낌의 태그 조합
+                    const allTags = [
+                        ...subject.tags,
+                        ...background.tags,
+                        ...composition.tags,
+                        ...appliedStyle.tags
+                    ];
+                    finalPrompt = joinTags(allTags);
+                    format = "tags";
+                } else {
+                    // 나노바나나: 문장(섹션별 문단)
+                    finalPrompt = [
+                        subject.sentence,
+                        background.sentence,
+                        composition.sentence,
+                        appliedStyle.sentence
+                    ].filter(Boolean).join("\n\n");
+                    format = "sentences";
+                }
+
+                const negative = {
+                    tags: asTags(promptResult?.negative?.tags),
+                    sentence: asSentence(promptResult?.negative?.sentence)
+                };
+
+                return {
+                    format,
+                    finalPrompt,
+                    promptBundle: {
+                        language: "en",
+                        subjectType: promptResult?.subjectType || "unknown",
+                        style: {
+                            source: stylePreset ? "preset" : "ai",
+                            presetKey: stylePreset ? normalizedStyleKey : null,
+                            ai: aiStyle,
+                            applied: appliedStyle
+                        },
+                        sections: { subject, background, composition },
+                        negative
+                    }
+                };
+            }
 
             // 4) 모델 선택
             const modelKey = (job.modelKey || "gemini").toString();
@@ -412,17 +542,35 @@ ${STYLE_PROMPTS[job.style] || ""}
                 `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${downloadToken}`;
 
             // 7) characters 문서 업데이트
+            const { format, finalPrompt, promptBundle } = buildFinalPrompt({
+                promptResult,
+                modelInfo,
+                jobStyleKey: job.style
+            });
+
+            // ... 이미지 생성 시 finalPrompt 사용
+
             await charRef.update({
                 image: { type: "ai", key: "ai", url },
                 aiImages: admin.firestore.FieldValue.arrayUnion({
                     url,
-                    fitScore: promptResult.fitScore,
-                    safetyScore: promptResult.safetyScore,
-                    style: job.style || null,
+                    fitScore: Number(promptResult.fitScore || 0),
+                    safetyScore: Number(promptResult.safetyScore || 0),
+
+                    // 유저가 선택한 스타일 키(없으면 null)
+                    style: normalizeStyleKey(job.style),
+
                     modelKey,
                     model: modelInfo.model || "gemini-2.5-flash-image",
                     provider: modelInfo.provider,
-                    createdAt: now
+                    createdAt: now,
+
+                    // ✅ 추가: 프롬프트 저장
+                    prompt: {
+                        format,                 // "tags" | "sentences"
+                        final: finalPrompt,     // 실제 이미지 모델에 넣은 최종 문자열
+                        bundle: promptBundle    // 섹션별(캐릭터/배경/구도/그림체) + style source 등
+                    }
                 })
             });
 
