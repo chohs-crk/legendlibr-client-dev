@@ -2,7 +2,7 @@
 import { apiFetch } from "/base/api.js";
 const MODEL_PRICE_MAP = {
     together_flux1_schnell: 10,
-    together_flux2: 25,
+    together_flux1_dev: 25,
     gemini: 50
 };
 
@@ -67,7 +67,7 @@ export async function initCharacterImagePage() {
             btn.classList.add("active");
             selectedStyle = btn.dataset.style;
             selectedModel = btn.dataset.model;
-            updateGenerateButtonPrice();
+      
         };
     });
 
