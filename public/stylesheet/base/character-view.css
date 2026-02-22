@@ -589,3 +589,67 @@
 .battle-item.lose {
     border: 2px solid #ff5f5f;
 }
+/* ===============================
+   SKELETON (character-view)
+=============================== */
+@keyframes skShimmer {
+    0% {
+        background-position: -450px 0;
+    }
+
+    100% {
+        background-position: 450px 0;
+    }
+}
+
+.sk-line,
+.sk-block {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #1B1928;
+}
+
+    .sk-line::before,
+    .sk-block::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient( 90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100% );
+        background-size: 900px 100%;
+        animation: skShimmer 1.15s ease-in-out infinite;
+    }
+
+.sk-line {
+    height: 12px;
+    margin: 6px 0;
+}
+
+.sk-block {
+    height: 14px;
+    margin: 10px 0;
+}
+
+    .sk-block.short {
+        width: 70%;
+    }
+
+.w-30 {
+    width: 30%;
+}
+
+.w-40 {
+    width: 40%;
+}
+
+.w-60 {
+    width: 60%;
+}
+
+.sk-content {
+    padding: 4px 0;
+}
+
+.tab-btn.is-disabled {
+    filter: grayscale(0.2);
+}

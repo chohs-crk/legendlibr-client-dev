@@ -67,15 +67,64 @@ export function initCharacterViewUI() {
     let fullStoryText = "";
     let skillsCache = [];
 
-    // ✅ 배틀 탭 전용 모듈
-    const battleModule = initBattleModule({
-        charId: id,
-        content,
-        battlePager,
-        btnPrevPage,
-        btnNextPage,
-        pageSize: BATTLE_PAGE_SIZE
-    });
+    // ✅ 레이스 방지 토큰 (SPA에서 캐릭터 연속 클릭 시 필수)
+    let loadSeq = 0;
+
+    function setTabsEnabled(enabled) {
+        [tabStory, tabSkill, tabBattle].filter(Boolean).forEach((btn) => {
+            btn.classList.toggle("is-disabled", !enabled);
+            btn.style.pointerEvents = enabled ? "auto" : "none";
+            btn.style.opacity = enabled ? "1" : "0.65";
+        });
+    }
+
+    function renderSkeleton() {
+        // ✅ 이전 캐릭터 UI가 잠깐이라도 보이지 않게 "즉시" 비워준다
+        if (nameBox) nameBox.textContent = ""; // 타이틀에 (로딩중..) 같은 텍스트 금지
+
+        const imgEl = document.getElementById("charImage");
+        if (imgEl) {
+            // 1x1 투명 gif (이미지 깨짐 방지)
+            imgEl.src =
+                "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+        }
+
+        if (introBox) {
+            introBox.innerHTML = `
+              <div class="info-grid">
+                <div class="info-cell"><div class="sk-line w-60"></div><div class="sk-line w-40"></div></div>
+                <div class="info-cell"><div class="sk-line w-40"></div><div class="sk-line w-30"></div></div>
+                <div class="info-cell"><div class="sk-line w-40"></div><div class="sk-line w-30"></div></div>
+                <div class="info-cell placeholder"></div>
+              </div>
+
+              <div class="intro-title-label"><div class="sk-line w-30"></div></div>
+              <div class="intro-text">
+                <div class="sk-block"></div>
+                <div class="sk-block"></div>
+                <div class="sk-block short"></div>
+              </div>
+            `;
+        }
+
+        if (content) {
+            content.innerHTML = `
+              <div class="sk-content">
+                <div class="sk-block"></div>
+                <div class="sk-block"></div>
+                <div class="sk-block short"></div>
+              </div>
+            `;
+        }
+
+        if (battlePager) battlePager.style.display = "none";
+        setTabsEnabled(false);
+
+        // 탭 active도 초기화 (이전 탭 상태 유지 방지)
+        [tabStory, tabSkill, tabBattle].filter(Boolean).forEach((btn) => btn.classList.remove("active"));
+    }
+
+    let battleModule = null;
     function applyCharacterData(data) {
         const originName = data.origin || "-";
         const regionName = data.region || "-"
@@ -364,44 +413,73 @@ export function initCharacterViewUI() {
 
     async function loadCharacter() {
         if (!id) {
-            content.textContent = "잘못된 접근입니다.";
+            if (content) content.textContent = "잘못된 접근입니다.";
             return;
         }
 
-        // 🔥 1️⃣ home 캐시 우선 확인
+        // ✅ 0) 진입 즉시 스켈레톤 (이전 캐릭터 화면 제거)
+        renderSkeleton();
+
+        // ✅ 1) 이번 로딩의 토큰 발급 (이전 요청 응답이 와도 덮어쓰지 못하게)
+        const seq = ++loadSeq;
+
+        // 🔥 home 캐시 우선 확인
         const cachedHome = sessionStorage.getItem("homeCharacters");
-
         if (cachedHome) {
-            const parsed = JSON.parse(cachedHome);
-            const found = parsed.find(c => c.id === id);
+            try {
+                const parsed = JSON.parse(cachedHome);
+                const found = parsed.find((c) => c.id === id);
+                if (found) {
+                    // ✅ 레이스 체크
+                    if (seq !== loadSeq) return;
 
-            if (found) {
-                applyCharacterData(found); // 🔥 UI 세팅 함수 분리
-                return;
+                    applyCharacterData(found);
+                    setTabsEnabled(true);
+                    return;
+                }
+            } catch {
+                // 캐시 JSON 깨졌으면 그냥 무시하고 서버로
             }
         }
+
         try {
             const res = await apiFetchCharacterById(id);
 
+            // ✅ 레이스 체크
+            if (seq !== loadSeq) return;
+
             if (!res.ok) {
-                content.textContent = "권한이 없거나 캐릭터가 존재하지 않습니다.";
+                if (content) content.textContent = "권한이 없거나 캐릭터가 존재하지 않습니다.";
                 return;
             }
 
             const data = await res.json();
-            const cachedHome = sessionStorage.getItem("homeCharacters");
-            let arr = cachedHome ? JSON.parse(cachedHome) : [];
 
-            arr = arr.filter(c => c.id !== data.id);
+            // ✅ 레이스 체크 (json 파싱 사이에도 바뀔 수 있음)
+            if (seq !== loadSeq) return;
+
+            // homeCharacters 캐시 갱신
+            const cachedHome2 = sessionStorage.getItem("homeCharacters");
+            let arr = cachedHome2 ? JSON.parse(cachedHome2) : [];
+            arr = arr.filter((c) => c.id !== data.id);
             arr.push(data);
-
             sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
-
+            // battleModule은 매 캐릭터 로딩 시 새로 생성
+            battleModule = initBattleModule({
+                charId: id,
+                content,
+                battlePager,
+                btnPrevPage,
+                btnNextPage,
+                pageSize: BATTLE_PAGE_SIZE
+            });
             applyCharacterData(data);
-            
+            setTabsEnabled(true);
+
         } catch (err) {
             console.error(err);
-            content.textContent = "서버 오류로 캐릭터를 불러오지 못했습니다.";
+            if (seq !== loadSeq) return;
+            if (content) content.textContent = "서버 오류로 캐릭터를 불러오지 못했습니다.";
         }
     }
 
