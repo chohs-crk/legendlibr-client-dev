@@ -402,7 +402,7 @@ exports.processImageJob = onDocumentCreated(
             );
 
             // safety 차단
-            if (Number(promptResult.safetyScore || 0) > 75) {
+            if (Number(promptResult.safetyScore || 0) > 90) {
                 await jobRef.update({
                     updatedAt: Date.now(),
                     result: {

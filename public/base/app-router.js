@@ -76,7 +76,7 @@ export async function showPage(name, options = {}) {
     return;
   }
     // 🔥 character-view는 activate 직후 즉시 초기화
-    if (name === "character-view") {
+    if (name === "character-view" && !fromPop) {
         const img = document.getElementById("charImage");
         const nameBox = document.getElementById("charName");
         const intro = document.getElementById("charIntroBox");
