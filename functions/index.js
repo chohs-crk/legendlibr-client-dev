@@ -33,3 +33,9 @@ BATTLE TRIGGER
 exports.onBattleCreated =
     require("./battles/battleTrigger")
         .onBattleCreated;
+/* ============================
+AI IMAGE JOB WORKER (추가)
+============================ */
+exports.processImageJob =
+    require("./images/processImageJob")
+        .processImageJob;

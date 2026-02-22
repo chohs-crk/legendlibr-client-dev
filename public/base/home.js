@@ -3,7 +3,7 @@ import { resolveCharImage } from "/base/common/image-util.js";
 import { openConfirm } from "/base/common/ui-confirm.js";
 import { apiFetch } from "/base/api.js";
 
-const btnCreate = document.getElementById("btnCreate");
+
 
 let characters = [];
 
@@ -14,18 +14,24 @@ let storyCheckTimer = null;
 let storyCheckInterval = 10000; // 기본 10초
 let wasFinalFlow = false;
 
-/* ===================================================
-   생성 버튼
-=================================================== */
-btnCreate?.addEventListener("click", () => {
+function bindHomeEventsOnce() {
+    const btnCreate = document.getElementById("btnCreate");
+    if (!btnCreate) return;
 
-    sessionStorage.removeItem("homeCharacters");
-    sessionStorage.setItem("homeCalled", "false");
+    // 중복 바인딩 방지 (home 재진입 시 init이 여러 번 불릴 수 있음)
+    if (btnCreate.dataset.bound === "1") return;
+    btnCreate.dataset.bound = "1";
 
-    resetCreationFlow();
+    btnCreate.addEventListener("click", () => {
+        sessionStorage.removeItem("homeCharacters");
+        sessionStorage.setItem("homeCalled", "false");
 
-    showPage("create");
-});
+        resetCreationFlow();
+
+        // ✅ 전역 라우터 사용 (스코프 안전)
+        window.showPage?.("create", { type: "push" });
+    });
+}
 
 /* ===================================================
    API
@@ -298,7 +304,7 @@ function startStoryCheckPolling() {
 export async function initHomePage() {
 
     await requireAuthOrRedirect();
-
+    bindHomeEventsOnce();
     startStoryCheckPolling();
 
     const homeCalled = sessionStorage.getItem("homeCalled");

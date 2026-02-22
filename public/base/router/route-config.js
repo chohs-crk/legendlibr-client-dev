@@ -56,11 +56,7 @@ export function buildPath(name, options = {}) {
         return "/";
     }
 
-    // ✅ 여기부터 핵심
-    // PAGES에 등록된 일반 페이지는 자동으로 /pageName
-    if (PAGES.includes(name)) {
-        return `/${name}`;
-    }
+  
 
     return "/";
 }

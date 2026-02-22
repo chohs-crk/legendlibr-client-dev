@@ -1,25 +1,14 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
+
 const MODEL_PRICE_MAP = {
     together_flux1_schnell: 10,
-    together_flux1_dev: 25,
+    together_flux2: 25,
     gemini: 50
 };
-
-
-/**
- * AI 이미지 생성 모델 선택값 (프론트 → 백엔드로 그대로 전달)
- * - gemini: 기존 Nano Banana(=Gemini 이미지)
- * - together_flux2: Together API - FLUX.2(dev) (※ Together Serverless에 "FLUX.2-schnell"은 없어서 dev로 매핑)
- * - together_qwen: Together API - Qwen Image
- * - together_flux1_schnell: Together API - FLUX.1(schnell) (옵션)
- */
 const DEFAULT_AI_MODEL = "together_flux1_schnell";
 
 export async function initCharacterImagePage() {
-    /* =========================
-       캐릭터 ID (항상 최신)
-    ========================= */
     const charId = sessionStorage.getItem("viewCharId");
     if (!charId) {
         alert("잘못된 접근입니다.");
@@ -27,9 +16,6 @@ export async function initCharacterImagePage() {
         return;
     }
 
-    /* =========================
-       DOM
-    ========================= */
     const imgEl = document.getElementById("currentImage");
     const grid = document.getElementById("imageGrid");
     const aiSlot = document.getElementById("aiSlot");
@@ -41,64 +27,54 @@ export async function initCharacterImagePage() {
     const btnAIGenerate = document.getElementById("btnAIGenerate");
     const loadingOverlay = document.getElementById("loadingOverlay");
 
-    /* =========================
-       상태 초기화 (🔥 중요)
-    ========================= */
     let selectedImage = null;
     let aiImages = [];
     let selectedStyle = null;
     let selectedModel = DEFAULT_AI_MODEL;
+
     function updateGenerateButtonPrice() {
         const price = MODEL_PRICE_MAP[selectedModel] || 0;
         btnAIGenerate.textContent = `생성 (${price}원)`;
     }
 
     imgEl.src = "";
-    grid.querySelectorAll(".ai-image-item").forEach(el => el.remove());
-    grid.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
+    grid.querySelectorAll(".ai-image-item").forEach((el) => el.remove());
+    grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
 
-    /* =========================
-       스타일 버튼
-    ========================= */
-    document.querySelectorAll(".style-btn").forEach(btn => {
+    // 스타일 버튼
+    document.querySelectorAll(".style-btn").forEach((btn) => {
         btn.classList.remove("active");
         btn.onclick = () => {
-            document.querySelectorAll(".style-btn")
-                .forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
             selectedStyle = btn.dataset.style;
-            selectedModel = btn.dataset.model;
-      
+            // 스타일 버튼에 model이 붙어있다면 그 값 사용
+            if (btn.dataset.model) selectedModel = btn.dataset.model;
+            updateGenerateButtonPrice();
         };
     });
 
-    /* =========================
-       모델 버튼 (Together / Gemini)
-       - HTML에 .model-btn 이 없으면(아직 UI 미적용) DEFAULT_AI_MODEL로 동작
-    ========================= */
+    // 모델 버튼
     function setActiveModelButton(modelValue) {
-        document.querySelectorAll(".model-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".model-btn").forEach((b) => b.classList.remove("active"));
         const btn = document.querySelector(`.model-btn[data-model="${modelValue}"]`);
         if (btn) btn.classList.add("active");
     }
 
-    document.querySelectorAll(".model-btn").forEach(btn => {
+    document.querySelectorAll(".model-btn").forEach((btn) => {
         btn.classList.remove("active");
         btn.onclick = () => {
-            document.querySelectorAll(".model-btn")
-                .forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".model-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
             selectedModel = btn.dataset.model || DEFAULT_AI_MODEL;
             updateGenerateButtonPrice();
         };
     });
 
-    // 초기 기본 모델 버튼 활성화(버튼이 있는 경우에만)
     setActiveModelButton(selectedModel);
+    updateGenerateButtonPrice();
 
-    /* =========================
-       캐릭터 정보 로드
-    ========================= */
+    // 캐릭터 로드
     const res = await apiFetch(`/base/characters?id=${encodeURIComponent(charId)}`);
     if (!res.ok) {
         alert("캐릭터 정보를 불러올 수 없습니다.");
@@ -108,45 +84,20 @@ export async function initCharacterImagePage() {
 
     const character = await res.json();
 
-    // 🔥 본인 확인
     if (!character.isMine) {
         alert("권한이 없습니다.");
-        showPage("character-view", {
-            type: "replace",
-            charId
-        });
+        showPage("character-view", { type: "replace", charId });
         return;
     }
+
     selectedImage = character.image;
     aiImages = character.aiImages || [];
     imgEl.src = resolveCharImage(selectedImage);
 
-    renderAIImages();
-
-    /* =========================
-       기본 / 프리셋 선택
-    ========================= */
-    grid.querySelectorAll("img[data-type]").forEach(img => {
-        img.onclick = () => {
-            clearSelected();
-            img.classList.add("selected");
-
-            selectedImage = {
-                type: img.dataset.type,
-                key: img.dataset.key,
-                url: ""
-            };
-            imgEl.src = resolveCharImage(selectedImage);
-        };
-    });
-
-    /* =========================
-       AI 이미지 렌더
-    ========================= */
     function renderAIImages() {
-        grid.querySelectorAll(".ai-image-item").forEach(el => el.remove());
+        grid.querySelectorAll(".ai-image-item").forEach((el) => el.remove());
 
-        aiImages.forEach(ai => {
+        aiImages.forEach((ai) => {
             const img = document.createElement("img");
             img.src = ai.url;
             img.className = "ai-image-item";
@@ -163,24 +114,31 @@ export async function initCharacterImagePage() {
     }
 
     function clearSelected() {
-        grid.querySelectorAll(".selected")
-            .forEach(el => el.classList.remove("selected"));
+        grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
     }
 
-    /* =========================
-       AI 모달
-    ========================= */
+    renderAIImages();
+
+    // 기본/프리셋 클릭
+    grid.querySelectorAll("img[data-type]").forEach((img) => {
+        img.onclick = () => {
+            clearSelected();
+            img.classList.add("selected");
+
+            selectedImage = { type: img.dataset.type, key: img.dataset.key, url: "" };
+            imgEl.src = resolveCharImage(selectedImage);
+        };
+    });
+
+    // AI 모달 열기
     aiSlot.onclick = () => {
         aiPromptInput.value = "";
         selectedStyle = null;
 
-        // 모달 열 때마다 기본 모델로 리셋하고 싶으면 아래 1줄 유지
-        // (사용자가 마지막 선택값을 유지하고 싶으면 이 줄을 제거)
         selectedModel = DEFAULT_AI_MODEL;
-
-        // 버튼 UI가 있다면 상태도 같이 리셋
-        document.querySelectorAll(".style-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
         setActiveModelButton(selectedModel);
+        updateGenerateButtonPrice();
 
         btnAIGenerate.disabled = true;
         aiOverlay.style.display = "flex";
@@ -195,13 +153,41 @@ export async function initCharacterImagePage() {
         btnAIGenerate.disabled = !(len >= 30 && len <= 200);
     };
 
-    /* =========================
-       AI 이미지 생성
-    ========================= */
+    // 폴링 유틸
+    async function pollJob(jobId, { intervalMs = 2500, timeoutMs = 5 * 60 * 1000 } = {}) {
+        const started = Date.now();
+
+        while (true) {
+            if (Date.now() - started > timeoutMs) {
+                return { ok: false, error: { code: "TIMEOUT", message: "생성 시간이 너무 길어요." } };
+            }
+
+            const res = await apiFetch(`/base/image-job-status?id=${encodeURIComponent(jobId)}`);
+            const data = await res.json();
+
+            if (!data.ok) {
+                return data;
+            }
+
+            if (data.status === "done") {
+                return data;
+            }
+
+            if (data.status === "error") {
+                return data;
+            }
+
+            // queued/processing이면 대기
+            await new Promise((r) => setTimeout(r, intervalMs));
+        }
+    }
+
+    // AI 생성(비동기 Job)
     btnAIGenerate.onclick = async () => {
         loadingOverlay.style.display = "flex";
 
         try {
+            // 1) job 생성
             const res = await apiFetch("/base/characters-ai-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -213,21 +199,47 @@ export async function initCharacterImagePage() {
                 })
             });
 
-            const data = await res.json();
-            if (!data.ok) {
-                alert(data.error || "AI 이미지 생성 실패");
+            const created = await res.json();
+            if (!created.ok) {
+                alert(created.error || "AI 이미지 생성 요청 실패");
                 return;
             }
-            if (data.userMeta) {
-                sessionStorage.setItem("userMeta", JSON.stringify(data.userMeta));
 
-                // 🔥 상단 UI 즉시 반영
-                window.__updateChromeResource?.(data.userMeta);
+            // 선불 차감 결과(userMeta) 즉시 반영
+            if (created.userMeta) {
+                sessionStorage.setItem("userMeta", JSON.stringify(created.userMeta));
+                window.__updateChromeResource?.(created.userMeta);
             }
 
-            aiImages.push({ url: data.imageUrl });
-            selectedImage = { type: "ai", key: "ai", url: data.imageUrl };
-            imgEl.src = data.imageUrl;
+            const jobId = created.jobId;
+
+            // 2) 폴링
+            const done = await pollJob(jobId);
+
+            if (!done.ok) {
+                alert(done.error || "생성 실패");
+                return;
+            }
+
+            if (done.status === "error") {
+                // (환불이 polling에서 처리된 경우 userMeta가 올 수 있음)
+                if (done.userMeta) {
+                    sessionStorage.setItem("userMeta", JSON.stringify(done.userMeta));
+                    window.__updateChromeResource?.(done.userMeta);
+                }
+
+                const msg = done?.error?.message || done?.error?.code || "AI 이미지 생성 실패";
+                alert(msg);
+                return;
+            }
+
+            // done
+            const imageUrl = done.imageUrl;
+
+            aiImages.push({ url: imageUrl });
+            selectedImage = { type: "ai", key: "ai", url: imageUrl };
+            imgEl.src = imageUrl;
+
             renderAIImages();
             aiOverlay.style.display = "none";
 
@@ -236,9 +248,7 @@ export async function initCharacterImagePage() {
         }
     };
 
-    /* =========================
-       적용 버튼
-    ========================= */
+    // 적용 버튼
     btnApply.onclick = async () => {
         if (!selectedImage) {
             alert("이미지를 선택하세요.");
@@ -254,28 +264,11 @@ export async function initCharacterImagePage() {
             })
         });
 
-        /* =========================
-           🔥 home 캐시 있으면 image만 갱신
-        ========================= */
         const cached = sessionStorage.getItem("homeCharacters");
-
         if (cached) {
             const arr = JSON.parse(cached);
-
-            const updated = arr.map(c => {
-                if (c.id === charId) {
-                    return {
-                        ...c,
-                        image: selectedImage
-                    };
-                }
-                return c;
-            });
-
-            sessionStorage.setItem(
-                "homeCharacters",
-                JSON.stringify(updated)
-            );
+            const updated = arr.map((c) => (c.id === charId ? { ...c, image: selectedImage } : c));
+            sessionStorage.setItem("homeCharacters", JSON.stringify(updated));
         }
 
         sessionStorage.setItem("viewCharId", charId);
@@ -284,8 +277,5 @@ export async function initCharacterImagePage() {
             type: "push",
             charId: charId
         });
-
-
     };
-
 }
