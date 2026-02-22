@@ -75,7 +75,11 @@ export async function showPage(name, options = {}) {
     console.warn("[router] unknown page:", name);
     return;
   }
-
+    // 🔥 home 전용 scroll extension 제어
+    const app = document.querySelector(".app");
+    if (app) {
+        app.classList.toggle("home-active", name === "home");
+    }
   // ====== 앱 스택 업데이트 ======
   let stack = loadStack();
   const entry = makeEntry(name, { charId, battleId });

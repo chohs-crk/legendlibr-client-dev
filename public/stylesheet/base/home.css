@@ -190,3 +190,7 @@
     pointer-events: auto; /* 버튼만 클릭 */
 }
 
+/* home 전용 */
+.app.home-active .scroll-area::after {
+    height: calc( (100% - var(--top-bar-height) - var(--footer-total)) * 0.1 );
+}

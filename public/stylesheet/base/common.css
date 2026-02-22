@@ -13,6 +13,18 @@
     --shadow: 0 3px 12px rgba(0,0,0,0.35);
 }
 
+html {
+    height: 100%;
+}
+
+body {
+    font-family: "Pretendard", sans-serif;
+    color: var(--text-main);
+    overflow-x: hidden; /* 가로만 차단 */
+    overflow-y: hidden; /* 바깥 스크롤 차단(스크롤은 .scroll-area만) */
+    overscroll-behavior: none;
+    background: radial-gradient( circle at center, #151126 0%, #09070d 70%, #050408 100% );
+}
 
 /* ===============================
    RESET
@@ -27,12 +39,7 @@ html, body {
     margin: 0;
 }
 
-body {
-    font-family: "Pretendard", sans-serif;
-    color: var(--text-main);
-    overflow-x: hidden;
-    background: radial-gradient( circle at center, #151126 0%, #09070d 70%, #050408 100% );
-}
+
 
 
 /* ===============================
@@ -69,12 +76,11 @@ body {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 420px; /* ← 데스크탑 여부와 상관없이 강제 적용 */
+    max-width: 420px;
     margin: 0 auto;
     height: 100dvh;
-    /* 🔥 핵심 변경점: X축 확장 금지 */
-    overflow-x: hidden;
-    /* overflow-y: hidden; 기존 overflow: hidden 유지 */
+    overflow-x: hidden; /* 가로만 차단 */
+    overflow-y: hidden; /* 부모는 스크롤 생성 안 함 */
 
     display: flex;
     flex-direction: column;
@@ -89,12 +95,31 @@ body {
 
 
 
+
+/* ===============================
+   ROUTER ROOT (#pages-root)
+   페이지가 들어가는 컨테이너가 높이를 가져야
+   내부 .scroll-area가 정상적으로 스크롤 됩니다.
+=============================== */
+#pages-root {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 바깥 스크롤 금지 */
+}
+
+    /* 각 page(section)가 남은 높이를 채우도록 */
+    #pages-root > .page {
+        flex: 1;
+        min-height: 0;
+    }
+
 /* ===============================
    MAIN CONTENT STRUCTURE
 =============================== */
 .content {
     flex: 1;
-
     display: flex;
     flex-direction: column;
     background: transparent;
@@ -103,44 +128,47 @@ body {
 /* page-body가 필요한 화면용 */
 .page-body {
     flex: 1;
-  
     display: flex;
     flex-direction: column;
 }
 
 
 /* ===============================
-   SCROLL AREA (NO CHROME PADDING)
-=============================== */
-
-/* 스크롤 컨테이너가 체인으로 바깥으로 튀지 않게 */
-.scroll-area {
-
-    -webkit-overflow-scrolling: touch;
-}
-.scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* ===============================
-   SCROLL AREA - SCROLLBAR HIDDEN
+   SCROLL AREA
+   - 바깥(body/app) 스크롤은 잠그고
+   - 오직 .scroll-area만 스크롤되게
+   - 스크롤바: 얇은 보라색
 =============================== */
 .scroll-area {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    /* 스크롤 체인이 바깥(바디)로 튀지 않게 */
+    overscroll-behavior: contain;
     /* Firefox */
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
 }
 
     /* Chrome / Edge / Safari */
     .scroll-area::-webkit-scrollbar {
-        display: none;
+        width: 6px;
     }
 
+    .scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
+    .scroll-area::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 999px;
+    }
+
+        .scroll-area::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-hover);
+        }
 
 /* ===============================
    UTIL / BLOCK
@@ -171,21 +199,21 @@ body {
     content: "";
     display: block;
     flex-shrink: 0;
-    height: 20px !important;
+    height: 20px;
 }
 
 .scroll-area::after {
     content: "";
     display: block;
     flex-shrink: 0;
-    height: 30px !important;
+    height: 30px;
 }
+
 .page,
 .content,
 .page-body {
     min-height: 0;
-    /* overflow: hidden; ← 삭제 */
-    overflow: visible;
+    overflow: hidden; /* 🔥 visible 금지 */
 }
 /* 기존 코드 (character-view.css에 이미 있음) */
 .story-em {

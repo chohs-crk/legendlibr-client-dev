@@ -1,9 +1,9 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
 const MODEL_PRICE_MAP = {
-    together_qwen: 5,
-    together_flux2: 20,
-    gemini: 40
+    together_flux1_schnell: 10,
+    together_flux2: 25,
+    gemini: 50
 };
 
 function updateGenerateButtonPrice() {
@@ -17,7 +17,7 @@ function updateGenerateButtonPrice() {
  * - together_qwen: Together API - Qwen Image
  * - together_flux1_schnell: Together API - FLUX.1(schnell) (옵션)
  */
-const DEFAULT_AI_MODEL = "together_flux2";
+const DEFAULT_AI_MODEL = "together_flux1_schnell";
 
 export async function initCharacterImagePage() {
     /* =========================

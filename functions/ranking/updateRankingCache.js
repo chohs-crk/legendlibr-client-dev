@@ -2,10 +2,12 @@
 const { admin, db } = require("../admin/admin");
 
 exports.updateRankingCache = onSchedule(
-    "every 5 minutes",
+    {
+        schedule: "*/5 * * * *",
+        timeZone: "Asia/Seoul"
+    },
     async () => {
 
-        // 🔥 lastBattleAt 관련 모든 필터 제거
         const snapshot = await db
             .collection("characters")
             .orderBy("rankScore", "desc")
@@ -22,8 +24,12 @@ exports.updateRankingCache = onSchedule(
                 rank,
                 charId: doc.id,
                 name: c.displayRawName,
+
                 rankScore: c.rankScore,
-                image: c.image || null,     // ← base/preset용 전체 저장 권장
+                elo: c.rankScore,              // 🔥 추가
+                battleCount: c.battleCount || 0,
+
+                image: c.image || null,
                 imageUrl: c.image?.url || null,
             });
 
@@ -39,4 +45,3 @@ exports.updateRankingCache = onSchedule(
             });
     }
 );
-

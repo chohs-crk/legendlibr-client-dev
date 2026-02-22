@@ -93,11 +93,17 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                     tx.update(winnerRef, {
                         rankScore: winnerAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
+
+                        // 🔥 battleCount 증가
+                        battleCount: admin.firestore.FieldValue.increment(1),
                     });
 
                     tx.update(loserRef, {
                         rankScore: loserAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
+
+                        // 🔥 battleCount 증가
+                        battleCount: admin.firestore.FieldValue.increment(1),
                     });
 
                     tx.update(battleRef, {

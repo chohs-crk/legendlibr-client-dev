@@ -246,10 +246,10 @@
    (CHROME 제외 내부 기준 +20%)
 =============================== */
 .app .scroll-area::before {
-    height: calc( (100% - var(--top-bar-height) - var(--footer-total)) * 0.2 );
+    height: 10px;
 }
 
 .app .scroll-area::after {
-    height: calc( (100% - var(--top-bar-height) - var(--footer-total)) * 0.35 );
+    height: 20px;
 }
 
