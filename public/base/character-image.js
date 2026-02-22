@@ -180,7 +180,7 @@ export async function initCharacterImagePage() {
 
     aiPromptInput.oninput = () => {
         const len = aiPromptInput.value.trim().length;
-        btnAIGenerate.disabled = !(len >= 30 && len <= 200);
+        btnAIGenerate.disabled = !(len >= 20 && len <= 1000);
     };
 
     // 폴링 유틸

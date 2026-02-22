@@ -501,7 +501,11 @@ exports.processImageJob = onDocumentCreated(
                 await markError(jobRef, job, "INVALID_MODEL", "Unknown modelKey");
                 return;
             }
-
+            const { format, finalPrompt, promptBundle } = buildFinalPrompt({
+                promptResult,
+                modelInfo,
+                jobStyleKey: job.style
+            });
             // 5) 이미지 생성
             let buffer;
 
@@ -542,13 +546,9 @@ exports.processImageJob = onDocumentCreated(
                 `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${downloadToken}`;
 
             // 7) characters 문서 업데이트
-            const { format, finalPrompt, promptBundle } = buildFinalPrompt({
-                promptResult,
-                modelInfo,
-                jobStyleKey: job.style
-            });
+         
 
-            // ... 이미지 생성 시 finalPrompt 사용
+           
 
             await charRef.update({
                 image: { type: "ai", key: "ai", url },

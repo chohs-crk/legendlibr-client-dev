@@ -93,7 +93,12 @@ async function loadMyCharactersFromServer() {
    리스트 렌더
 =================================================== */
 function renderList() {
-
+    characters.sort((a, b) => {
+        const ta = new Date(a.createdAt || 0).getTime();
+        const tb = new Date(b.createdAt || 0).getTime();
+        return tb - ta;
+    });
+    
     const listEl = document.getElementById("charList");
     if (!listEl) return;
 

@@ -396,6 +396,7 @@ export function initCharacterViewUI() {
 
     async function loadCharacter() {
         renderSkeletonUI(); // 🔥 제일 먼저 호출
+        await new Promise(requestAnimationFrame);
         if (!id) {
             content.textContent = "잘못된 접근입니다.";
             return;
@@ -411,8 +412,9 @@ export function initCharacterViewUI() {
             cachedData = parsed.find(c => c.id === id);
         }
 
-        // 🔥 캐시 있으면 스켈레톤 대신 빠르게 표시
-        if (cachedData) {
+        const currentRenderedId = window.__currentCharId;
+
+        if (cachedData && currentRenderedId === id) {
             applyCharacterData(cachedData);
             return;
         }
@@ -432,12 +434,18 @@ export function initCharacterViewUI() {
             const cachedHome = sessionStorage.getItem("homeCharacters");
             let arr = cachedHome ? JSON.parse(cachedHome) : [];
 
-            arr = arr.filter(c => c.id !== data.id);
-            arr.push(data);
+            const index = arr.findIndex(c => c.id === data.id);
+
+            if (index !== -1) {
+                arr[index] = data;   // 🔥 제자리 교체
+            } else {
+                arr.push(data);      // 신규인 경우만 push
+            }
 
             sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
 
             applyCharacterData(data);
+            window.__currentCharId = data.id;
             
         } catch (err) {
             console.error(err);

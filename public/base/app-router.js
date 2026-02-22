@@ -75,6 +75,18 @@ export async function showPage(name, options = {}) {
     console.warn("[router] unknown page:", name);
     return;
   }
+    // 🔥 character-view는 activate 직후 즉시 초기화
+    if (name === "character-view") {
+        const img = document.getElementById("charImage");
+        const nameBox = document.getElementById("charName");
+        const intro = document.getElementById("charIntroBox");
+        const content = document.getElementById("content");
+
+        if (img) img.src = "/images/base/base_01.png";
+        if (nameBox) nameBox.textContent = "";
+        if (intro) intro.innerHTML = "";
+        if (content) content.innerHTML = "";
+    }
     // 🔥 home 전용 scroll extension 제어
     const app = document.querySelector(".app");
     if (app) {
