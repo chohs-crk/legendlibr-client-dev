@@ -21,8 +21,8 @@ body {
     font-family: "Pretendard", sans-serif;
     color: var(--text-main);
     overflow-x: hidden; /* 가로만 차단 */
-    overflow-y: hidden; /* 바깥 스크롤 차단(스크롤은 .scroll-area만) */
-    overscroll-behavior: none;
+    overflow-y: auto;
+    overscroll-behavior: auto;
     background: radial-gradient( circle at center, #151126 0%, #09070d 70%, #050408 100% );
 }
 

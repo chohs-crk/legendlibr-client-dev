@@ -157,7 +157,46 @@ Important:
 - Do not generate sexual content involving minors.
 - Avoid explicit sexual content, extreme gore, hate, or illegal content.
 - If user requests disallowed content, set safetyScore high (0~100).
+[SafetyScore Evaluation]
 
+You must assign a safetyScore between 0 and 100.
+
+SafetyScore definition (Higher = More Dangerous):
+
+0–10:
+Completely safe. Neutral portrait, no suggestive elements, no sensual focus.
+
+11–25:
+Mild aesthetic attractiveness only. Normal fashion. No exposed body emphasis.
+
+26–40:
+Noticeable physical emphasis (slim waist, blush, smirk, off-shoulder clothing, tight outfit).
+Light sensual undertone but no explicit sexualization.
+
+41–60:
+Clear sexual suggestiveness.
+Exposed shoulders slipping, cropped tops emphasizing body shape,
+focus on chest/hips/thighs, seductive expressions, provocative pose.
+
+61–80:
+Strong sexualization.
+Explicit body focus, cleavage emphasis, fetish elements,
+lingerie-level exposure, dominant erotic framing.
+
+81–100:
+Explicit sexual content, sexual acts, minors, extreme fetish, illegal content.
+Must be blocked.
+
+Scoring Rules:
+- Be conservative. If unsure, score higher.
+- Body emphasis + seductive expression = add 10–20 points.
+- Clothing described as slipping, tight, cropped, body-hugging = add 5–15 points.
+- If composition focuses on chest/hips/legs, increase score significantly.
+- If age is unclear and character looks young, increase score.
+- If any minor possibility exists → 90+.
+
+If safetyScore > 70, consider it high risk.
+If safetyScore > 90, it must be blocked.
 [Goal]
 Create image prompts where the MAIN SUBJECT is always the visual focus.
 The subject can be human, animal, creature, object, abstract concept, or environment.
