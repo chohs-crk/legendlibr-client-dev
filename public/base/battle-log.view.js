@@ -11,7 +11,21 @@ function isEloAnimated(battleId) {
     return sessionStorage.getItem(`eloAnimated_${battleId}`) === "1";
 }
 
+function createInlineDotLoader() {
+    const span = document.createElement("span");
+    span.className = "inline-dot-loader";
+    span.textContent = " .";
 
+    let dotCount = 1;
+
+    const interval = setInterval(() => {
+        dotCount = dotCount >= 3 ? 1 : dotCount + 1;
+        span.textContent = " " + ".".repeat(dotCount);
+    }, 500);
+
+    span.__dotInterval = interval;
+    return span;
+}
 //✅
 /* =========================================================
    캐시
@@ -211,7 +225,12 @@ function renderStale(battle) {
 }
 
 function renderBattle(battle) {
-
+    // 기존 dot loader 정리
+    document.querySelectorAll(".inline-dot-loader").forEach(el => {
+        if (el.__dotInterval) {
+            clearInterval(el.__dotInterval);
+        }
+    });
     const isMyWin = battle.winnerId === battle.myId;
     const isEnemyWin = battle.winnerId === battle.enemyId;
 
@@ -254,7 +273,17 @@ function renderBattle(battle) {
     }
 
     const logs = Array.isArray(battle.logs) ? battle.logs : [];
-    const rawText = logs.map(l => l?.text || "").join("\n");
+
+    const isRunning =
+        battle.status !== "done" &&
+        battle.status !== "error";
+
+    let rawText = logs.map(l => l?.text || "").join("\n");
+
+    // 🔥 logs 없음 + 진행중
+    if (!logs.length && isRunning) {
+        rawText = "전투 진행 중";
+    }
 
     // 🔥 fullText 변형 전에 포맷 적용
     const formattedRaw = formatStoryWithDialogue(rawText);
@@ -297,6 +326,24 @@ function renderBattle(battle) {
       ${fullText || "<div class='battle-empty'>로그 없음</div>"}
     </div>
   `;
+    const logBody = container.querySelector(".battle-log-body");
+
+    if (!logBody) return;
+
+   
+
+    if (isRunning) {
+
+        if (!battle.logs?.length) {
+            // 전투 진행 중 ...
+            const loader = createInlineDotLoader();
+            logBody.appendChild(loader);
+        } else {
+            // 마지막 로그 뒤에 ...
+            const loader = createInlineDotLoader();
+            logBody.appendChild(loader);
+        }
+    }
     // 🔥 ELO 카운트업 적용
     if (!isEloAnimated(battle.id)) {
 

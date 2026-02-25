@@ -1,0 +1,137 @@
+/* create-prompt.css
+   - 캐릭터 이름/프롬프트 입력 페이지 전용 스타일
+   - 최대한 스코프를 좁혀 다른 페이지에 영향 없도록 구성
+*/
+
+#page-create-prompt .create-prompt-root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  /* 기존 레이아웃이 padding을 이미 가지고 있을 수 있어서 과도하지 않게 */
+  padding: 18px 16px 24px;
+  max-width: 560px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+#page-create-prompt .cp-header .page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+/* =========================
+   META (기원/지역)
+========================= */
+#page-create-prompt .cp-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#page-create-prompt .cp-meta-item {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 12px 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+#page-create-prompt .cp-meta-label {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
+
+#page-create-prompt .cp-meta-value {
+  font-size: 15px;
+  font-weight: 650;
+  word-break: break-word;
+}
+
+/* =========================
+   FIELD
+========================= */
+#page-create-prompt .cp-field {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+}
+
+#page-create-prompt .cp-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#page-create-prompt .cp-field-label {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+#page-create-prompt .cp-counter {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+#page-create-prompt .cp-help {
+  margin: 8px 0 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+#page-create-prompt .cp-input,
+#page-create-prompt .cp-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  padding: 10px 12px;
+  outline: none;
+}
+
+#page-create-prompt .cp-input:focus,
+#page-create-prompt .cp-textarea:focus {
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+#page-create-prompt .cp-textarea {
+  line-height: 1.5;
+
+  /* 기본 4줄 */
+  min-height: calc(1.5em * 4 + 22px);
+
+  /* 자동 확장 시 스크롤바 안 뜨게 */
+  overflow: hidden;
+  resize: none;
+}
+
+#page-create-prompt .cp-field.is-invalid {
+  border-color: rgba(255, 0, 0, 0.35);
+}
+
+#page-create-prompt .cp-field.is-invalid .cp-counter,
+#page-create-prompt .cp-field.is-invalid .cp-help {
+  opacity: 1;
+}
+
+/* =========================
+   START BUTTON
+========================= */
+#page-create-prompt .cp-start {
+  align-self: flex-end;
+  min-width: 90px;
+  padding: 10px 18px;
+  border-radius: 12px;
+}
+
+#page-create-prompt .cp-start[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.2);
+}

@@ -3,6 +3,7 @@ import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetchBattlesList } from "./character-view.api.js";
 import { parseStoryText } from "/base/common/story-parser.js";
 
+
 /**
  * 전투 기록 탭 모듈
  * - 목록 렌더 + 페이징 + 상세 진입(showPage) + battleCacheMap(sessionStorage) 저장
@@ -20,6 +21,21 @@ export function initBattleModule({
     let maxBattlePage = 1;
     let currentBattlePage = 1;
     let battleCache = []; // 현재 페이지 전투 목록 캐시
+    function createDotLoader(baseText = "전투 진행 중") {
+        const span = document.createElement("span");
+        span.className = "dot-loader";
+        span.textContent = baseText + " .";
+
+        let dotCount = 1;
+
+        const interval = setInterval(() => {
+            dotCount = dotCount >= 3 ? 1 : dotCount + 1;
+            span.textContent = baseText + " " + ".".repeat(dotCount);
+        }, 500);
+
+        span.__dotInterval = interval;
+        return span;
+    }
 
     function cacheBattle(battle) {
         if (!battle?.id) return;
@@ -197,6 +213,10 @@ export function initBattleModule({
     }
 
     function formatBattlePreviewLine(battle) {
+        // 🔥 전투 진행 중
+        if (!battle?.finished) {
+            return "__LOADING__";
+        }
         const logs = battle?.logs || [];
         if (!logs.length) return "로그 없음";
 
@@ -242,7 +262,7 @@ export function initBattleModule({
                 ${battles
                 .map((b) => {
                     const res = formatBattleResult(b);
-                    const preview = formatBattlePreviewLine(b);
+                    const previewRaw = formatBattlePreviewLine(b);
                     const myId = getMyCharId();
 
                     // 내가 공격자인지 수비자인지 판별
@@ -303,9 +323,9 @@ export function initBattleModule({
       ${formatBattleDate(b)}
     </div>
 
-    <div class="battle-sub">
-      ${preview}
-    </div>
+    <div class="battle-sub" data-loading="${previewRaw === "__LOADING__"}">
+  ${previewRaw === "__LOADING__" ? "" : previewRaw}
+</div>
   </div>
 </div>
 `;
@@ -319,6 +339,12 @@ export function initBattleModule({
             item.addEventListener("click", () => {
                 openBattleDetail(idx);
             });
+        });
+        document.querySelectorAll(".battle-sub").forEach(el => {
+            if (el.dataset.loading === "true") {
+                const loader = createDotLoader("전투 진행 중");
+                el.appendChild(loader);
+            }
         });
     }
 

@@ -237,7 +237,7 @@
 .story-box {
     width: 100%;
     padding: 0; /* padding은 dlg-body가 담당 */
-    font-size: 15px;
+    font-size: 20px; /* 15px 기준 약 +30% */
     line-height: 1.9;
     color: #ffffff;
 }

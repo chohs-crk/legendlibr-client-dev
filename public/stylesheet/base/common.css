@@ -21,8 +21,8 @@ body {
     font-family: "Pretendard", sans-serif;
     color: var(--text-main);
     overflow-x: hidden; /* 가로만 차단 */
-    overflow-y: auto;
-    overscroll-behavior: auto;
+    overflow-y: hidden; /* 바깥 스크롤 차단(스크롤은 .scroll-area만) */
+    overscroll-behavior: none;
     background: radial-gradient( circle at center, #151126 0%, #09070d 70%, #050408 100% );
 }
 
@@ -60,7 +60,7 @@ html, body {
     width: 100%;
     max-width: 420px;
     z-index: 0;
-    background-image: url("/images/base/purple-frameb.png");
+    background-image: url("/images/base/purple-frame.png");
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -237,4 +237,7 @@ html, body {
     background: rgba(20, 18, 33, 0.55);
     box-shadow: 0 2px 8px rgba(120, 60, 255, 0.18);
     white-space: nowrap; /* 스킬명 뭉개짐 방지(선택) */
+}
+.scroll-area {
+    overscroll-behavior: auto;
 }

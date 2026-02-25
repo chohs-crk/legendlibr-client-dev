@@ -152,7 +152,7 @@
 .battle-log-body {
     width: 80%;
     margin: 0 auto;
-    font-size: 1.3em; /* 약 30% 증가 */
+    font-size: 20px; /* 15px 기준 약 +30% */
     line-height: 1.8;
 }
 .battle-log-body {
