@@ -32,7 +32,9 @@ async function generateBattleNarrationStream({
     myTop2Idx,
     enemyTop2Idx,
     turnLogs,
-    winnerId
+    winnerId,
+    myId,
+    enemyId
 }) {
     const apiKey = GEMINI_API_KEY.value();
     if (!apiKey) throw new Error("Gemini API KEY is missing!");
@@ -43,12 +45,12 @@ async function generateBattleNarrationStream({
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-lite",
-        systemInstruction: SYSTEM_PROMPT   // 🔥 여기로 이동
+        systemInstruction: SYSTEM_PROMPT // 🔥 여기로 이동
     });
 
-
-    const winnerName =
-        winnerId === my.uid ? my.displayRawName : enemy.displayRawName;
+    // ✅ winnerId는 myId/enemyId(문서ID) 기준인데, 기존엔 my.uid를 써서 뒤집힐 수 있었음
+    const winnerName = winnerId === myId ? my.displayRawName : enemy.displayRawName;
+    const loserName = winnerId === myId ? enemy.displayRawName : my.displayRawName;
 
     const userPrompt = buildUserPrompt({
         my,
@@ -61,72 +63,54 @@ async function generateBattleNarrationStream({
         enemyTop2Idx,
         openingType: pickOpening(),
         midResultType: evaluateBattleFlow(turnLogs),
-        winnerName
+        winnerName,
+        loserName
     });
 
     const stream = await model.generateContentStream({
-        contents: [
-            { role: "user", parts: [{ text: userPrompt }] }
-        ],
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
         generationConfig: {
-            temperature: 0.8,
+            temperature: 0.65, // 🔥 0.8 -> 0.65 (규칙 위반/승패 혼선 감소)
             topP: 0.85,
             maxOutputTokens: 1200
         }
     });
-
 
     let buffer = "";
     let fullText = "";
     let previewSaved = false;
     let lastFlushTime = Date.now();
 
-    const MIN_UPLOAD_SIZE = 300;        // 글자 최소 기준
-    const MIN_FLUSH_INTERVAL = 1000;    // 2.5초 최소 간격
+    const MIN_UPLOAD_SIZE = 300; // 글자 최소 기준
+    const MIN_FLUSH_INTERVAL = 1000; // 1초 최소 간격
 
     async function flushChunk(text) {
-
         fullText += text;
 
         try {
-            await battleRef
-                .collection("logs")
-                .add({
-                    text,
-                    createdAt: admin.firestore.Timestamp.now()
-                });
+            await battleRef.collection("logs").add({
+                text,
+                createdAt: admin.firestore.Timestamp.now()
+            });
 
-    
             if (!previewSaved) {
                 const PREVIEW_LEN = 180;
 
                 const previewText =
-                    fullText.length > PREVIEW_LEN
-                        ? fullText.slice(0, PREVIEW_LEN)
-                        : fullText;
+                    fullText.length > PREVIEW_LEN ? fullText.slice(0, PREVIEW_LEN) : fullText;
 
                 await battleRef.update({
                     previewText
                 });
 
-                previewSaved = true;   // 🔥 한번 저장했으면 다시 안 함
+                previewSaved = true; // 🔥 한번 저장했으면 다시 안 함
             }
-
-
-
-
         } catch (e) {
             console.error("[STREAM_WRITE_FAIL]", e.message);
         }
 
         lastFlushTime = Date.now();
     }
-
-
-
-    
-
-
 
     for await (const chunk of stream.stream) {
         const part = chunk.text();
@@ -137,43 +121,31 @@ async function generateBattleNarrationStream({
         const now = Date.now();
         const timePassed = now - lastFlushTime;
 
-        if (
-            buffer.length >= MIN_UPLOAD_SIZE &&
-            timePassed >= MIN_FLUSH_INTERVAL
-        ) {
+        if (buffer.length >= MIN_UPLOAD_SIZE && timePassed >= MIN_FLUSH_INTERVAL) {
             await flushChunk(buffer);
             buffer = "";
         }
-
     }
-
 
     // 🔥 스트림 종료 후 남은 부분 업로드
     if (buffer.trim().length > 0) {
-        await flushChunk(buffer);   // 🔥 즉시 write
+        await flushChunk(buffer); // 🔥 즉시 write
     }
-
 
     return fullText;
 }
-
-
-
-
 
 /* =========================================================
    🔥 실제 전투 로직
 ========================================================= */
 
 async function runBattleLogic(battleId, myId, enemyId) {
-
     const callStartTime = Date.now();
 
     const mySnap = await db.collection("characters").doc(myId).get();
     const enemySnap = await db.collection("characters").doc(enemyId).get();
 
-    if (!mySnap.exists || !enemySnap.exists)
-        throw new Error("캐릭터 정보를 가져올 수 없음");
+    if (!mySnap.exists || !enemySnap.exists) throw new Error("캐릭터 정보를 가져올 수 없음");
 
     const my = mySnap.data();
     const enemy = enemySnap.data();
@@ -186,18 +158,20 @@ async function runBattleLogic(battleId, myId, enemyId) {
     const enemyPicked = pickRandom3Skills(enemy.skills);
 
     // 🔥 핵심 수정: 뽑힌 3개 스킬이 '원래 4개 중 몇 번'이었는지 인덱스 배열 생성
-    // 예: [스킬A, 스킬B, 스킬D]가 뽑혔다면 [0, 1, 3]이 됨
-    const myPickedIndices = myPicked.map(p => my.skills.findIndex(s => s.name === p.name));
-    const enemyPickedIndices = enemyPicked.map(p => enemy.skills.findIndex(s => s.name === p.name));
+    const myPickedIndices = myPicked.map((p) => my.skills.findIndex((s) => s.name === p.name));
+    const enemyPickedIndices = enemyPicked.map((p) =>
+        enemy.skills.findIndex((s) => s.name === p.name)
+    );
 
     // 3. 순서 가중치 계산 (인덱스 배열을 넘겨줌)
     const myOrderWeight = calcOrderWeight(aiEval.myOrder, myPickedIndices);
     const enemyOrderWeight = calcOrderWeight(aiEval.enemyOrder, enemyPickedIndices);
-    // 🔥 핵심 수정 1: HP 변수 초기화
+
+    // 🔥 HP 변수 초기화
     let myHP = calcHP(my.scores);
     let enemyHP = calcHP(enemy.scores);
 
-    // 🔥 핵심 수정 2: 배틀마다 독립적인 auraQueue 생성 (전역 변수 오염 방지)
+    // 🔥 배틀마다 독립적인 auraQueue 생성 (전역 변수 오염 방지)
     const context = {
         auraQueue: [],
         aura: {
@@ -205,6 +179,7 @@ async function runBattleLogic(battleId, myId, enemyId) {
             enemy: { AP: 0, BP: 0, AN: 0, BN: 0 }
         }
     };
+
     const turnLogs = [];
     for (let turn = 1; turn <= 3; turn++) {
         const result = simulateTurn({
@@ -220,7 +195,7 @@ async function runBattleLogic(battleId, myId, enemyId) {
             enemyCombat: enemy.scores.combatScore,
             myOrderWeight,
             enemyOrderWeight,
-            context // 🔥 배틀 상태 전달
+            context
         });
 
         enemyHP -= result.dmgToEnemy;
@@ -236,6 +211,7 @@ async function runBattleLogic(battleId, myId, enemyId) {
     }
 
     let winnerId;
+
     // 🔥 각 캐릭터가 가장 높은 데미지를 준 스킬 2개 인덱스 계산
     function pickTop2SkillIdx(turnLogs, isMy) {
         const arr = turnLogs.map((log, i) => ({
@@ -244,7 +220,7 @@ async function runBattleLogic(battleId, myId, enemyId) {
         }));
 
         arr.sort((a, b) => b.dmg - a.dmg);
-        return arr.slice(0, 2).map(v => v.idx);
+        return arr.slice(0, 2).map((v) => v.idx);
     }
 
     let myTop2Idx = null;
@@ -256,18 +232,14 @@ async function runBattleLogic(battleId, myId, enemyId) {
         enemyTop2Idx = pickTop2SkillIdx(turnLogs, false);
     }
 
-
-
-
     if (myHP > enemyHP) winnerId = myId;
     else if (enemyHP > myHP) winnerId = enemyId;
     else winnerId = Math.random() < 0.5 ? myId : enemyId;
 
-const loserId = winnerId === myId ? enemyId : myId;
+    const loserId = winnerId === myId ? enemyId : myId;
+    const battleRef = db.collection("battles").doc(battleId);
 
-const battleRef = db.collection("battles").doc(battleId);
-
-// 🔥 승패 먼저 저장 (ELO는 아직 실행 안 됨)
+    // 🔥 승패 먼저 저장
     await battleRef.update({
         winnerId,
         loserId,
@@ -275,49 +247,41 @@ const battleRef = db.collection("battles").doc(battleId);
         finished: false
     });
 
-
     const battleLogicEndTime = Date.now();
-
     const usedTurnCount = turnLogs.length;
 
-    
+    let narration = "";
+    try {
+        narration = await generateBattleNarrationStream({
+            battleRef,
+            my,
+            enemy,
+            myPicked: myPicked.slice(0, usedTurnCount),
+            enemyPicked: enemyPicked.slice(0, usedTurnCount),
+            myTop2Idx,
+            enemyTop2Idx,
+            turnLogs,
+            winnerId,
+            myId,
+            enemyId
+        });
+    } catch (streamErr) {
+        console.error("[STREAM_FAIL]", streamErr.message);
 
- 
-
-let narration = "";
-try {
-    narration = await generateBattleNarrationStream({
-        battleRef,
-        my,
-        enemy,
-        myPicked: myPicked.slice(0, usedTurnCount),
-        enemyPicked: enemyPicked.slice(0, usedTurnCount),
-        myTop2Idx,
-        enemyTop2Idx,
-        turnLogs,
-        winnerId
-    });
-} catch (streamErr) {
-    console.error("[STREAM_FAIL]", streamErr.message);
-
-    await battleRef.update({
-        status: "stream_error",
-        streamFailed: true,
-        finished: true,
-        tarotEligible: false,
-        finishedAt: admin.firestore.Timestamp.now()   // 🔥 추가
-    });
-
-
-}
-
-
-
+        await battleRef.update({
+            status: "stream_error",
+            streamFailed: true,
+            finished: true,
+            tarotEligible: false,
+            finishedAt: admin.firestore.Timestamp.now()
+        });
+    }
 
     const narrationEndTime = Date.now();
     const logicTime = battleLogicEndTime - callStartTime;
     const logTime = narrationEndTime - battleLogicEndTime;
     const totalTime = narrationEndTime - callStartTime;
+
     return {
         winnerId,
         loserId,
@@ -326,47 +290,30 @@ try {
         enemyName: enemy.displayRawName,
         timing: { logicTime, logTime, totalTime }
     };
-
 }
-
 
 /* =========================================================
    🔥 Worker 엔트리포인트
 ========================================================= */
 
 exports.processOneBattle = async (battleId, battleData) => {
-
     const ref = db.collection("battles").doc(battleId);
 
     try {
-
-     
-
-        const result = await runBattleLogic(
-            battleId,
-            battleData.myId,
-            battleData.enemyId
-        );
-
+        const result = await runBattleLogic(battleId, battleData.myId, battleData.enemyId);
 
         await ref.update({
             status: "done",
             finished: true,
             tarotEligible: true,
 
-        
-         
             turnLogs: result.turnLogs,
             myName: result.myName,
             enemyName: result.enemyName,
             timing: result.timing,
             finishedAt: admin.firestore.Timestamp.now()
-
         });
-
-
     } catch (e) {
-
         await ref.update({
             status: "error",
             errorMsg: e.message

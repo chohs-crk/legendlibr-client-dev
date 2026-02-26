@@ -70,15 +70,14 @@ export async function initCharacterImagePage() {
     aiSlot.onclick = () => {
         aiPromptInput.value = "";
 
-        selectedStyle = null;
-        setActiveStyleButton(null); // ✅ 기본값: 설정 안함(=AI style)
-
         selectedModel = DEFAULT_AI_MODEL;
-        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
-        setActiveStyleButton(null);
+        selectedStyle = selectedModel === "gemini" ? null : "default";
 
         setActiveModelButton(selectedModel);
         updateGenerateButtonPrice();
+        updateStyleVisibilityByModel();
+
+        setActiveStyleButton(selectedStyle);
 
         btnAIGenerate.disabled = true;
         aiOverlay.style.display = "flex";
@@ -96,11 +95,32 @@ export async function initCharacterImagePage() {
         btn.onclick = () => {
             document.querySelectorAll(".model-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
+
             selectedModel = btn.dataset.model || DEFAULT_AI_MODEL;
             updateGenerateButtonPrice();
+
+            updateStyleVisibilityByModel();
         };
     });
+    function updateStyleVisibilityByModel() {
+        const geminiOnlyBtns = document.querySelectorAll(".gemini-only");
 
+        if (selectedModel === "gemini") {
+            geminiOnlyBtns.forEach((btn) => {
+                btn.style.display = "inline-block";
+            });
+        } else {
+            geminiOnlyBtns.forEach((btn) => {
+                btn.style.display = "none";
+            });
+
+            // together 선택 시 설정 안함 강제 제거
+            if (!selectedStyle) {
+                selectedStyle = "default";
+                setActiveStyleButton("default");
+            }
+        }
+    }
     setActiveModelButton(selectedModel);
     updateGenerateButtonPrice();
 

@@ -21,27 +21,219 @@ const TOGETHER_KEY = defineSecret("TOGETHER_KEY");
    스타일/구도
 ========================= */
 const STYLE_PRESETS = {
-    anime2d: {
-        tags: ["2D anime", "clean lineart", "cel shading", "vibrant colors"],
-        sentence: "2D anime illustration with clean line art and crisp cel shading, vibrant colors."
+    // 🔹 기본 (2D + 광택 강화)
+    default: {
+        tags: [
+            "2D illustration",
+            "clean lineart",
+            "soft cel shading",
+            "glossy highlights",
+            "soft elegant portrait",
+            "high key lighting",
+            "luxury white dress",
+            "ethereal atmosphere",
+            "smooth painterly rendering",
+            "delicate skin shading",
+            "subtle glow",
+            "renaissance inspired digital art"
+        ],
+        sentence:
+            "2D illustration with clean line art and soft cel shading, glossy highlights on skin and fabric. Soft elegant portrait under high key lighting, ethereal atmosphere, smooth painterly rendering with delicate skin shading and a subtle glow, inspired by renaissance digital art."
     },
-    real3d: {
-        tags: ["realistic 3D render", "physically based materials", "cinematic lighting", "high detail"],
-        sentence: "Realistic 3D render with physically based materials, high detail, and cinematic lighting."
-    },
-    watercolor: {
-        tags: ["watercolor illustration", "soft bleeding edges", "paper texture", "gentle gradients"],
-        sentence: "Watercolor illustration with soft bleeding edges, paper texture, and gentle gradients."
-    },
+
+    // 🔹 다크 판타지 (2D + 광택 + 어두운 분위기)
     darkfantasy: {
-        tags: ["dark fantasy", "moody lighting", "high contrast", "dramatic shadows"],
-        sentence: "Dark fantasy illustration with moody lighting, high contrast, and dramatic shadows."
+        tags: [
+            "2D illustration",
+            "clean lineart",
+            "soft cel shading",
+            "glossy highlights",
+            "dark fantasy",
+            "moody dramatic lighting",
+            "deep shadows",
+            "high contrast",
+            "mysterious atmosphere",
+            "subtle magical glow",
+            "ornate fantasy costume"
+        ],
+        sentence:
+            "2D dark fantasy illustration with clean line art and glossy highlights, moody dramatic lighting and deep shadows. High contrast atmosphere with subtle magical glow and mysterious, ornate fantasy elements."
     },
-    pixel: {
-        tags: ["pixel art", "retro game style", "limited palette", "crisp pixels"],
-        sentence: "Pixel art in a retro game style with crisp pixels and a limited color palette."
+
+    // 🔹 파스텔 풍 (2D + 광택 + 부드러운 색감)
+    pastel: {
+        tags: [
+            "2D illustration",
+            "clean lineart",
+            "soft cel shading",
+            "glossy highlights",
+            "pastel color palette",
+            "soft lighting",
+            "dreamy atmosphere",
+            "gentle gradients",
+            "light bloom effect",
+            "delicate textures"
+        ],
+        sentence:
+            "2D illustration with glossy highlights and soft cel shading, rendered in a pastel color palette. Soft lighting, dreamy atmosphere, gentle gradients and light bloom create a delicate and airy mood."
+    },
+
+    // 🔹 사이버펑크 (2D + 광택 + 네온)
+    cyberpunk: {
+        tags: [
+            "2D illustration",
+            "clean lineart",
+            "sharp cel shading",
+            "glossy reflections",
+            "cyberpunk aesthetic",
+            "neon lights",
+            "futuristic city glow",
+            "high contrast lighting",
+            "electric color accents",
+            "holographic details"
+        ],
+        sentence:
+            "2D cyberpunk illustration with sharp cel shading and glossy reflections. Neon lighting, futuristic city glow and electric color accents create a high-contrast, holographic atmosphere."
+    },
+
+    // 🔹 일본 애니 (2D + 광택 + 선명한 색)
+    anime: {
+        tags: [
+            "2D anime style",
+            "clean crisp lineart",
+            "smooth cel shading",
+            "glossy highlights",
+            "vibrant colors",
+            "expressive eyes",
+            "bright lighting",
+            "polished anime rendering"
+        ],
+        sentence:
+            "Polished 2D anime illustration with crisp line art and smooth cel shading, glossy highlights and vibrant colors. Bright lighting enhances expressive eyes and refined anime rendering."
     }
 };
+
+/* =========================
+   SDXL 전용: LoRA로 "스타일" 주입
+   - SDXL은 프롬프트로 그림체(스타일)를 강제하기가 불안정한 경우가 많아서,
+     STYLE_PRESETS를 프롬프트에 덮어쓰지 않고 LoRA(image_loras)로만 스타일을 입힙니다.
+   - Together Images API: body.image_loras = [{ path, scale }, ...]
+========================= */
+
+// SDXL에서 최소한의 2D/광택 힌트는 프롬프트에 공통으로 넣고(과도한 스타일 문구는 제거),
+// 스타일 차이는 image_loras로만 주입합니다.
+const SDXL_BASE_STYLE_TAGS = [
+    "2D illustration",
+    "clean lineart",
+    "cel shading",
+    "glossy highlights"
+];
+
+// ✅ 아래 path는 "SDXL용 LoRA(.safetensors) 링크(또는 HF/Replicate/Civitai 모델 URL)"로 교체해야 합니다.
+//    - LoRA 개수 제한은 모델/엔드포인트 정책에 따라 달라질 수 있으니 우선 2개 이내를 추천합니다.
+//    - job 문서에 imageLoras(또는 image_loras) 배열을 넣으면, preset 대신 그 값을 우선 사용합니다.
+const SDXL_LORA_PRESETS = {
+    // 공통(base) LoRA: 2D+광택을 강하게 고정
+    // - cel-shaded: 셀셰이딩(2D 느낌) 강화
+    // - shiny: 광택/하이라이트 강화
+    base: [
+        {
+            path: "https://huggingface.co/ntc-ai/SDXL-LoRA-slider.cel-shaded/resolve/main/cel-shaded.safetensors",
+            scale: 1.05
+        },
+        {
+            path: "https://huggingface.co/ntc-ai/SDXL-LoRA-slider.shiny/resolve/main/shiny.safetensors",
+            scale: 0.85
+        }
+    ],
+
+    // 스타일 키별 추가 LoRA (선택)
+    default: [],
+    darkfantasy: [
+        {
+            path: "https://huggingface.co/thwri/dark-gothic-fantasy-xl/resolve/main/dark_gothic_fantasy_xl_3.01.safetensors",
+            scale: 0.85
+        }
+    ],
+    pastel: [
+        {
+            path: "https://huggingface.co/Linaqruf/pastel-style-xl-lora/resolve/main/pastel-style-xl-v2.safetensors",
+            scale: 0.75
+        }
+    ],
+    cyberpunk: [
+        {
+            path: "https://huggingface.co/issaccyj/lora-sdxl-cyberpunk/resolve/main/pytorch_lora_weights.safetensors",
+            scale: 0.85
+        }
+    ],
+    anime: [
+        {
+            path: "https://huggingface.co/Linaqruf/pastel-anime-xl-lora/resolve/main/pastel-anime-xl.safetensors",
+            scale: 0.9
+        }
+    ]
+};
+
+// 일부 LoRA는 "트리거 토큰"이 있을 때 효과가 더 잘 드러납니다.
+// SDXL에서는 '스타일 문장'을 길게 넣지 않고, 트리거만 최소로 추가합니다.
+const SDXL_STYLE_TRIGGER_TAGS = {
+    // NTC sliders
+    base: ["cel-shaded", "shiny"],
+
+    // thwri dark gothic fantasy
+    darkfantasy: ["dark gothic fantasy"],
+
+    // issaccyj cyberpunk
+    cyberpunk: ["szn style"],
+
+    // Linaqruf 계열은 특정 트리거가 필수는 아닌 편이지만,
+    // anime/pastel은 단정한 톤을 위해 가벼운 힌트만 둡니다.
+    pastel: [],
+    anime: []
+};
+
+function normalizeImageLoras(v) {
+    if (!Array.isArray(v)) return [];
+    return v
+        .map((x) => {
+            const path = typeof x?.path === "string" ? x.path.trim() : "";
+            const scaleRaw = x?.scale;
+            const scale = typeof scaleRaw === "number" ? scaleRaw : Number(scaleRaw);
+            if (!path) return null;
+            if (!Number.isFinite(scale)) return { path, scale: 1.0 };
+            return { path, scale };
+        })
+        .filter(Boolean);
+}
+
+function resolveSdxlStyleKey(jobStyle) {
+    // job.style이 없거나 비어있으면 default로 간주(기본 룩 유지)
+    if (jobStyle == null) return "default";
+    const raw = typeof jobStyle === "string" ? jobStyle.trim() : "";
+    if (!raw) return "default";
+    return normalizeStyleKey(jobStyle); // null이면(설정안함/잘못된 키) LoRA 미적용
+}
+
+function resolveSdxlImageLoras(job, styleKey) {
+    // (1) job에서 직접 LoRA를 주입하면 최우선 사용 (클라이언트에서 실험/AB에 유리)
+    //     - job.imageLoras: [{path, scale}]
+    //     - job.image_loras: [{path, scale}]  (snake_case도 허용)
+    const fromJob = normalizeImageLoras(job?.imageLoras ?? job?.image_loras);
+    if (fromJob.length > 0) return fromJob.slice(0, 3);
+
+    // (2) preset 기반 (코드에 고정된 매핑)
+    if (!styleKey) return []; // 명시적으로 none/off/unset이면 미적용
+    const base = normalizeImageLoras(SDXL_LORA_PRESETS.base);
+    const specific = normalizeImageLoras(SDXL_LORA_PRESETS[styleKey] ?? SDXL_LORA_PRESETS.default);
+
+    // ⚠️ Together 정책/모델에 따라 LoRA 개수 제한이 있을 수 있으니 우선 3개로 제한
+    return [...base, ...specific].slice(0, 3);
+}
+
+function isSdxlModel(modelId) {
+    return typeof modelId === "string" && modelId.toLowerCase().includes("stable-diffusion-xl");
+}
 
 const ALLOWED_STYLE_KEYS = new Set(Object.keys(STYLE_PRESETS));
 
@@ -57,7 +249,6 @@ function normalizeStyleKey(v) {
         compact === "unset" ||
         compact === "nostyle" ||
         compact === "no_style" ||
-        compact === "default" ||
         compact === "없음" ||
         compact === "미설정" ||
         compact === "설정안함"
@@ -69,6 +260,48 @@ function normalizeStyleKey(v) {
     const s = raw.toLowerCase();
     return ALLOWED_STYLE_KEYS.has(s) ? s : null;
 }
+
+/* =========================
+   프롬프트 출력 포맷(tags vs sentences)
+   - "요청(job) / 모델(provider)"에 따라 OpenAI 1차 정규화 단계에서
+     아예 한쪽만 생성하도록 분기하기 위한 유틸
+========================= */
+function normalizePromptFormat(v) {
+    const raw = typeof v === "string" ? v.trim().toLowerCase() : "";
+    if (!raw) return null;
+
+    // auto/default 계열은 null → provider 기준 자동 결정
+    if (["auto", "default", "provider", "model", "자동", "기본"].includes(raw)) return null;
+
+    // tags/keywords 계열
+    if (["tags", "tag", "keyword", "keywords", "kw", "키워드", "태그"].includes(raw)) return "tags";
+
+    // sentences/text 계열
+    if (
+        ["sentences", "sentence", "text", "paragraph", "paragraphs", "문장", "문장형", "서술", "서술형"].includes(raw)
+    ) {
+        return "sentences";
+    }
+
+    return null;
+}
+
+function resolvePromptFormat(job, modelInfo) {
+    // (1) job에서 명시적으로 포맷을 강제할 수 있도록 지원
+    //     - job.promptFormat / job.promptMode 등 어떤 이름이든 안전하게 흡수
+    const forced =
+        normalizePromptFormat(job?.promptFormat) ??
+        normalizePromptFormat(job?.promptMode) ??
+        normalizePromptFormat(job?.prompt_format);
+
+    if (forced) return forced;
+
+    // (2) 기본: provider 기준 자동
+    //     - together: 태그(키워드) 기반 모델에 최적
+    //     - gemini: 문장(단락) 기반 모델에 최적
+    return modelInfo?.provider === "together" ? "tags" : "sentences";
+}
+
 
 const CHARACTER_FOCUS_PROMPT = `
 Single character portrait
@@ -144,7 +377,64 @@ async function markError(jobRef, jobData, code, message, extra = {}) {
    OpenAI: 프롬프트+점수 생성
    - 기존과 같은 Chat Completions 방식 유지(필요하면 Responses로 변경 가능)
 ========================= */
-async function buildImagePromptAndScore(input, openaiKey) {
+async function buildImagePromptAndScore(input, openaiKey, options = {}) {
+    // ✅ 1차 정규화 단계에서 "tags" 또는 "sentences" 중 하나만 생성하도록 강제
+    //    - options.format: "tags" | "sentences"
+    const format = options?.format === "tags" ? "tags" : "sentences";
+
+    const outputRules =
+        format === "tags"
+            ? `
+[Output formats]
+You MUST output ONLY:
+- tags: Flux-style prompting (short phrases, NOT full sentences)
+  - Each tag is 1~5 words, English only
+  - No commas inside a tag
+  - Keep tag lists compact (8~25 tags per section)
+
+Do NOT output any "sentence" fields anywhere in the JSON.
+`
+            : `
+[Output formats]
+You MUST output ONLY:
+- sentence: sentence-style prompting (English sentences)
+  - 1~3 sentences per section
+  - Keep it concise and visual
+
+Do NOT output any "tags" fields anywhere in the JSON.
+`;
+
+    const outputSchema =
+        format === "tags"
+            ? `
+{
+  "subjectType": "human|animal|creature|object|abstract|environment",
+  "sections": {
+    "subject": { "tags": ["..."] },
+    "background": { "tags": ["..."] },
+    "composition": { "tags": ["..."] },
+    "style": { "tags": ["..."] }
+  },
+  "negative": { "tags": ["..."] },
+  "fitScore": 0,
+  "safetyScore": 0
+}
+`
+            : `
+{
+  "subjectType": "human|animal|creature|object|abstract|environment",
+  "sections": {
+    "subject": { "sentence": "..." },
+    "background": { "sentence": "..." },
+    "composition": { "sentence": "..." },
+    "style": { "sentence": "..." }
+  },
+  "negative": { "sentence": "..." },
+  "fitScore": 0,
+  "safetyScore": 0
+}
+`;
+
     const systemPrompt = `
 You are a professional image prompt engineer.
 
@@ -157,9 +447,7 @@ You will receive a JSON object with:
 - modelKey (string)       // for context only
 
 [FitScore Evaluation]
-
 You must evaluate how well the userPrompt visually and thematically fits with:
-
 1) promptRefined (core character concept)
 2) fullStory (character background, tone, world context)
 
@@ -172,65 +460,35 @@ FitScore definition:
 Important:
 - Evaluate thematic consistency.
 - Evaluate visual consistency.
-- Penalize contradiction (e.g., holy knight described in fullStory but userPrompt requests neon cyberpunk clown).
+- Penalize contradiction.
 - Score must be between 1 and 100.
 
 [Safety]
 - Do not generate sexual content involving minors.
 - Avoid explicit sexual content, extreme gore, hate, or illegal content.
 - If user requests disallowed content, set safetyScore high (0~100).
+
 [SafetyScore Evaluation]
-
 You must assign a safetyScore between 0 and 100.
-
 SafetyScore definition (Higher = More Dangerous):
 
-0–10:
-Completely safe. Neutral portrait, no suggestive elements, no sensual focus.
-
-11–25:
-Mild aesthetic attractiveness only. Normal fashion. No exposed body emphasis.
-
-26–40:
-Noticeable physical emphasis (slim waist, blush, smirk, off-shoulder clothing, tight outfit).
-Light sensual undertone but no explicit sexualization.
-
-41–60:
-Clear sexual suggestiveness.
-Exposed shoulders slipping, cropped tops emphasizing body shape,
-focus on chest/hips/thighs, seductive expressions, provocative pose.
-
-61–80:
-Strong sexualization.
-Explicit body focus, cleavage emphasis, fetish elements,
-lingerie-level exposure, dominant erotic framing.
-
-81–100:
-Explicit sexual content, sexual acts, minors, extreme fetish, illegal content.
-Must be blocked.
+0–10: Completely safe.
+11–25: Mild aesthetic attractiveness only.
+26–40: Noticeable physical emphasis; light sensual undertone.
+41–60: Clear sexual suggestiveness.
+61–80: Strong sexualization.
+81–100: Explicit sexual content, sexual acts, minors, extreme fetish, illegal content. Must be blocked.
 
 Scoring Rules:
 - Be conservative. If unsure, score higher.
-- Body emphasis + seductive expression = add 10–20 points.
-- Clothing described as slipping, tight, cropped, body-hugging = add 5–15 points.
-- If composition focuses on chest/hips/legs, increase score significantly.
-- If age is unclear and character looks young, increase score.
 - If any minor possibility exists → 90+.
+- If safetyScore > 90, it must be blocked.
 
-If safetyScore > 70, consider it high risk.
-If safetyScore > 90, it must be blocked.
 [Goal]
 Create image prompts where the MAIN SUBJECT is always the visual focus.
 The subject can be human, animal, creature, object, abstract concept, or environment.
 Do NOT force a human if the request is not about a person.
-
-[Output formats]
-You MUST output BOTH:
-1) tags: for Flux-style prompting (short phrases, NOT full sentences)
-   - Each tag is 1~5 words, English only
-   - No commas inside a tag
-2) sentence: for sentence-style prompting (English sentences)
-
+${outputRules}
 [Sections]
 You MUST produce these sections:
 - subject (main subject description)
@@ -241,29 +499,9 @@ You MUST produce these sections:
 [Strict Rules]
 - Output MUST be English
 - JSON only (no markdown, no extra text)
-- Keep tags lists compact (8~25 tags per section)
 
 Return JSON with this exact shape:
-
-[Context Usage Rules]
-- fullStory describes the character's lore, personality, and world setting.
-- promptRefined describes the core visual identity.
-- userPrompt is a requested modification or addition.
-
-You must check if userPrompt logically fits within the established character world.
-
-{
-  "subjectType": "human|animal|creature|object|abstract|environment",
-  "sections": {
-    "subject": { "tags": ["..."], "sentence": "..." },
-    "background": { "tags": ["..."], "sentence": "..." },
-    "composition": { "tags": ["..."], "sentence": "..." },
-    "style": { "tags": ["..."], "sentence": "..." }
-  },
-  "negative": { "tags": ["..."], "sentence": "..." },
-  "fitScore": 0,
-  "safetyScore": 0
-}
+${outputSchema}
 `;
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -336,7 +574,7 @@ async function generateImageWithGemini(prompt, geminiKey) {
    - docs: /images/generations + response_format=base64 → data[0].b64_json :contentReference[oaicite:6]{index=6}
 ========================= */
 async function generateImageWithTogether(
-    { model, prompt, width, height, steps, guidance, negativePrompt, seed },
+    { model, prompt, width, height, steps, guidance, negativePrompt, seed, imageLoras },
     togetherKey
 ) {
     const body = {
@@ -355,6 +593,10 @@ async function generateImageWithTogether(
 
     if (negativePrompt && typeof negativePrompt === "string") {
         body.negative_prompt = negativePrompt;
+    }
+
+    if (Array.isArray(imageLoras) && imageLoras.length > 0) {
+        body.image_loras = imageLoras;
     }
 
     const res = await fetch("https://api.together.xyz/v1/images/generations", {
@@ -450,8 +692,16 @@ exports.processImageJob = onDocumentCreated(
                 await markError(jobRef, job, "NOT_OWNER", "Character owner mismatch");
                 return;
             }
+            // 2) 모델 선택 (OpenAI 1차 정규화 포맷을 결정하기 위해 먼저 선택)
+            const modelKey = (job.modelKey || "gemini").toString();
+            const modelInfo = IMAGE_MODEL_MAP[modelKey];
+            if (!modelInfo) {
+                await markError(jobRef, job, "INVALID_MODEL", "Unknown modelKey");
+                return;
+            }
 
-            // 2) OpenAI로 prompt 구성 + score
+            // 3) OpenAI로 prompt 구성 + score (필요한 포맷만 생성)
+            const desiredPromptFormat = resolvePromptFormat(job, modelInfo); // "tags" | "sentences"
             const openaiKey = OPENAI_KEY.value();
             const promptResult = await buildImagePromptAndScore(
                 {
@@ -461,9 +711,10 @@ exports.processImageJob = onDocumentCreated(
 
                     // ✅ 프롬프트 엔지니어링 컨텍스트(시스템 프롬프트에 이미 정의됨)
                     styleKey: normalizeStyleKey(job.style),
-                    modelKey: (job.modelKey || "gemini").toString()
+                    modelKey
                 },
-                openaiKey
+                openaiKey,
+                { format: desiredPromptFormat }
             );
 
             // safety 차단
@@ -497,11 +748,9 @@ exports.processImageJob = onDocumentCreated(
                 return list.map(s => s.trim()).filter(Boolean).join(", ");
             }
 
-            function buildFinalPrompt({ promptResult, modelInfo, jobStyleKey, userPrompt }) {
-                // ✅ provider 기준 분기
-                // - together: 키워드(태그) 기반
-                // - gemini: 문장(단락) 기반
-                const useTagsFormat = modelInfo.provider === "together";
+            function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, modelInfo }) {
+                // ✅ OpenAI 1차 정규화 단계에서 이미 format(tags/sentences)을 결정했음
+                const normalizedFormat = format === "tags" ? "tags" : "sentences";
 
                 function userSpecifiesCompositionPrompt(up) {
                     if (typeof up !== "string") return false;
@@ -533,7 +782,9 @@ exports.processImageJob = onDocumentCreated(
                 };
 
                 // =====================
-                // 2) 구도: 유저가 명시하지 않았으면 "얼굴+상반신 정면" 위주로 강제
+                // 2) 구도: 유저가 명시하지 않았으면 "얼굴+상반신 정면" 위주로 기본값 적용
+                //    - 단, 유저가 구도를 직접 명시했는데(OpenAI 결과가 비어버린 경우)
+                //      기본값을 강제로 넣으면 유저 의도와 충돌할 수 있으므로 비워둠.
                 // =====================
                 const compositionFromAI = {
                     tags: asTags(sections.composition?.tags),
@@ -559,7 +810,7 @@ exports.processImageJob = onDocumentCreated(
 
                 const composition =
                     compositionEmpty
-                        ? defaultComposition
+                        ? (userWantsCustomComposition ? { tags: [], sentence: "" } : defaultComposition)
                         : compositionFromAI;
 
                 // =====================
@@ -571,43 +822,59 @@ exports.processImageJob = onDocumentCreated(
                     sentence: asSentence(sections.style?.sentence)
                 };
 
+                const isSdxl = isSdxlModel(modelInfo?.model);
+
+                // ✅ SDXL은 "그림체 프롬프트"로 강제하지 않고, LoRA(image_loras)로만 스타일을 주입합니다.
+                //    - style preset/AI style 섹션은 비우고,
+                //      최소한의 2D/광택 힌트만 공통으로 넣습니다.
                 const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
-                const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
 
-                const appliedStyle = stylePreset
+                const stylePreset = (!isSdxl && normalizedStyleKey)
+                    ? STYLE_PRESETS[normalizedStyleKey]
+                    : null;
+
+                const appliedStyle = isSdxl
                     ? {
-                        tags: [...stylePreset.tags, ...aiStyle.tags.filter(t => !stylePreset.tags.includes(t))],
-                        sentence: stylePreset.sentence
+                        tags: [
+                            ...SDXL_BASE_STYLE_TAGS,
+                            ...(SDXL_STYLE_TRIGGER_TAGS.base || []),
+                            ...((SDXL_STYLE_TRIGGER_TAGS[normalizedStyleKey] || []))
+                        ],
+                        sentence: "2D illustration with clean line art, cel shading, and glossy highlights."
                     }
-                    : aiStyle;
+                    : (stylePreset
+                        ? {
+                            tags: [...stylePreset.tags, ...aiStyle.tags.filter(t => !stylePreset.tags.includes(t))],
+                            sentence: stylePreset.sentence
+                        }
+                        : aiStyle);
+
 
                 // =====================
-                // 4) 태그/문장 프롬프트를 각각 생성한 뒤, provider에 따라 선택
+                // 4) 최종 프롬프트 생성: format에 따라 "하나만" 생성
                 // =====================
-                function buildTagsPrompt() {
+                let tagsPrompt = "";
+                let sentencePrompt = "";
+                let finalPrompt = "";
+
+                if (normalizedFormat === "tags") {
                     const allTags = [
                         ...subject.tags,
                         ...background.tags,
                         ...composition.tags,
                         ...appliedStyle.tags
                     ];
-                    return joinTags(allTags);
-                }
-
-                function buildSentencePrompt() {
-                    return [
+                    tagsPrompt = joinTags(allTags);
+                    finalPrompt = tagsPrompt;
+                } else {
+                    sentencePrompt = [
                         subject.sentence,
                         background.sentence,
                         composition.sentence,
                         appliedStyle.sentence
                     ].filter(Boolean).join("\n\n");
+                    finalPrompt = sentencePrompt;
                 }
-
-                const tagsPrompt = buildTagsPrompt();
-                const sentencePrompt = buildSentencePrompt();
-
-                const format = useTagsFormat ? "tags" : "sentences";
-                const finalPrompt = useTagsFormat ? tagsPrompt : sentencePrompt;
 
                 const negative = {
                     tags: asTags(promptResult?.negative?.tags),
@@ -615,13 +882,13 @@ exports.processImageJob = onDocumentCreated(
                 };
 
                 return {
-                    format,
+                    format: normalizedFormat,
                     finalPrompt,
                     promptBundle: {
                         language: "en",
                         subjectType: promptResult?.subjectType || "unknown",
                         style: {
-                            source: stylePreset ? "preset" : "ai",
+                            source: isSdxl ? "lora" : (stylePreset ? "preset" : "ai"),
                             presetKey: stylePreset ? normalizedStyleKey : null,
                             ai: aiStyle,
                             applied: appliedStyle
@@ -629,7 +896,7 @@ exports.processImageJob = onDocumentCreated(
                         sections: { subject, background, composition },
                         negative,
 
-                        // (선택) 디버깅/추적용: 둘 다 저장해두면 이후 모델 변경에도 재사용 가능
+                        // ✅ 디버깅/추적용: 생성된 포맷만 채우고, 나머지는 null
                         rendered: {
                             tags: tagsPrompt,
                             sentences: sentencePrompt
@@ -638,19 +905,24 @@ exports.processImageJob = onDocumentCreated(
                 };
             }
 
-            // 4) 모델 선택
-            const modelKey = (job.modelKey || "gemini").toString();
-            const modelInfo = IMAGE_MODEL_MAP[modelKey];
-            if (!modelInfo) {
-                await markError(jobRef, job, "INVALID_MODEL", "Unknown modelKey");
-                return;
-            }
+            // 4) 최종 프롬프트 렌더링 (format에 따라 tags 또는 sentences 중 하나만 사용)
             const { format, finalPrompt, promptBundle } = buildFinalPrompt({
                 promptResult,
-                modelInfo,
+                format: desiredPromptFormat,
                 jobStyleKey: job.style,
-                userPrompt: job.userPrompt
+                userPrompt: job.userPrompt,
+                modelInfo
             });
+            // 4.5) SDXL인 경우: 스타일은 LoRA로만 주입 (image_loras)
+            const isSdxl = isSdxlModel(modelInfo.model);
+            const sdxlStyleKey = isSdxl ? resolveSdxlStyleKey(job.style) : null;
+            const imageLoras = isSdxl ? resolveSdxlImageLoras(job, sdxlStyleKey) : [];
+
+            if (isSdxl) {
+                // 디버그/재현용으로 Firestore에 같이 저장
+                promptBundle.style.imageLoras = imageLoras;
+            }
+
             // 5) 이미지 생성
             let buffer;
 
@@ -680,7 +952,8 @@ exports.processImageJob = onDocumentCreated(
     cropped head, cut off face,
     background overpowering subject
     `.replace(/\s+/g, " ").trim()
-                            : undefined
+                            : undefined,
+                        imageLoras: isSdxl ? imageLoras : undefined
                     },
                     TOGETHER_KEY.value()
                 );
