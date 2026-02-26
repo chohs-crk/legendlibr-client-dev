@@ -46,7 +46,27 @@ const STYLE_PRESETS = {
 const ALLOWED_STYLE_KEYS = new Set(Object.keys(STYLE_PRESETS));
 
 function normalizeStyleKey(v) {
-    const s = typeof v === "string" ? v.trim() : "";
+    const raw = typeof v === "string" ? v.trim() : "";
+    if (!raw) return null;
+
+    // "설정 안함"(none) 계열은 모두 null 처리
+    const compact = raw.toLowerCase().replace(/\s+/g, "");
+    if (
+        compact === "none" ||
+        compact === "off" ||
+        compact === "unset" ||
+        compact === "nostyle" ||
+        compact === "no_style" ||
+        compact === "default" ||
+        compact === "없음" ||
+        compact === "미설정" ||
+        compact === "설정안함"
+    ) {
+        return null;
+    }
+
+    // 스타일 키는 소문자 기준으로 허용
+    const s = raw.toLowerCase();
     return ALLOWED_STYLE_KEYS.has(s) ? s : null;
 }
 
@@ -69,16 +89,18 @@ const IMAGE_MODEL_MAP = {
         model: "gemini-2.5-flash-image",
         costFrames: 50
     },
-    together_flux1_schnell: {
+    together_sdxl: { // 🔥 키 변경
         provider: "together",
-        model: "black-forest-labs/FLUX.1-schnell",
+        model: "stabilityai/stable-diffusion-xl-base-1.0",
         costFrames: 10,
-        supportsNegativePrompt: false,
-        steps: 4
+        supportsNegativePrompt: true,
+        steps: 30,
+        guidance: 6
     },
     together_flux2: {
         provider: "together",
-        model: "black-forest-labs/FLUX.1-dev",
+        // ✅ 교체: Flux 1 dev → Flux 2 dev
+        model: "black-forest-labs/FLUX.2-dev",
         costFrames: 25,
         supportsNegativePrompt: false,
         steps: 28
@@ -435,7 +457,11 @@ exports.processImageJob = onDocumentCreated(
                 {
                     promptRefined: char.promptRefined,
                     fullStory: char.fullStory ?? char.finalStory,
-                    userPrompt: job.userPrompt
+                    userPrompt: job.userPrompt,
+
+                    // ✅ 프롬프트 엔지니어링 컨텍스트(시스템 프롬프트에 이미 정의됨)
+                    styleKey: normalizeStyleKey(job.style),
+                    modelKey: (job.modelKey || "gemini").toString()
                 },
                 openaiKey
             );
@@ -471,44 +497,117 @@ exports.processImageJob = onDocumentCreated(
                 return list.map(s => s.trim()).filter(Boolean).join(", ");
             }
 
-            function buildFinalPrompt({ promptResult, modelInfo, jobStyleKey }) {
-                const isFlux = modelInfo.provider === "together"; // Flux 계열(현재 together_*)
+            function buildFinalPrompt({ promptResult, modelInfo, jobStyleKey, userPrompt }) {
+                // ✅ provider 기준 분기
+                // - together: 키워드(태그) 기반
+                // - gemini: 문장(단락) 기반
+                const useTagsFormat = modelInfo.provider === "together";
 
+                function userSpecifiesCompositionPrompt(up) {
+                    if (typeof up !== "string") return false;
+                    const s = up.toLowerCase();
+                    if (!s.trim()) return false;
+
+                    // 영문/국문 모두(가볍게) 커버: 구도/카메라/샷/시점 관련 키워드가 있으면
+                    // 유저가 구도를 의도적으로 지정했다고 보고, 기본 구도 강제 적용을 하지 않음.
+                    const patterns = [
+                        /\b(full body|full-body|wide shot|long shot|establishing shot|close up|close-up|bust|portrait|headshot|upper body|half body|cowboy shot)\b/i,
+                        /\b(front view|side view|profile|three[- ]quarter|3\/?4|from behind|back view|over the shoulder)\b/i,
+                        /\b(low angle|high angle|bird'?s eye|top[- ]down|worm'?s eye|dutch angle|fisheye|pov|point of view|depth of field)\b/i,
+                        /(전신|반신|상반신|얼굴|클로즈업|정면|측면|옆모습|후면|뒷모습|구도|카메라|앵글|시점|원근|로우앵글|하이앵글|탑다운|버드아이|피사계심도)/
+                    ];
+                    return patterns.some((re) => re.test(up));
+                }
+
+                // =====================
+                // 1) 섹션 파싱
+                // =====================
                 const sections = promptResult?.sections || {};
-                const subject = { tags: asTags(sections.subject?.tags), sentence: asSentence(sections.subject?.sentence) };
-                const background = { tags: asTags(sections.background?.tags), sentence: asSentence(sections.background?.sentence) };
-                const composition = { tags: asTags(sections.composition?.tags), sentence: asSentence(sections.composition?.sentence) };
+                const subject = {
+                    tags: asTags(sections.subject?.tags),
+                    sentence: asSentence(sections.subject?.sentence)
+                };
+                const background = {
+                    tags: asTags(sections.background?.tags),
+                    sentence: asSentence(sections.background?.sentence)
+                };
 
-                const aiStyle = { tags: asTags(sections.style?.tags), sentence: asSentence(sections.style?.sentence) };
+                // =====================
+                // 2) 구도: 유저가 명시하지 않았으면 "얼굴+상반신 정면" 위주로 강제
+                // =====================
+                const compositionFromAI = {
+                    tags: asTags(sections.composition?.tags),
+                    sentence: asSentence(sections.composition?.sentence)
+                };
+
+                const defaultComposition = {
+                    tags: [
+                        "single character portrait",
+                        "upper body",
+                        "front view",
+                        "centered face",
+                        "chest-up close shot",
+                        "protagonist framing"
+                    ],
+                    sentence:
+                        "Single character portrait, upper body composition, front-facing view with the face centered and clearly visible."
+                };
+
+                const userWantsCustomComposition = userSpecifiesCompositionPrompt(userPrompt);
+                const compositionEmpty =
+                    compositionFromAI.tags.length === 0 && !compositionFromAI.sentence;
+
+                const composition =
+                    compositionEmpty
+                        ? defaultComposition
+                        : compositionFromAI;
+
+                // =====================
+                // 3) 그림체(style): preset이 있으면 AI 결과를 "덮어쓰기"(overwrite)
+                //    - "설정 안함"(none) 계열이면 preset 없음 → AI 결과 사용
+                // =====================
+                const aiStyle = {
+                    tags: asTags(sections.style?.tags),
+                    sentence: asSentence(sections.style?.sentence)
+                };
 
                 const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
                 const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
 
                 const appliedStyle = stylePreset
-                    ? { tags: stylePreset.tags, sentence: stylePreset.sentence }
+                    ? {
+                        tags: [...stylePreset.tags, ...aiStyle.tags.filter(t => !stylePreset.tags.includes(t))],
+                        sentence: stylePreset.sentence
+                    }
                     : aiStyle;
 
-                let finalPrompt, format;
-                if (isFlux) {
-                    // Flux: "word, word" 느낌의 태그 조합
+                // =====================
+                // 4) 태그/문장 프롬프트를 각각 생성한 뒤, provider에 따라 선택
+                // =====================
+                function buildTagsPrompt() {
                     const allTags = [
                         ...subject.tags,
                         ...background.tags,
                         ...composition.tags,
                         ...appliedStyle.tags
                     ];
-                    finalPrompt = joinTags(allTags);
-                    format = "tags";
-                } else {
-                    // 나노바나나: 문장(섹션별 문단)
-                    finalPrompt = [
+                    return joinTags(allTags);
+                }
+
+                function buildSentencePrompt() {
+                    return [
                         subject.sentence,
                         background.sentence,
                         composition.sentence,
                         appliedStyle.sentence
                     ].filter(Boolean).join("\n\n");
-                    format = "sentences";
                 }
+
+                const tagsPrompt = buildTagsPrompt();
+                const sentencePrompt = buildSentencePrompt();
+
+                const format = useTagsFormat ? "tags" : "sentences";
+                const finalPrompt = useTagsFormat ? tagsPrompt : sentencePrompt;
 
                 const negative = {
                     tags: asTags(promptResult?.negative?.tags),
@@ -528,7 +627,13 @@ exports.processImageJob = onDocumentCreated(
                             applied: appliedStyle
                         },
                         sections: { subject, background, composition },
-                        negative
+                        negative,
+
+                        // (선택) 디버깅/추적용: 둘 다 저장해두면 이후 모델 변경에도 재사용 가능
+                        rendered: {
+                            tags: tagsPrompt,
+                            sentences: sentencePrompt
+                        }
                     }
                 };
             }
@@ -543,7 +648,8 @@ exports.processImageJob = onDocumentCreated(
             const { format, finalPrompt, promptBundle } = buildFinalPrompt({
                 promptResult,
                 modelInfo,
-                jobStyleKey: job.style
+                jobStyleKey: job.style,
+                userPrompt: job.userPrompt
             });
             // 5) 이미지 생성
             let buffer;
@@ -560,7 +666,20 @@ exports.processImageJob = onDocumentCreated(
                         steps: modelInfo.steps,
                         guidance: modelInfo.guidance,
                         negativePrompt: modelInfo.supportsNegativePrompt
-                            ? "blurry, low quality, distorted, extra fingers, extra limbs, text, watermark"
+                            ? `
+    low quality, worst quality, blurry,
+    distorted face, deformed face, bad anatomy,
+    extra fingers, extra hands, extra arms,
+    missing fingers, fused fingers,
+    bad hands, malformed hands,
+    extra limbs, mutated body,
+    cross eyes, asymmetrical eyes,
+    jpeg artifacts, noisy image,
+    overexposed, underexposed,
+    watermark, text, logo, signature,
+    cropped head, cut off face,
+    background overpowering subject
+    `.replace(/\s+/g, " ").trim()
                             : undefined
                     },
                     TOGETHER_KEY.value()
@@ -585,9 +704,9 @@ exports.processImageJob = onDocumentCreated(
                 `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${downloadToken}`;
 
             // 7) characters 문서 업데이트
-         
 
-           
+
+
 
             await charRef.update({
                 image: { type: "ai", key: "ai", url },

@@ -2,11 +2,11 @@
 import { apiFetch } from "/base/api.js";
 
 const MODEL_PRICE_MAP = {
-    together_flux1_schnell: 10,
+    together_sdxl: 10, // 🔥 변경
     together_flux2: 25,
     gemini: 50
 };
-const DEFAULT_AI_MODEL = "together_flux1_schnell";
+const DEFAULT_AI_MODEL = "together_sdxl"; // 🔥 변경
 
 export async function initCharacterImagePage() {
     const charId = sessionStorage.getItem("viewCharId");
@@ -160,19 +160,7 @@ export async function initCharacterImagePage() {
         };
     });
 
-    // AI 모달 열기
-    aiSlot.onclick = () => {
-        aiPromptInput.value = "";
-        selectedStyle = null;
-
-        selectedModel = DEFAULT_AI_MODEL;
-        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
-        setActiveModelButton(selectedModel);
-        updateGenerateButtonPrice();
-
-        btnAIGenerate.disabled = true;
-        aiOverlay.style.display = "flex";
-    };
+   
 
     btnAICancel.onclick = () => {
         aiOverlay.style.display = "none";
