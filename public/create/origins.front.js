@@ -1,47 +1,45 @@
 ﻿// origins.front.js
 // ⚠️ 프론트(UI) 전용
-// 서버는 이 파일을 절대 신뢰하거나 사용하지 않음
-
 export const ORIGINS_FRONT = {
-    IRON_CROWN: {
-        id: "IRON_CROWN",
-        name: "꺼지지 않는 무쇠",
-        desc: "끝없는 전쟁과 제련의 불길 속에서 살아남은 중세 도시 연합."
+    FERRUM_POLIS: {
+        id: "FERRUM_POLIS",
+        name: "페룸 폴리스",
+        desc: "각진 힘, 넘치는 피를 숭배하라"
     },
 
-    CHAOS_MIDLANDS: {
-        id: "CHAOS_MIDLANDS",
-        name: "난세중원",
-        desc: "문파와 가문이 얽혀 다투는 혼란의 강호."
+    NEON_DRIP: {
+        id: "NEON_DRIP",
+        name: "네온 드립",
+        desc: "가득 찬 데이터가 도시의 동맥을 터뜨렸다."
     },
 
-    AURELION: {
-        id: "AURELION",
-        name: "아우렐리온",
-        desc: "빛과 질서가 지배하는 찬란한 성역."
+    EDEN_CINERIS: {
+        id: "EDEN_CINERIS",
+        name: "에덴 시네리스",
+        desc: "낙원의 잿더미에서, 금기의 주술이 다시 꽃핀다."
     },
 
-    NELGARD: {
-        id: "NELGARD",
-        name: "넬가드",
-        desc: "계약과 배신이 지배하는 지옥의 도시."
+    ORIGO_PRIMUS: {
+        id: "ORIGO_PRIMUS",
+        name: "오리고 프리무스",
+        desc: "최초의 근원에서 흘러내린 성광이, 모든 존재의 자리를 정한다."
     },
 
-    NEO_ARCADIA: {
-        id: "NEO_ARCADIA",
-        name: "네오 아르카디아",
-        desc: "기술과 욕망이 교차하는 미래의 거대 도시."
+    GIANTS_DREAM: {
+        id: "GIANTS_DREAM",
+        name: "거인의 꿈",
+        desc: "가장 작은 이의 누구보다 거대한 꿈이 세계를 창제했다."
     },
 
-    SYLVARIA: {
-        id: "SYLVARIA",
-        name: "실바리아",
-        desc: "자연과 마법이 공존하는 엘프의 밀림."
+    KIZUNA_RESONANCE: {
+        id: "KIZUNA_RESONANCE",
+        name: "키즈나 레조넌스",
+        desc: "감정의 파동이 물리적 병기가 되는 시대, 청춘들은 세계를 위협하는 ‘공허’에 맞서 자신들의 청춘을 연소시킨다."
     },
 
-    DEEP_FORGE: {
-        id: "DEEP_FORGE",
-        name: "이글대는 심부",
-        desc: "불과 돌 속에서 살아가는 드워프의 화산 도시."
+    WYVERN_JURASSIC: {
+        id: "WYVERN_JURASSIC",
+        name: "와이번 쥬라기",
+        desc: "공룡과 드래곤 중 누가 왕좌를 차지했는가"
     }
 };
