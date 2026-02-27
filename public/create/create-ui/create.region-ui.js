@@ -104,7 +104,16 @@ export async function renderOriginDetail({
 
     // ✅ 유저 Region 개수 제한(전체 myregion 기준)이면 "지역 추가하기" 버튼 숨김
     // - 서버(/base/get-regions)가 userRegionCount를 내려줌
-    const userRegionCount = Number(json?.userRegionCount) || 0;
+    
+    let userRegionCount = Number(json?.userRegionCount) || 0;
+
+    const currentUid =
+        state?.uid ||
+        (window?.firebase?.auth?.().currentUser?.uid ?? null);
+
+    if (currentUid === "UxsPSnBP32cR1BnLlH506kk8Pln2") {
+        userRegionCount = 10; // 테스트용 강제 제한
+    }
     const isRegionLimitReached = userRegionCount >= 10;
 
     if (ui.addBtn) {
