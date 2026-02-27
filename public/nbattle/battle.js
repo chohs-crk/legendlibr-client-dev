@@ -11,8 +11,17 @@ function toggleAccordion() {
     if (!body) return;
     body.style.display = body.style.display === "none" ? "block" : "none";
 }
+
 /* =========================
-   UI 초기화 함수 (✨ 신규)
+   공통: 매칭 캐시 제거
+========================= */
+function clearBattleMatchCache(charId) {
+    if (!charId) return;
+    sessionStorage.removeItem(`battleMatchCache:${charId}`);
+}
+
+/* =========================
+   UI 초기화 함수
 ========================= */
 function resetBattleUI() {
     const statusEl = document.getElementById("battleStatus");
@@ -24,6 +33,8 @@ function resetBattleUI() {
         startBtn.style.display = "none";
         startBtn.disabled = false;
         startBtn.textContent = "⚔ 배틀 시작";
+        // 혹시 이전 onclick이 남아있을 수 있어 초기화
+        startBtn.onclick = null;
     }
     if (debugEl) debugEl.textContent = "";
 }
@@ -48,7 +59,7 @@ function renderBattleCharList(chars) {
         btn.onclick = async () => {
             // 선택 캐릭터 변경
             sessionStorage.setItem("battleCharId", c.id);
-       
+
             // UI 반영
             toggleBtn.textContent = `선택: ${btn.textContent}`;
             listEl.style.display = "none";
@@ -91,12 +102,10 @@ async function getMyCharactersSafe() {
    메인 진입
 ========================= */
 export async function initBattlePage(isRetry = false) {
-    resetBattleUI();   // 🔥 추가된 초기화
+    resetBattleUI();
 
     const statusEl = document.getElementById("battleStatus");
     const debugEl = document.getElementById("battleDebug");
-
-
     if (!statusEl) return;
 
     try {
@@ -114,7 +123,7 @@ export async function initBattlePage(isRetry = false) {
            2️⃣ battleCharId 보정
         ========================= */
         let battleCharId = sessionStorage.getItem("battleCharId");
-        const exists = chars.some(c => c.id === battleCharId);
+        const exists = chars.some((c) => c.id === battleCharId);
 
         if (!battleCharId || !exists) {
             battleCharId = chars[0].id;
@@ -126,12 +135,11 @@ export async function initBattlePage(isRetry = false) {
         ========================= */
         renderBattleCharList(chars);
 
-        const selected = chars.find(c => c.id === battleCharId);
+        const selected = chars.find((c) => c.id === battleCharId);
         const toggleBtn = document.getElementById("battleCharToggle");
 
         if (toggleBtn && selected) {
-            toggleBtn.textContent =
-                `선택: ${selected.displayRawName || "(이름 없음)"}`;
+            toggleBtn.textContent = `선택: ${selected.displayRawName || "(이름 없음)"}`;
             toggleBtn.onclick = toggleAccordion;
         }
 
@@ -156,19 +164,21 @@ export async function initBattlePage(isRetry = false) {
                 startBtn.disabled = true;
                 startBtn.textContent = "전투 준비 중...";
 
-                const battleCharId = sessionStorage.getItem("battleCharId");
+                // ✅ 여기서 한 번만 읽고 끝까지 재사용 (중복 선언 금지)
+                const myBattleCharId = sessionStorage.getItem("battleCharId");
 
                 try {
+                    // ✅ 실제 API 파일 구조와 맞춤: api/battle/start.js → /api/battle/start
                     const res = await apiFetch("/battle/start", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ myCharId: battleCharId })
+                        body: JSON.stringify({ myCharId: myBattleCharId }),
                     });
 
                     let data = {};
                     try {
                         data = await res.json();
-                    } catch (e) {
+                    } catch {
                         data = { error: "INVALID_JSON" };
                     }
 
@@ -176,12 +186,8 @@ export async function initBattlePage(isRetry = false) {
                         startBtn.disabled = false;
 
                         if (data.error === "ENEMY_DELETED") {
-
-                            const battleCharId = sessionStorage.getItem("battleCharId");
-                            if (battleCharId) {
-                                sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
-                            }
-
+                            // ✅ 삭제된 상대면 캐시 제거 후 재매칭
+                            clearBattleMatchCache(myBattleCharId);
 
                             startBtn.textContent = "상대가 사라졌습니다. 재매칭 중...";
 
@@ -192,43 +198,27 @@ export async function initBattlePage(isRetry = false) {
                             return;
                         }
 
-                        startBtn.textContent =
-                            `실패 (${res.status}): ${data.error || "UNKNOWN_ERROR"}`;
+                        startBtn.textContent = `실패 (${res.status}): ${data.error || "UNKNOWN_ERROR"}`;
                         return;
                     }
 
                     // ✅ 배틀 시작 성공 시 매칭 캐시 제거
-                    const battleCharId = sessionStorage.getItem("battleCharId");
-                    if (battleCharId) {
-                        sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
-                    }
-                    startBtn.textContent =
-                        `전투 대기열 등록됨 (${data.battleId})`;
+                    clearBattleMatchCache(myBattleCharId);
 
+                    startBtn.textContent = `전투 대기열 등록됨 (${data.battleId})`;
                 } catch (err) {
+                    console.error("🔥 START API ERROR:", err);
+
                     startBtn.disabled = false;
-                    startBtn.textContent = "네트워크 오류. 홈으로 이동합니다...";
-
-                    const battleCharId = sessionStorage.getItem("battleCharId");
-                    if (battleCharId) {
-                        sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
-                    }
-
-
-                    setTimeout(() => {
-                        window.showPage("home", { type: "tab" });
-                    }, 800);
+                    startBtn.textContent = "네트워크 오류. 콘솔 확인";
+                    return;
                 }
             };
-
-
         }
 
         if (debugEl) {
             debugEl.textContent = JSON.stringify(result, null, 2);
         }
-
-
     } catch (e) {
         console.error("[battle]", e);
 
