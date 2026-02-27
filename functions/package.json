@@ -9,6 +9,7 @@
     "lint": "echo \"skip lint\""
   },
   "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
     "@google/generative-ai": "^0.24.1",
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.0"

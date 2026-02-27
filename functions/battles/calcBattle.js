@@ -1,7 +1,7 @@
 ﻿// calcBattle.js
 // 체력 계산, 스킬 데미지 계산, 효과 데미지 계산, weight 계산 전담
 
-function calcHP(stats) {
+function calcHP(stats, regionScore = 0, fitScore = 0) {
     const {
         willScore,
         charmScore,
@@ -16,7 +16,7 @@ function calcHP(stats) {
     hp += (willScore || 0) * 3;
     hp += (charmScore || 0) * 3;
     hp += (worldScore || 0) * 3;
-
+    hp += (regionScore || 0) * 3;
     if (narrativeScore <= 8) hp += narrativeScore * 2.5;
     else hp += 20;
 
@@ -25,9 +25,17 @@ function calcHP(stats) {
         return -1.35 * Math.pow(Math.E, 0.9 * (score - 5));
     };
 
-    hp += penalty(ruleBreakScore);
-    hp += penalty(dominateScore);
-    hp += penalty(metaScore);
+    const totalPenalty =
+        penalty(ruleBreakScore) +
+        penalty(dominateScore) +
+        penalty(metaScore);
+
+    // 🔥 총 패널티는 최대 -100까지만 허용
+    hp += Math.max(totalPenalty, -100);
+
+    // 🔥 fitScore 보정 (최대 10% 증가)
+    const multiplier = 1 + (Math.min(Math.max(fitScore || 0, 0), 100) / 1000);
+    hp *= multiplier;
 
     return hp;
 }

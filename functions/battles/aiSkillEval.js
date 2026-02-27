@@ -1,40 +1,67 @@
 ﻿// functions/battles/aiSkillEval.js
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { defineSecret } = require("firebase-functions/params");
+// ✅ AI Studio(@google/generative-ai + API Key) → Vertex AI(@google-cloud/vertexai + IAM)
 
-const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const { VertexAI } = require("@google-cloud/vertexai");
 
 module.exports.getSkillEvaluation = async function (my, enemy) {
-    const apiKey = GEMINI_API_KEY.value();
-    if (!apiKey) throw new Error("Gemini API KEY is missing!");
+    // Firebase Functions 내부라면 보통 ADC(기본 서비스계정)로 자동 인증됨
+    // project는 GCLOUD_PROJECT가 기본으로 잡히는 경우가 많음
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new Error(
+            "GCP project id missing. Set GCLOUD_PROJECT (or GCP_PROJECT) env."
+        );
+    }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const location = "us-central1";
+    const modelName = "gemini-2.5-flash-lite";
 
-    // 1. 모델 설정 단계에서 systemInstruction 분리
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",   // 🔥 변경
-        systemInstruction: SYSTEM_PROMPT,
+    const vertexAI = new VertexAI({ project: projectId, location });
+
+    // Vertex에서는 systemInstruction을 object 형태로 주는 패턴이 안정적
+    const model = vertexAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: {
+            parts: [{ text: SYSTEM_PROMPT }],
+        },
     });
-
 
     const prompt = buildPrompt(my, enemy);
 
+    // Vertex 요청 포맷
+    // - contents: [{role, parts:[{text}]}]
+    // - generationConfig: temperature 등
     const result = await model.generateContent({
         contents: [
             {
                 role: "user",
-                parts: [{ text: prompt }]
-            }
+                parts: [{ text: prompt }],
+            },
         ],
         generationConfig: {
+            temperature: 0.1,
+            // 모델/SDK 버전에 따라 responseMimeType 지원이 다를 수 있음.
+            // 지원되면 JSON 강제에 도움이 됨. (미지원이면 무시될 수 있음)
             responseMimeType: "application/json",
-            temperature: 0.1, // 0.4에서 0.1로 하향 (일관성 및 속도 향상)
-            // thinking 관련 설정이 있다면 여기서 억제 가능 (모델 버전에 따라 다름)
-        }
+        },
     });
 
-    const response = await result.response;
-    const text = response.text();
+    // Vertex 응답 텍스트 추출 (후보 구조가 있을 수 있음)
+    const response = result?.response;
+    const text =
+        response?.candidates?.[0]?.content?.parts
+            ?.map((p) => p.text || "")
+            .join("") ||
+        // 일부 런타임에선 response.text()가 있을 수 있어 fallback
+        (typeof response?.text === "function" ? response.text() : "");
+
+    if (!text) {
+        console.error("[SKILL_EVAL_EMPTY_RESPONSE]", {
+            hasResponse: !!response,
+            candidatesLen: response?.candidates?.length,
+        });
+        throw new Error("SKILL_EVAL_EMPTY_RESPONSE");
+    }
 
     try {
         return JSON.parse(text.trim());
@@ -44,10 +71,8 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
     }
 };
 
-/* SYSTEM_PROMPT 및 buildPrompt 로직은 기존 소스와 동일하게 유지 */
-
 /* =========================================================
-   시스템 프롬프트
+   시스템 프롬프트 (기존과 동일)
 ========================================================= */
 const SYSTEM_PROMPT = `
 너는 두 캐릭터의 특징, 서사, 그리고 스킬의 이름과 짧은 설명을 바탕으로
@@ -86,9 +111,8 @@ const SYSTEM_PROMPT = `
 }
 `;
 
-
 /* =========================================================
-   프롬프트 생성
+   프롬프트 생성 (기존과 동일)
 ========================================================= */
 function buildPrompt(my, enemy) {
     const mySkills = my.skills
@@ -126,4 +150,3 @@ ${enemySkills}
 - myOrder / enemyOrder는 0~3 숫자로 구성된 4자리 문자열
 `;
 }
-

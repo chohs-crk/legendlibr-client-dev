@@ -195,7 +195,17 @@ skin pores,
 3D render,
 octane render,
 ray tracing,
-volumetric realism
+volumetric realism,
+full body,
+long shot,
+wide shot,
+distant character,
+small subject,
+tiny character,
+far away camera,
+zoomed out,
+excessive background,
+establishing shot
 `.replace(/\s+/g, " ").trim();
 
                 buffer = await generateImageWithTogether(
@@ -232,7 +242,12 @@ volumetric realism
 
             // 7) characters 문서 업데이트
             await charRef.update({
-                image: { type: "ai", key: "ai", url },
+                image: {
+                    type: "ai",
+                    key: "ai",
+                    url,
+                    fitScore: Number(promptResult.fitScore || 0)
+                },
                 aiImages: admin.firestore.FieldValue.arrayUnion({
                     url,
                     fitScore: Number(promptResult.fitScore || 0),

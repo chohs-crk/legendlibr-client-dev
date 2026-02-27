@@ -2,7 +2,7 @@
 const { admin, db } = require("../admin/admin");
 const { processOneBattle } = require("./processOneBattle");
 
-const MAX_CONCURRENT = 8;
+const MAX_CONCURRENT = 12;
 
 /* ======================================================
    🔥 동시 실행 체크 후 실행

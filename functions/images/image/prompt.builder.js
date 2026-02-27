@@ -209,16 +209,23 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
     };
 
     const defaultComposition = {
-        tags: [
-            "single character portrait",
-            "upper body",
-            "front view",
-            "centered face",
-            "chest-up close shot",
-            "protagonist framing"
-        ],
+      
+            tags: [
+                "single character portrait",
+                "close-up portrait",
+                "upper body only",
+                "chest-up framing",
+                "face dominant in frame",
+                "head and shoulders",
+                "front view",
+                "tight crop",
+                "subject fills the frame",
+                "no full body",
+                "no distant shot",
+                "no wide shot"
+            ],
         sentence:
-            "Single character portrait, upper body composition, front-facing view with the face centered and clearly visible."
+            "Close-up portrait of a single character, framed from chest up. The face dominates the frame, tightly cropped with no full body visible. The subject fills most of the image."
     };
 
     const userWantsCustomComposition = userSpecifiesCompositionPrompt(userPrompt);
@@ -260,10 +267,15 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
         "single subject focus",
         "center composition",
         "clear silhouette",
-        "subject separated from background",
-        "sharp focus on subject",
+        "sharp focus on face",
+        "face clearly visible",
         "portrait framing",
-        "balanced composition"
+        "tight crop",
+        "subject fills the frame",
+        "no distant shot",
+        "no wide angle",
+        "no full body visible",
+        "minimal background exposure"
     ];
 
     const STYLE_ANCHORS_2D = [
@@ -308,7 +320,7 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
 
         if (isFlux) {
             // 🔥 FLUX: 스타일을 맨 앞에 (고정력 ↑)
-            allTags = [...appliedStyle.tags, ...subject.tags, ...composition.tags, ...background.tags];
+            allTags = [...appliedStyle.tags, ...composition.tags, ...subject.tags, ...background.tags];
         } else {
             // SDXL/기타: subject 중심 + 마지막에 스타일
             allTags = [...subject.tags, ...background.tags, ...composition.tags, ...appliedStyle.tags];
