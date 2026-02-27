@@ -197,7 +197,11 @@ export async function initBattlePage(isRetry = false) {
                         return;
                     }
 
-
+                    // ✅ 배틀 시작 성공 시 매칭 캐시 제거
+                    const battleCharId = sessionStorage.getItem("battleCharId");
+                    if (battleCharId) {
+                        sessionStorage.removeItem(`battleMatchCache:${battleCharId}`);
+                    }
                     startBtn.textContent =
                         `전투 대기열 등록됨 (${data.battleId})`;
 
