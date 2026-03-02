@@ -57,8 +57,14 @@ export async function renderOriginDetail({
     // ✅ 기존 코드에서 selectedOrigin으로 조회하던 부분을 originId로 조회(안전)
     ui.desc.textContent = origins?.[originId]?.desc || "";
 
-    // 다음 버튼은 기본 비활성
+    // 다음 버튼은 기본 비활성 + 숨김
     ui.nextBtn.disabled = true;
+    ui.nextBtn.style.display = "none";
+
+    // 지역 추가 버튼도 기본 숨김
+    if (ui.addBtn) {
+        ui.addBtn.style.display = "none";
+    }
 
     // 렌더 전 selected 초기화 (해당 origin의 region-list 기준)
     ui.regions.querySelectorAll(".region-item").forEach((i) => i.classList.remove("selected"));
@@ -107,18 +113,19 @@ export async function renderOriginDetail({
     
     let userRegionCount = Number(json?.userRegionCount) || 0;
 
-    const currentUid =
-        state?.uid ||
-        (window?.firebase?.auth?.().currentUser?.uid ?? null);
-
-    if (currentUid === "UxsPSnBP32cR1BnLlH506kk8Pln2") {
-        userRegionCount = 10; // 테스트용 강제 제한
-    }
+    
+  
+    
     const isRegionLimitReached = userRegionCount >= 10;
 
+    // 버튼 상태 확정
     if (ui.addBtn) {
         ui.addBtn.style.display = isRegionLimitReached ? "none" : "inline-flex";
+        ui.addBtn.disabled = isRegionLimitReached;
     }
+
+    // 다음 버튼은 항상 보이되, region 선택 전까지 disabled
+    ui.nextBtn.style.display = "inline-flex";
 
     // --- 지역 목록 렌더링 ---
     json.regions.forEach((r) => {

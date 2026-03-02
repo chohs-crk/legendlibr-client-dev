@@ -153,7 +153,6 @@ function normalizeStyleKey(v) {
         compact === "unset" ||
         compact === "nostyle" ||
         compact === "no_style" ||
-        compact === "default" ||
         compact === "없음" ||
         compact === "미설정" ||
         compact === "설정안함"

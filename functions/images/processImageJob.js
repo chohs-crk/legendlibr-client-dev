@@ -5,6 +5,49 @@ const logger = require("firebase-functions/logger");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const { randomUUID } = require("crypto");
+const nodePath = require("path");
+const { pathToFileURL } = require("url");
+
+let ORIGINS_CACHE = undefined;
+
+/**
+ * Loads ORIGINS map from /battles/origins.js (ESM) with a few fallback paths.
+ * This function is intentionally resilient because Functions (CJS) must import ESM.
+ */
+async function loadOriginsMap() {
+    if (ORIGINS_CACHE !== undefined) return ORIGINS_CACHE;
+
+    const candidates = [
+        "./battles/origins.js",
+        "../battles/origins.js",
+        "./origins.js",
+        "../origins.js"
+    ];
+
+    for (const rel of candidates) {
+        try {
+            const url = pathToFileURL(nodePath.join(__dirname, rel)).href;
+            const mod = await import(url);
+            const origins = mod?.ORIGINS || mod?.default?.ORIGINS || mod?.default;
+            if (origins && typeof origins === "object") {
+                ORIGINS_CACHE = origins;
+                return ORIGINS_CACHE;
+            }
+        } catch (_) {
+            // try next
+        }
+    }
+
+    ORIGINS_CACHE = null;
+    return ORIGINS_CACHE;
+}
+
+function getOriginBackground(originsMap, originId) {
+    if (!originsMap || typeof originId !== "string" || !originId.trim()) return null;
+    const bg = originsMap?.[originId]?.background;
+    return typeof bg === "string" && bg.trim() ? bg.trim() : null;
+}
+
 
 const {
     IMAGE_MODEL_MAP,
@@ -116,6 +159,17 @@ exports.processImageJob = onDocumentCreated(
                 return;
             }
 
+            // 1.5) origin background (job.originId 우선, 없으면 character.originId)
+            const originId =
+                typeof job.originId === "string" && job.originId.trim()
+                    ? job.originId.trim()
+                    : typeof char.originId === "string" && char.originId.trim()
+                        ? char.originId.trim()
+                        : null;
+
+            const originsMap = await loadOriginsMap();
+            const originBackground = getOriginBackground(originsMap, originId);
+
             // 2) 모델 선택
             const modelKey = (job.modelKey || "gemini").toString();
             const modelInfo = IMAGE_MODEL_MAP[modelKey];
@@ -133,6 +187,11 @@ exports.processImageJob = onDocumentCreated(
                     promptRefined: char.promptRefined,
                     fullStory: char.fullStory ?? char.finalStory,
                     userPrompt: job.userPrompt,
+
+                    // origin 컨텍스트: background 우선 적용 + prompt 제작 AI에도 힌트로 제공
+                    originId,
+                    originBackground,
+
                     styleKey: normalizeStyleKey(job.style),
                     modelKey
                 },
@@ -162,7 +221,8 @@ exports.processImageJob = onDocumentCreated(
                 format: desiredPromptFormat,
                 jobStyleKey: job.style,
                 userPrompt: job.userPrompt,
-                modelInfo
+                modelInfo,
+                originBackground
             });
 
             // 5) 이미지 생성
@@ -205,7 +265,22 @@ tiny character,
 far away camera,
 zoomed out,
 excessive background,
-establishing shot
+establishing shot,
+character sheet,
+concept art,
+concept sheet,
+reference sheet,
+model sheet,
+turnaround,
+front and back view,
+multiple angles,
+orthographic view,
+T-pose,
+pose reference,
+design sheet,
+character design layout,
+side by side views,
+multiple poses
 `.replace(/\s+/g, " ").trim();
 
                 buffer = await generateImageWithTogether(

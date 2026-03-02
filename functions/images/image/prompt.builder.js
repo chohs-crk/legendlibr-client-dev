@@ -40,6 +40,41 @@ function enrichTags(baseTags, anchorTags, maxCount) {
     return typeof maxCount === "number" ? merged.slice(0, maxCount) : merged;
 }
 
+/**
+ * Split a comma-separated background string into tags.
+ * - Keeps phrases intact (commas are the only delimiter).
+ */
+function splitCommaTags(v) {
+    if (typeof v !== "string") return [];
+    return v
+        .split(",")
+        .map((s) => String(s || "").trim())
+        .filter(Boolean);
+}
+
+function toOneSentence(v) {
+    if (typeof v !== "string") return "";
+    const s = v.trim().replace(/\s+/g, " ");
+    if (!s) return "";
+    return /[.!?]$/.test(s) ? s : `${s}.`;
+}
+
+/**
+ * Cap a list while preserving the last N items (useful when we want "low-priority tail tags"
+ * to still be included even if the list is long).
+ */
+function capPreservingTail(list, maxCount, tailKeep = 0) {
+    if (!Array.isArray(list)) return [];
+    if (!Number.isFinite(maxCount) || maxCount <= 0) return [];
+    if (list.length <= maxCount) return list;
+
+    const tk = Math.max(0, Math.min(Number(tailKeep) || 0, maxCount));
+    if (tk === 0) return list.slice(0, maxCount);
+
+    const headKeep = maxCount - tk;
+    return [...list.slice(0, headKeep), ...list.slice(list.length - tk)];
+}
+
 /* =========================
    OpenAI: 프롬프트+점수 생성
 ========================= */
@@ -107,6 +142,8 @@ You will receive a JSON object with:
 - promptRefined (string)
 - fullStory (string, optional)
 - userPrompt (string)
+- originId (string|null, optional)
+- originBackground (string|null, optional)
 - styleKey (string|null)
 - modelKey (string)
 
@@ -130,6 +167,8 @@ Do NOT raise safetyScore for:
 
 [Goal]
 Main subject must be visual focus.
+If originBackground is provided, prefer it as the primary background direction.
+Keep the background secondary to the subject (no crowd, no text, no logos).
 Do NOT force a human if request is not about a person.
 ${outputRules}
 
@@ -172,7 +211,7 @@ ${outputSchema}
    최종 프롬프트 렌더링
    - subject는 그대로 두고(background/composition/style만 보강)
 ========================= */
-function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, modelInfo }) {
+function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, modelInfo, originBackground }) {
     const normalizedFormat = format === "tags" ? "tags" : "sentences";
 
     function userSpecifiesCompositionPrompt(up) {
@@ -191,7 +230,7 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
 
     const sections = promptResult?.sections || {};
 
-    // ✅ 인물(subject)은 그대로 (요청대로)
+    // ✅ subject는 그대로 (요청대로)
     const subject = {
         tags: asTags(sections.subject?.tags),
         sentence: asSentence(sections.subject?.sentence)
@@ -208,74 +247,58 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
         sentence: asSentence(sections.composition?.sentence)
     };
 
-    const defaultComposition = {
-      
-            tags: [
-                "single character portrait",
-                "close-up portrait",
-                "upper body only",
-                "chest-up framing",
-                "face dominant in frame",
-                "head and shoulders",
-                "front view",
-                "tight crop",
-                "subject fills the frame",
-                "no full body",
-                "no distant shot",
-                "no wide shot"
-            ],
-        sentence:
-            "Close-up portrait of a single character, framed from chest up. The face dominates the frame, tightly cropped with no full body visible. The subject fills most of the image."
-    };
-
-    const userWantsCustomComposition = userSpecifiesCompositionPrompt(userPrompt);
-    const compositionEmpty = compositionFromAI.tags.length === 0 && !compositionFromAI.sentence;
-
-    let composition = compositionEmpty
-        ? userWantsCustomComposition
-            ? { tags: [], sentence: "" }
-            : defaultComposition
-        : compositionFromAI;
-
     const aiStyle = {
         tags: asTags(sections.style?.tags),
         sentence: asSentence(sections.style?.sentence)
     };
 
-    const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
-    const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
+    // ✅ 기본(클로즈업) 컴포지션 — "후순위(태그 뒤)" 로만 넣기 위해 별도 분리
+    const defaultComposition = {
+        tags: [
+            "single character portrait",
+            "close-up portrait",
+            "upper body only",
+            "chest-up framing",
+            "face dominant in frame",
+            "head and shoulders",
+            "front view",
+            "tight crop",
+            "subject fills the frame",
+            "no full body",
+            "no distant shot",
+            "no wide shot"
+        ],
+        sentence:
+            "Close-up portrait of a single character, framed from chest up. The face dominates the frame, tightly cropped with no full body visible. The subject fills most of the image."
+    };
 
-    let appliedStyle = stylePreset
-        ? {
-            tags: [...stylePreset.tags, ...aiStyle.tags.filter((t) => !stylePreset.tags.includes(t))],
-            sentence: stylePreset.sentence
-        }
-        : aiStyle;
+    const userWantsCustomComposition = userSpecifiesCompositionPrompt(userPrompt);
 
-    // ✅ 인물 제외 앵커
-    const BG_ANCHORS = [
-        "simple background",
+    // ✅ origin background(콤마 문자열) → 태그로 분해
+    const originBgTags = splitCommaTags(originBackground);
+    const originBgSentence = toOneSentence(originBackground);
+
+    // ✅ 앵커 (인물 제외)
+    // - origin background가 있으면 "simple background" 같은 강제 단순화를 줄여 충돌을 피함
+    const BG_ANCHORS_BASE = [
         "background not overpowering subject",
         "soft blur background",
-        "clean shapes",
         "minimal clutter",
         "no text in background",
         "no logo"
     ];
 
-    const COMP_ANCHORS = [
+    const BG_ANCHORS_SIMPLE = ["simple background", "clean shapes"];
+
+    const BG_ANCHORS = originBgTags.length > 0 ? BG_ANCHORS_BASE : [...BG_ANCHORS_SIMPLE, ...BG_ANCHORS_BASE];
+
+    // - "기본 구도(클로즈업)"은 후순위로 넣고, 여기서는 충돌이 적은 품질 앵커만 사용
+    const COMP_ANCHORS_GENERAL = [
         "single subject focus",
         "center composition",
         "clear silhouette",
         "sharp focus on face",
-        "face clearly visible",
-        "portrait framing",
-        "tight crop",
-        "subject fills the frame",
-        "no distant shot",
-        "no wide angle",
-        "no full body visible",
-        "minimal background exposure"
+        "face clearly visible"
     ];
 
     const STYLE_ANCHORS_2D = [
@@ -300,14 +323,58 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
         typeof modelInfo?.model === "string" &&
         modelInfo.model.toLowerCase().includes("stable-diffusion-xl");
 
+    // 기본 구도를 "후순위"로 추가하므로 comp 한도를 조금 상향
     const limits = isFlux
-        ? { bg: 16, comp: 16, style: 28 } // FLUX: style은 조금 더 허용 (앞에 배치)
+        ? { bg: 18, comp: 18, style: 28 }
         : isSdxl
-            ? { bg: 12, comp: 12, style: 18 } // SDXL: 과다 태그 금지
-            : { bg: 12, comp: 12, style: 20 };
+            ? { bg: 14, comp: 16, style: 18 }
+            : { bg: 14, comp: 16, style: 20 };
 
-    background.tags = enrichTags(background.tags, BG_ANCHORS, limits.bg);
-    composition.tags = enrichTags(composition.tags, COMP_ANCHORS, limits.comp);
+    // 1) background: origin background를 최우선(태그 앞)으로 삽입
+    const bgAnchors = originBgTags.length > 0 ? [...originBgTags, ...BG_ANCHORS] : BG_ANCHORS;
+    background.tags = enrichTags(background.tags, bgAnchors, limits.bg);
+    if (originBgSentence) {
+        background.sentence = [originBgSentence, background.sentence].filter(Boolean).join(" ");
+    }
+
+    // 2) composition:
+    // - 유저가 구도를 명시한 경우: 기본(클로즈업)을 붙이지 않음
+    // - 유저가 구도를 명시하지 않은 경우: AI composition이 있어도 "기본(클로즈업)"을 후순위로 붙임
+    let compositionTags = userWantsCustomComposition
+        ? uniq([...compositionFromAI.tags])
+        : uniq([...COMP_ANCHORS_GENERAL, ...compositionFromAI.tags]);
+
+    const useDefaultCompositionFallback = !userWantsCustomComposition;
+
+    if (useDefaultCompositionFallback) {
+        // ✅ 후순위: AI tags 뒤에 기본 구도 태그를 추가
+        compositionTags = uniq([...compositionTags, ...defaultComposition.tags]);
+    }
+
+    // 태그가 길어져도 기본 구도 tail이 살아있도록 tail 보존
+    compositionTags = capPreservingTail(compositionTags, limits.comp, useDefaultCompositionFallback ? 6 : 0);
+
+    let compositionSentence = compositionFromAI.sentence;
+    if (useDefaultCompositionFallback) {
+        // ✅ 후순위: AI sentence 뒤에 기본 구도 sentence를 추가(또는 AI가 비면 기본만)
+        compositionSentence = compositionSentence
+            ? [compositionSentence, defaultComposition.sentence].filter(Boolean).join(" ")
+            : defaultComposition.sentence;
+    }
+
+    const composition = { tags: compositionTags, sentence: compositionSentence };
+
+    // 3) style preset 적용 (preset 우선)
+    const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
+    const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
+
+    let appliedStyle = stylePreset
+        ? {
+            tags: [...stylePreset.tags, ...aiStyle.tags.filter((t) => !stylePreset.tags.includes(t))],
+            sentence: stylePreset.sentence
+        }
+        : aiStyle;
+
     appliedStyle.tags = enrichTags(appliedStyle.tags, STYLE_ANCHORS_2D, limits.style);
 
     // 최종 프롬프트 생성
@@ -316,20 +383,21 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
     let finalPrompt = "";
 
     if (normalizedFormat === "tags") {
+        // ✅ 모든 모델: style 관련 프롬프트를 가장 앞에
+        // - FLUX는 기존처럼 composition을 style 다음에 두는 편이 안정적
         let allTags;
 
         if (isFlux) {
-            // 🔥 FLUX: 스타일을 맨 앞에 (고정력 ↑)
             allTags = [...appliedStyle.tags, ...composition.tags, ...subject.tags, ...background.tags];
         } else {
-            // SDXL/기타: subject 중심 + 마지막에 스타일
-            allTags = [...subject.tags, ...background.tags, ...composition.tags, ...appliedStyle.tags];
+            allTags = [...appliedStyle.tags, ...subject.tags, ...background.tags, ...composition.tags];
         }
 
         tagsPrompt = joinTags(allTags);
         finalPrompt = tagsPrompt;
     } else {
-        sentencePrompt = [subject.sentence, background.sentence, composition.sentence, appliedStyle.sentence]
+        // ✅ sentences도 style을 첫 단락으로
+        sentencePrompt = [appliedStyle.sentence, subject.sentence, background.sentence, composition.sentence]
             .filter(Boolean)
             .join("\n\n");
         finalPrompt = sentencePrompt;
@@ -357,10 +425,14 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
             rendered: {
                 tags: tagsPrompt,
                 sentences: sentencePrompt
+            },
+            origin: {
+                background: originBackground || null
             }
         }
     };
 }
+
 
 module.exports = {
     buildImagePromptAndScore,
