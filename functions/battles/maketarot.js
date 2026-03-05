@@ -31,7 +31,7 @@ async function makeTarot({
 
     // ✅ 타로는 창의성/표현력 때문에 flash 추천 (lite도 가능하지만 품질이 조금 떨어질 수 있음)
     const model = vertexAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.0-flash-lite",
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
     });
 

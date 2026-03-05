@@ -195,6 +195,7 @@ function resolvePromptFormat(job, modelInfo) {
 
 /* =========================
    모델 매핑
+   ✅ together_sdxl 로 들어오는 요청을 FLUX.1 [schnell] 로 처리
 ========================= */
 const IMAGE_MODEL_MAP = {
     gemini: {
@@ -202,14 +203,23 @@ const IMAGE_MODEL_MAP = {
         model: "gemini-2.5-flash-image",
         costFrames: 50
     },
+
+    // ✅ SDXL 요청(modelKey=together_sdxl)은 내부에서 FLUX.1 schnell로 실행
     together_sdxl: {
         provider: "together",
-        model: "stabilityai/stable-diffusion-xl-base-1.0",
+        model: "black-forest-labs/FLUX.1-schnell",
         costFrames: 10,
-        supportsNegativePrompt: true,
-        steps: 30,
-        guidance: 8
+
+        // FLUX 계열은 negative prompt 미지원인 경우가 많으니 끔
+        supportsNegativePrompt: false,
+
+        // Together FLUX.1 schnell 기본 4 steps 사용
+        steps: 4
+
+        // guidance는 Together FLUX에서 무시되거나 의미가 없을 수 있어 제거
+        // (필요하면 다시 넣어도 되지만, 서버less cost/안정성 목적이면 생략 권장)
     },
+
     together_flux2: {
         provider: "together",
         model: "black-forest-labs/FLUX.2-dev",

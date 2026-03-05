@@ -10,7 +10,31 @@ function markEloAnimated(battleId) {
 function isEloAnimated(battleId) {
     return sessionStorage.getItem(`eloAnimated_${battleId}`) === "1";
 }
+let lastBattleStatus = {};
+function applyEloToCharacterCache(charId, delta) {
 
+    if (!charId || !Number.isFinite(delta)) return;
+
+    const raw = sessionStorage.getItem("homeCharacters");
+    if (!raw) return;
+
+    let arr;
+
+    try {
+        arr = JSON.parse(raw);
+    } catch {
+        return;
+    }
+
+    const idx = arr.findIndex(c => c.id === charId);
+    if (idx === -1) return;
+
+    const oldScore = Number(arr[idx].battleScore) || 0;
+
+    arr[idx].battleScore = oldScore + delta;
+
+    sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
+}
 function createInlineDotLoader() {
     const span = document.createElement("span");
     span.className = "inline-dot-loader";
@@ -259,7 +283,16 @@ function renderBattle(battle) {
     const enemyDelta = Number.isFinite(battle.enemyEloDelta)
         ? battle.enemyEloDelta
         : null;
+    const prevStatus = lastBattleStatus[battle.id] ?? null;
 
+    if (prevStatus !== "done" && battle.status === "done") {
+
+        applyEloToCharacterCache(battle.myId, myDelta);
+        applyEloToCharacterCache(battle.enemyId, enemyDelta);
+
+    }
+
+    lastBattleStatus[battle.id] = battle.status;
     function deltaText(v) {
         if (!Number.isFinite(v)) return "";
         return v > 0 ? `+${v}` : `${v}`;

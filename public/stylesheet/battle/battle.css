@@ -1,0 +1,210 @@
+/* /public/stylesheet/battle/battle.css
+   배틀 준비 화면 전용 스타일 (battle.js에서 주입하던 스타일을 파일로 분리)
+*/
+
+/* battle prep layout (scoped) */
+#battlePrepRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 0 12px;
+}
+
+/* ✅ 내 캐릭/상대 캐릭을 세로로 배치 */
+#battlePrepRoot .battle-prep-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+#battlePrepRoot .battle-panel {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  backdrop-filter: blur(6px);
+}
+
+#battlePrepRoot .panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#battlePrepRoot .panel-title {
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  font-size: 14px;
+  opacity: 0.92;
+}
+
+#battlePrepRoot .panel-subtitle {
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+#battlePrepRoot .battle-char-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+#battlePrepRoot .battle-char-card img {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  flex: 0 0 auto;
+}
+
+#battlePrepRoot .battle-char-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#battlePrepRoot .battle-char-name {
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#battlePrepRoot .battle-char-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#battlePrepRoot .battle-prompt-preview {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 140px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#battlePrepRoot .battle-skill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#battlePrepRoot .battle-skill-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#battlePrepRoot .battle-skill-chip:active {
+  transform: translateY(1px);
+}
+
+#battlePrepRoot .badge {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+#battlePrepRoot .mini-btn {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#battlePrepRoot .mini-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* selection list (reuse battleCharList container) */
+#battlePrepRoot #battleCharList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 720px) {
+  #battlePrepRoot #battleCharList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+#battlePrepRoot .battle-char-item-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+#battlePrepRoot .battle-char-item-card.selected {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#battlePrepRoot .battle-char-item-card img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 0 0 auto;
+}
+
+#battlePrepRoot .battle-char-item-name {
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#battlePrepRoot .battle-char-item-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#battlePrepRoot .battle-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}

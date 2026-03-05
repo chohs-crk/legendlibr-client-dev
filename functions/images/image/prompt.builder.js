@@ -255,23 +255,26 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
     // ✅ 기본(클로즈업) 컴포지션 — "후순위(태그 뒤)" 로만 넣기 위해 별도 분리
     const defaultComposition = {
         tags: [
-            "single character portrait",
-            "close-up portrait",
+            // 🔥 강제 상반신 앵커
+            "extreme close-up portrait",
+            "head and shoulders only",
             "upper body only",
-            "chest-up framing",
-            "face dominant in frame",
-            "head and shoulders",
-            "front view",
-            "tight crop",
-            "subject fills the frame",
+            "tight chest-up framing",
+            "face fills most of the frame",
+            "zoomed in on face",
+            "large face in frame",
+            "subject dominates entire canvas",
+            "cropped below chest",
+            "no legs visible",
             "no full body",
-            "no distant shot",
-            "no wide shot"
+            "no distant character",
+            "no small subject",
+            "no wide shot",
+            "no long shot"
         ],
         sentence:
-            "Close-up portrait of a single character, framed from chest up. The face dominates the frame, tightly cropped with no full body visible. The subject fills most of the image."
+            "Extreme close-up portrait of a single character, framed tightly from chest up. The face fills most of the frame and dominates the canvas. No full body, no distant shot, no wide framing."
     };
-
     const userWantsCustomComposition = userSpecifiesCompositionPrompt(userPrompt);
 
     // ✅ origin background(콤마 문자열) → 태그로 분해
@@ -352,8 +355,17 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
     }
 
     // 태그가 길어져도 기본 구도 tail이 살아있도록 tail 보존
-    compositionTags = capPreservingTail(compositionTags, limits.comp, useDefaultCompositionFallback ? 6 : 0);
+    if (useDefaultCompositionFallback) {
+        const headKeep = 8; // 🔥 상반신 앵커 절대 유지
+        const capped = compositionTags.slice(0, headKeep);
 
+        const rest = compositionTags.slice(headKeep);
+        const remaining = limits.comp - headKeep;
+
+        compositionTags = [...capped, ...rest.slice(0, remaining)];
+    } else {
+        compositionTags = compositionTags.slice(0, limits.comp);
+    }
     let compositionSentence = compositionFromAI.sentence;
     if (useDefaultCompositionFallback) {
         // ✅ 후순위: AI sentence 뒤에 기본 구도 sentence를 추가(또는 AI가 비면 기본만)

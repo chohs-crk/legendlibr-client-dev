@@ -14,7 +14,7 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
     }
 
     const location = "us-central1";
-    const modelName = "gemini-2.5-flash-lite";
+    const modelName = "gemini-2.0-flash-lite";
 
     const vertexAI = new VertexAI({ project: projectId, location });
 

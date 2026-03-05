@@ -6,7 +6,31 @@ import { apiFetchCharacterById, apiFetchRegionMeta, apiDownloadRegion } from "./
 
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
-const REGION_META_TTL = 5 * 60 * 1000; // 5분
+const REGION_META_TTL = 3 * 60 * 1000; // 5분
+function applyEloToCharacterCache(charId, delta) {
+
+    if (!charId || !Number.isFinite(delta)) return;
+
+    const raw = sessionStorage.getItem("homeCharacters");
+    if (!raw) return;
+
+    let arr;
+
+    try {
+        arr = JSON.parse(raw);
+    } catch {
+        return;
+    }
+
+    const idx = arr.findIndex(c => c.id === charId);
+    if (idx === -1) return;
+
+    const oldScore = Number(arr[idx].battleScore) || 0;
+
+    arr[idx].battleScore = oldScore + delta;
+
+    sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
+}
 function renderSkeletonUI() {
     const imgEl = document.getElementById("charImage");
     const nameBox = document.getElementById("charName");
