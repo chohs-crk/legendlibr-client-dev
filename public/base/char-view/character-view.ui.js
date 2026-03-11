@@ -6,7 +6,7 @@ import { apiFetchCharacterById, apiFetchRegionMeta, apiDownloadRegion } from "./
 
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
-const REGION_META_TTL = 3 * 60 * 1000; // 5분
+const REGION_META_TTL = 1 * 60 * 1000; // 1분
 function applyEloToCharacterCache(charId, delta) {
 
     if (!charId || !Number.isFinite(delta)) return;

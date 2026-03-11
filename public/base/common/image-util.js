@@ -7,5 +7,5 @@ export function resolveCharImage(image) {
     if (image.type === "base" && image.key)
         return `/images/base/${image.key}.png`;
 
-    return "/images/base/base_01.png";
+    return "/images/base/base_02.png";
 }

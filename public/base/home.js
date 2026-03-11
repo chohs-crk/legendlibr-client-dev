@@ -1,9 +1,6 @@
-﻿import { requireAuthOrRedirect } from "./auth.js";
-import { resolveCharImage } from "/base/common/image-util.js";
+﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { openConfirm } from "/base/common/ui-confirm.js";
 import { apiFetch } from "/base/api.js";
-
-
 
 let characters = [];
 
@@ -14,21 +11,54 @@ let storyCheckTimer = null;
 let storyCheckInterval = 10000; // 기본 10초
 let wasFinalFlow = false;
 
+/* ===================================================
+   AUTH STATE
+=================================================== */
+function getHomeAuthState() {
+    const user = window.__authUser || null;
+    if (user) {
+        return { isAuthed: true, user };
+    }
+
+    const uid = sessionStorage.getItem("uid");
+    if (uid) {
+        return {
+            isAuthed: true,
+            user: { uid }
+        };
+    }
+
+    return {
+        isAuthed: false,
+        user: null
+    };
+}
+
+/* ===================================================
+   EVENT BIND
+=================================================== */
 function bindHomeEventsOnce() {
     const btnCreate = document.getElementById("btnCreate");
     if (!btnCreate) return;
 
-    // 중복 바인딩 방지 (home 재진입 시 init이 여러 번 불릴 수 있음)
+    // 중복 바인딩 방지
     if (btnCreate.dataset.bound === "1") return;
     btnCreate.dataset.bound = "1";
 
     btnCreate.addEventListener("click", () => {
+        const { isAuthed } = getHomeAuthState();
+
         sessionStorage.removeItem("homeCharacters");
         sessionStorage.setItem("homeCalled", "false");
 
         resetCreationFlow();
 
-        // ✅ 전역 라우터 사용 (스코프 안전)
+        if (!isAuthed) {
+            sessionStorage.setItem("loginRedirect", "/create");
+            window.location.href = "/login";
+            return;
+        }
+
         window.showPage?.("create", { type: "push" });
     });
 }
@@ -59,6 +89,25 @@ function applyCharCountUI(charCount) {
     if (!btnCreate) return;
 
     btnCreate.style.display = count >= 10 ? "none" : "";
+}
+
+function renderGuestHome() {
+    characters = [];
+
+    const listEl = document.getElementById("charList");
+    if (listEl) {
+        listEl.innerHTML = "";
+        listEl.style.opacity = "1";
+    }
+
+    applyCharCountUI(0);
+}
+
+function stopStoryCheckPolling() {
+    if (storyCheckTimer) {
+        clearTimeout(storyCheckTimer);
+        storyCheckTimer = null;
+    }
 }
 
 /* ===================================================
@@ -98,14 +147,13 @@ function renderList() {
         const tb = new Date(b.createdAt || 0).getTime();
         return tb - ta;
     });
-    
+
     const listEl = document.getElementById("charList");
     if (!listEl) return;
 
     listEl.innerHTML = "";
 
     characters.forEach((c) => {
-
         const card = document.createElement("div");
         card.className = "char-card";
         card.style.position = "relative";
@@ -138,8 +186,12 @@ function renderList() {
             transition: "opacity 0.2s"
         });
 
-        delBtn.addEventListener("mouseenter", () => delBtn.style.opacity = "1");
-        delBtn.addEventListener("mouseleave", () => delBtn.style.opacity = "0.6");
+        delBtn.addEventListener("mouseenter", () => {
+            delBtn.style.opacity = "1";
+        });
+        delBtn.addEventListener("mouseleave", () => {
+            delBtn.style.opacity = "0.6";
+        });
 
         card.appendChild(delBtn);
 
@@ -185,12 +237,12 @@ function renderList() {
                     type: "push",
                     charId: c.id
                 });
-
             }
         });
 
         listEl.appendChild(card);
     });
+
     listEl.style.opacity = "1";
 }
 
@@ -198,7 +250,6 @@ function renderList() {
    FINAL 가짜 카드
 =================================================== */
 function injectFakeFinalCard(nameOrIntro) {
-
     const listEl = document.getElementById("charList");
     if (!listEl) return;
 
@@ -206,14 +257,11 @@ function injectFakeFinalCard(nameOrIntro) {
 
     if (document.getElementById("fake-final-card")) return;
 
-    // 🔥 유저 입력 이름 우선 사용
     let name = nameOrIntro;
 
-    // intro가 넘어온 경우 fallback 처리
     if (!name || name.length > 30) {
         name = extractNameFromIntro(nameOrIntro);
     }
-
 
     const card = document.createElement("div");
     card.className = "char-card";
@@ -246,23 +294,20 @@ function extractNameFromIntro(text) {
    STORY CHECK POLLING
 =================================================== */
 function startStoryCheckPolling() {
-
     if (storyCheckTimer) return;
 
     const startedAt = Number(sessionStorage.getItem("finalStartedAt"));
-
     if (!startedAt) return;
 
     const elapsed = Date.now() - startedAt;
 
-    // 🔥 30초 초과 → 폴링 안 함
+    // 30초 초과 → 폴링 안 함
     if (elapsed > 30000) {
         sessionStorage.removeItem("finalStartedAt");
         return;
     }
 
     const poll = async () => {
-
         const homePage = document.getElementById("page-home");
         if (!homePage?.classList.contains("active")) {
             storyCheckTimer = null;
@@ -278,11 +323,8 @@ function startStoryCheckPolling() {
                     injectFakeFinalCard(data.rawName || data.intro);
                 }
 
-                // 🔥 완료 감지
                 if (!data.ok) {
-
                     sessionStorage.removeItem("finalStartedAt");
-
                     sessionStorage.setItem("homeCalled", "false");
                     sessionStorage.removeItem("homeCharacters");
 
@@ -290,7 +332,6 @@ function startStoryCheckPolling() {
                     return;
                 }
             }
-
         } catch (err) {
             console.error("story-check error:", err);
         }
@@ -301,15 +342,22 @@ function startStoryCheckPolling() {
     poll();
 }
 
-
-
 /* ===================================================
    INIT
 =================================================== */
 export async function initHomePage() {
-
-    await requireAuthOrRedirect();
     bindHomeEventsOnce();
+
+    const { isAuthed } = getHomeAuthState();
+
+    if (!isAuthed) {
+        stopStoryCheckPolling();
+        sessionStorage.removeItem("homeCharacters");
+        sessionStorage.setItem("homeCalled", "false");
+        renderGuestHome();
+        return;
+    }
+
     startStoryCheckPolling();
 
     const homeCalled = sessionStorage.getItem("homeCalled");

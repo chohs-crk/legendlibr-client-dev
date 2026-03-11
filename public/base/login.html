@@ -57,7 +57,22 @@
                             body: JSON.stringify({ idToken })
                         });
 
-                        window.location.href = "/base/index.html";
+                        /* ================================
+                           로그인 후 redirect 복구
+                        ================================ */
+
+                        const redirect = sessionStorage.getItem("loginRedirect");
+                        sessionStorage.removeItem("loginRedirect");
+
+                        const safeRedirect =
+                            redirect &&
+                                redirect.startsWith("/") &&
+                                !redirect.startsWith("//") &&
+                                !redirect.startsWith("/\\")
+                                ? redirect
+                                : "/";
+
+                        window.location.href = safeRedirect;
 
                     } catch (e) {
                         console.error(e);

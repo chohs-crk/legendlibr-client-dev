@@ -2,7 +2,7 @@
 // 라우터 "오케스트레이션"만 담당: (DOM 활성화 + stack/history 연결 + init 호출)
 // 세부 책임(설정/스택/partial 로딩/init)은 /base/router/* 로 분리
 
-import { PAGE_OPTIONS, makeEntry, parseInitialRoute } from "./router/route-config.js";
+import { PAGE_OPTIONS, makeEntry, parseInitialRoute, PUBLIC_PAGES, buildPath } from "./router/route-config.js";
 import {
   loadStack,
   saveStack,
@@ -15,7 +15,31 @@ import { ensurePageMounted } from "./router/page-loader.js";
 import { initPage } from "./router/page-init.js";
 
 export { parseInitialRoute } from "./router/route-config.js";
+function getAuthState() {
+    const user = window.__authUser || null;
 
+    // 전역 auth 객체가 있으면 우선 사용
+    if (user) {
+        return {
+            isAuthed: true,
+            user,
+        };
+    }
+
+    // 최소한의 보조 체크
+    const uid = sessionStorage.getItem("uid");
+    if (uid) {
+        return {
+            isAuthed: true,
+            user: { uid },
+        };
+    }
+
+    return {
+        isAuthed: false,
+        user: null,
+    };
+}
 /* =======================================
    SCROLL
 ======================================= */
@@ -53,13 +77,24 @@ function activatePage(name) {
    ROUTER CORE
 ======================================= */
 export async function showPage(name, options = {}) {
-  // ✅ charId를 보정해야 해서 let으로 받는다
-  let { fromPop = false, type = "push", charId = null, battleId = null } = options;
+    let { fromPop = false, type = "push", charId = null, battleId = null } = options;
 
-  // ✅ character-image는 보통 viewCharId를 이미 갖고 있으니 그걸 사용
-  if (name === "character-image" && !charId) {
-    charId = sessionStorage.getItem("viewCharId") || null;
-  }
+    const { isAuthed } = getAuthState();
+
+    if (!isAuthed && !PUBLIC_PAGES.has(name)) {
+        const redirectPath = buildPath(name, { charId, battleId });
+        sessionStorage.setItem("loginRedirect", redirectPath);
+
+        location.href = "/login";
+        return;
+    }
+
+    // ✅ character-image는 보통 viewCharId를 이미 갖고 있으니 그걸 사용
+    if (name === "character-image" && !charId) {
+        charId = sessionStorage.getItem("viewCharId") || null;
+    }
+
+  
 
   // ====== onHide ======
   if (currentPageName && pageHooks[currentPageName]?.onHide) {

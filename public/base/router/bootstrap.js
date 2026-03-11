@@ -33,12 +33,28 @@ function bindGlobalUI() {
     // 인증이 실패하면 페이지 보여주지 않도록 순서 분리
     await loadChrome();
 
-    await requireAuthOrRedirect();
+      const route = parseInitialRoute();
+
+      const PUBLIC_PAGES = new Set([
+          "home",
+          "journey",
+          "ranking",
+          "setting",
+          "character-view"
+      ]);
+
+      if (!PUBLIC_PAGES.has(route.name)) {
+
+          const redirectPath = location.pathname + location.search + location.hash;
+          sessionStorage.setItem("loginRedirect", redirectPath);
+
+          await requireAuthOrRedirect();
+      }
 
     // ✅ 기존 index.html처럼 "모든 page DOM은 존재"하게 만든다 (안전/호환성 우선)
     await mountAllPages();
 
-    const route = parseInitialRoute(); // { name, charId?, battleId? }
+   
 
     window.showPage(route.name, {
       type: "tab",
