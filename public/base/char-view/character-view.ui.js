@@ -3,34 +3,30 @@ import { resolveCharImage } from "../common/image-util.js";
 import { parseStoryText } from "../common/story-parser.js";
 import { openWrap } from "/base/common/ui-wrap.js";
 import { apiFetchCharacterById, apiFetchRegionMeta, apiDownloadRegion } from "./character-view.api.js";
+import {
+    readHomeCharactersCache,
+    writeHomeCharactersCache,
+    upsertMyCharacterCache
+} from "../home-cache.js";
 
 import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
-const REGION_META_TTL = 1 * 60 * 1000; // 1분
-function applyEloToCharacterCache(charId, delta) {
 
+const REGION_META_TTL = 1 * 60 * 1000; // 1분
+
+function applyEloToCharacterCache(charId, delta) {
     if (!charId || !Number.isFinite(delta)) return;
 
-    const raw = sessionStorage.getItem("homeCharacters");
-    if (!raw) return;
-
-    let arr;
-
-    try {
-        arr = JSON.parse(raw);
-    } catch {
-        return;
-    }
-
+    const arr = readHomeCharactersCache();
     const idx = arr.findIndex(c => c.id === charId);
     if (idx === -1) return;
 
     const oldScore = Number(arr[idx].battleScore) || 0;
-
     arr[idx].battleScore = oldScore + delta;
 
-    sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
+    writeHomeCharactersCache(arr);
 }
+
 function renderSkeletonUI() {
     const imgEl = document.getElementById("charImage");
     const nameBox = document.getElementById("charName");
@@ -64,6 +60,7 @@ function renderSkeletonUI() {
         `;
     }
 }
+
 function getRegionMetaCache(regionId) {
     const raw = sessionStorage.getItem("regionMetaCache");
     if (!raw) return null;
@@ -123,7 +120,6 @@ export function initCharacterViewUI() {
     let fullStoryText = "";
     let skillsCache = [];
 
-    // ✅ 배틀 탭 전용 모듈
     const battleModule = initBattleModule({
         charId: id,
         content,
@@ -132,12 +128,12 @@ export function initCharacterViewUI() {
         btnNextPage,
         pageSize: BATTLE_PAGE_SIZE
     });
+
     function applyCharacterData(data) {
         const originName = data.origin || "-";
-        const regionName = data.region || "-"
+        const regionName = data.region || "-";
         const regionId = data.regionId || "";
 
-        /* ===== 이미지 수정 권한 처리 ===== */
         const imageBox = document.getElementById("charImageBox");
         const editIcon = document.getElementById("imageEditIcon");
 
@@ -162,18 +158,15 @@ export function initCharacterViewUI() {
             };
         }
 
-        // 이름
         if (nameBox) {
             nameBox.textContent = data.displayRawName || "(이름 없음)";
         }
 
-        // 이미지
         const imgEl = document.getElementById("charImage");
         if (imgEl) {
             imgEl.src = resolveCharImage(data.image);
         }
 
-        // 점수/판수 + 소개
         const battleScore = data.battleScore ?? 0;
         const battleCount = data.battleCount ?? 0;
 
@@ -219,6 +212,7 @@ export function initCharacterViewUI() {
             </div>
         `;
         }
+
         const originBtn = document.getElementById("originInfoBtn");
         const regionBtn = document.getElementById("regionInfoBtn");
 
@@ -232,11 +226,7 @@ export function initCharacterViewUI() {
     `);
         });
 
-          
-
         regionBtn?.addEventListener("click", async () => {
-
-            // ✅ default region
             if (!regionId || regionId.endsWith("_DEFAULT")) {
                 openWrap(`
             <h3>${regionName}</h3>
@@ -246,7 +236,6 @@ export function initCharacterViewUI() {
                 return;
             }
 
-            // ✅ 1️⃣ 즉시 팝업 열기 (placeholder 사용)
             openWrap(`
         <h3>${regionName}</h3>
 
@@ -263,7 +252,6 @@ export function initCharacterViewUI() {
         </button>
     `);
 
-            // 다운로드 버튼 이벤트 먼저 연결
             setTimeout(() => {
                 const btn = document.getElementById("regionDownloadBtn");
                 if (!btn) return;
@@ -289,6 +277,7 @@ export function initCharacterViewUI() {
                     }
                 });
             }, 0);
+
             const cached = getRegionMetaCache(regionId);
 
             if (cached) {
@@ -298,40 +287,34 @@ export function initCharacterViewUI() {
                         `[${cached.ownerchar || "대표 없음"}] · ${cached.charnum || 0}명의 캐릭터`;
                 }
             } else {
-            // ✅ 2️⃣ 서버 호출 (비동기)
-            try {
-                const res = await apiFetchRegionMeta(regionId);
-                const json = await res.json();
+                try {
+                    const res = await apiFetchRegionMeta(regionId);
+                    const json = await res.json();
 
-                if (!json.ok) {
+                    if (!json.ok) {
+                        const metaEl = document.getElementById("regionMetaInfo");
+                        if (metaEl) metaEl.textContent = "정보를 불러오지 못했습니다.";
+                        return;
+                    }
+
+                    setRegionMetaCache(regionId, json);
+
+                    const metaEl = document.getElementById("regionMetaInfo");
+                    if (metaEl) {
+                        metaEl.innerHTML =
+                            `[${json.ownerchar || "대표 없음"}] · ${json.charnum || 0}명의 캐릭터`;
+                    }
+
+                } catch {
                     const metaEl = document.getElementById("regionMetaInfo");
                     if (metaEl) metaEl.textContent = "정보를 불러오지 못했습니다.";
-                    return;
-                }
-                setRegionMetaCache(regionId, json);
-                // ✅ 3️⃣ DOM 부분 교체
-                const metaEl = document.getElementById("regionMetaInfo");
-                if (metaEl) {
-                    metaEl.innerHTML =
-                        `[${json.ownerchar || "대표 없음"}] · ${json.charnum || 0}명의 캐릭터`;
-                }
-
-            } catch {
-                const metaEl = document.getElementById("regionMetaInfo");
-                if (metaEl) metaEl.textContent = "정보를 불러오지 못했습니다.";
                 }
             }
         });
 
-
-
-
-
-        // 스토리/스킬 캐시
         fullStoryText = data.fullStory || "(스토리 없음)";
         skillsCache = data.skills || [];
 
-        // 기본 탭: 스토리
         setActiveTab("story");
         renderStoryPreview({
             content,
@@ -340,7 +323,6 @@ export function initCharacterViewUI() {
             openDetailDialog
         });
 
-        // 탭 이벤트 (매번 덮어써도 OK)
         if (tabStory) {
             tabStory.onclick = () => {
                 setActiveTab("story");
@@ -372,7 +354,6 @@ export function initCharacterViewUI() {
         }
     }
 
-
     function openDetailDialog(title, bodyHtml) {
         if (!detailBody || !detailDialog) return;
 
@@ -398,17 +379,15 @@ export function initCharacterViewUI() {
         if (detailBody) detailBody.innerHTML = "";
     }
 
-    // 외부 닫기 훅 유지
     window.__closeCharacterDetailDialog = closeDetailDialog;
 
     if (detailDialog) {
         detailDialog.addEventListener("cancel", (e) => {
-            e.preventDefault(); // 브라우저 기본 cancel 동작 방지
+            e.preventDefault();
             closeDetailDialog();
         });
     }
 
-    /* ===== 탭 활성화 ===== */
     function setActiveTab(tabName) {
         const all = [tabStory, tabSkill, tabBattle].filter(Boolean);
         all.forEach((btn) => btn.classList.remove("active"));
@@ -419,23 +398,16 @@ export function initCharacterViewUI() {
     }
 
     async function loadCharacter() {
-        renderSkeletonUI(); // 🔥 제일 먼저 호출
+        renderSkeletonUI();
         await new Promise(requestAnimationFrame);
+
         if (!id) {
             content.textContent = "잘못된 접근입니다.";
             return;
         }
 
-        // 🔥 1️⃣ home 캐시 우선 확인
-        const cachedHome = sessionStorage.getItem("homeCharacters");
-
-        let cachedData = null;
-
-        if (cachedHome) {
-            const parsed = JSON.parse(cachedHome);
-            cachedData = parsed.find(c => c.id === id);
-        }
-
+        const cachedHome = readHomeCharactersCache();
+        const cachedData = cachedHome.find(c => c.id === id);
         const currentRenderedId = window.__currentCharId;
 
         if (cachedData && currentRenderedId === id) {
@@ -443,9 +415,6 @@ export function initCharacterViewUI() {
             return;
         }
 
-     
-   
-        
         try {
             const res = await apiFetchCharacterById(id);
 
@@ -455,28 +424,22 @@ export function initCharacterViewUI() {
             }
 
             const data = await res.json();
-            const cachedHome = sessionStorage.getItem("homeCharacters");
-            let arr = cachedHome ? JSON.parse(cachedHome) : [];
 
-            const index = arr.findIndex(c => c.id === data.id);
-
-            if (index !== -1) {
-                arr[index] = data;   // 🔥 제자리 교체
-            } else {
-                arr.push(data);      // 신규인 경우만 push
+            if (data.isMine) {
+                upsertMyCharacterCache({
+                    ...data,
+                    isMine: true
+                });
             }
-
-            sessionStorage.setItem("homeCharacters", JSON.stringify(arr));
 
             applyCharacterData(data);
             window.__currentCharId = data.id;
-            
+
         } catch (err) {
             console.error(err);
             content.textContent = "서버 오류로 캐릭터를 불러오지 못했습니다.";
         }
     }
 
-    // 초기 로드
     loadCharacter();
 }

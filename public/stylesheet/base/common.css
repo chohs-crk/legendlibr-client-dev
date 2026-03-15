@@ -11,6 +11,8 @@
     --accent-hover: #7E6BFF;
     --radius: 14px;
     --shadow: 0 3px 12px rgba(0,0,0,0.35);
+    --page-transition-ms: 300ms;
+    --page-transition-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html {
@@ -20,10 +22,10 @@ html {
 body {
     font-family: "Pretendard", sans-serif;
     color: var(--text-main);
-    overflow-x: hidden; /* 가로만 차단 */
-    overflow-y: hidden; /* 바깥 스크롤 차단(스크롤은 .scroll-area만) */
+    overflow-x: hidden;
+    overflow-y: hidden;
     overscroll-behavior: none;
-    background: radial-gradient( circle at center, #151126 0%, #09070d 70%, #050408 100% );
+    background: radial-gradient(circle at center, #151126 0%, #09070d 70%, #050408 100%);
 }
 
 /* ===============================
@@ -33,14 +35,12 @@ body {
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     width: 100%;
     height: 100%;
     margin: 0;
 }
-
-
-
 
 /* ===============================
    GLOBAL BACKGROUND
@@ -48,10 +48,9 @@ html, body {
 .bg-root {
     position: relative;
     width: 100%;
-    min-height: 100dvh; /* 🔥 100dvh → min-height로 변경 */
+    min-height: 100dvh;
 }
 
-/* 배경 프레임은 app 기준 중앙 */
 .bg-frame {
     position: fixed;
     inset: 0;
@@ -67,11 +66,9 @@ html, body {
     pointer-events: none;
 }
 
-
 /* ===============================
    APP CONTAINER
 =============================== */
-
 .app {
     position: relative;
     z-index: 1;
@@ -79,40 +76,73 @@ html, body {
     max-width: 420px;
     margin: 0 auto;
     height: 100dvh;
-    overflow-x: hidden; /* 가로만 차단 */
-    overflow-y: hidden; /* 부모는 스크롤 생성 안 함 */
-
+    overflow-x: hidden;
+    overflow-y: hidden;
     display: flex;
     flex-direction: column;
     background: transparent;
 }
 
-    /* 내부 요소가 폭 초과 못 하도록 보호막 */
     .app * {
         max-width: 100%;
         box-sizing: border-box;
     }
 
-
-
-
 /* ===============================
    ROUTER ROOT (#pages-root)
-   페이지가 들어가는 컨테이너가 높이를 가져야
-   내부 .scroll-area가 정상적으로 스크롤 됩니다.
 =============================== */
 #pages-root {
+    position: relative;
     flex: 1;
     min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 바깥 스크롤 금지 */
+    display: block;
+    overflow: hidden;
 }
 
-    /* 각 page(section)가 남은 높이를 채우도록 */
     #pages-root > .page {
-        flex: 1;
         min-height: 0;
+    }
+
+/* ===============================
+   PAGE CROSS FADE (IOS-LIKE)
+=============================== */
+.page {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(1);
+    pointer-events: none;
+    overflow: hidden;
+    will-change: opacity, transform;
+}
+
+    .page.active {
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+    }
+
+    .page.page-transitioning {
+        pointer-events: none;
+    }
+
+    .page.page-entering {
+        opacity: 0;
+        transform: scale(1.012);
+        z-index: 3;
+    }
+
+        .page.page-entering.page-active-fade {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity var(--page-transition-ms) var(--page-transition-ease), transform var(--page-transition-ms) var(--page-transition-ease);
+        }
+
+    .page.page-leaving {
+        opacity: 0;
+        transform: scale(0.992);
+        z-index: 2;
+        transition: opacity var(--page-transition-ms) var(--page-transition-ease), transform var(--page-transition-ms) var(--page-transition-ease);
     }
 
 /* ===============================
@@ -125,19 +155,14 @@ html, body {
     background: transparent;
 }
 
-/* page-body가 필요한 화면용 */
 .page-body {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-
 /* ===============================
    SCROLL AREA
-   - 바깥(body/app) 스크롤은 잠그고
-   - 오직 .scroll-area만 스크롤되게
-   - 스크롤바: 얇은 보라색
 =============================== */
 .scroll-area {
     flex: 1;
@@ -145,14 +170,11 @@ html, body {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    /* 스크롤 체인이 바깥(바디)로 튀지 않게 */
     overscroll-behavior: contain;
-    /* Firefox */
     scrollbar-width: thin;
     scrollbar-color: var(--accent) transparent;
 }
 
-    /* Chrome / Edge / Safari */
     .scroll-area::-webkit-scrollbar {
         width: 6px;
     }
@@ -177,11 +199,11 @@ html, body {
     height: 12px;
 }
 
-/* PLAIN DIALOG 기본 위치 */
 .plain-dialog {
     position: fixed;
     inset: 0;
 }
+
 /* ===============================
    TEXT FLOW (KOREAN SAFE)
 =============================== */
@@ -190,11 +212,10 @@ html, body {
     overflow-wrap: break-word;
     white-space: normal;
 }
+
 /* ===============================
    PTR BASE SCROLL EXTENSION
-   (PURE CONTENT 기준 +20%)
 =============================== */
-
 .scroll-area::before {
     content: "";
     display: block;
@@ -213,15 +234,18 @@ html, body {
 .content,
 .page-body {
     min-height: 0;
-    overflow: hidden; /* 🔥 visible 금지 */
 }
-/* 기존 코드 (character-view.css에 이미 있음) */
+
+.content,
+.page-body {
+    overflow: hidden;
+}
+
 .story-em {
     color: var(--accent);
     font-weight: 600;
 }
 
-/* ✅ 추가: story-parser.js가 생성하는 클래스들 */
 .story-talk {
     color: #ffd6f5;
     font-weight: 600;
@@ -236,8 +260,9 @@ html, body {
     border: 1px solid rgba(143, 75, 255, 0.55);
     background: rgba(20, 18, 33, 0.55);
     box-shadow: 0 2px 8px rgba(120, 60, 255, 0.18);
-    white-space: nowrap; /* 스킬명 뭉개짐 방지(선택) */
+    white-space: nowrap;
 }
+
 .scroll-area {
     overscroll-behavior: auto;
 }

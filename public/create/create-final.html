@@ -51,7 +51,6 @@
             <div>캐릭터의 이야기를 마무리하고 있습니다.</div>
             <div>잠시만 기다려 주세요.</div>
 
-            <!-- 🔥 홈 이동 버튼 추가 -->
             <button id="btnGoHome"
                     style="
                 margin-top:20px;
@@ -71,6 +70,34 @@
     <script type="module">
         import { apiFetch } from "/base/api.js";
 
+        const PENDING_FINAL_KEY = "pendingFinalPreview";
+
+        function getPendingRawName() {
+            return (
+                sessionStorage.getItem("displayNameRaw") ||
+                sessionStorage.getItem("realName") ||
+                "새 캐릭터"
+            );
+        }
+
+        function savePendingFinalPreview(rawName) {
+            const safeName = String(rawName || "새 캐릭터").trim() || "새 캐릭터";
+
+            sessionStorage.setItem(PENDING_FINAL_KEY, JSON.stringify({
+                rawName: safeName,
+                image: {
+                    type: "default",
+                    key: "base_01",
+                    url: ""
+                },
+                startedAt: Number(sessionStorage.getItem("finalStartedAt")) || Date.now()
+            }));
+        }
+
+        function clearPendingFinalPreview() {
+            sessionStorage.removeItem(PENDING_FINAL_KEY);
+        }
+
         async function gen() {
             try {
                 const res = await apiFetch("/create/final", {
@@ -79,7 +106,6 @@
 
                 const j = await res.json();
 
-                // 🔒 이미 호출 중이거나 처리 중인 경우
                 if (j.status === "waiting") {
                     document.getElementById("loadingBox").innerHTML =
                         `<div>결말을 정리하고 있습니다...</div>
@@ -87,89 +113,84 @@
                     return;
                 }
 
-                // ✅ 이미 완료된 경우
                 if (j.status === "done") {
-                  
-                   
+                    clearPendingFinalPreview();
 
                     document.getElementById("loadingBox").innerHTML =
                         `<div>캐릭터 생성이 완료되었습니다.</div>
                              <div>잠시 후 이동합니다.</div>`;
+
                     setTimeout(() => {
                         sessionStorage.setItem("viewCharId", j.id);
                         sessionStorage.setItem("homeCalled", "false");
-
-                        // SPA 진입
+                        sessionStorage.removeItem("finalStartedAt");
                         location.href = `/character/${j.id}`;
-
                     }, 1200);
 
                     return;
                 }
 
-                // ❌ 실패 (서버 정책상 재시도 불가)
                 if (!j.ok) {
-             
+                    clearPendingFinalPreview();
 
                     document.getElementById("loadingBox").innerHTML =
                         `<div>캐릭터 생성이 종료되었습니다.</div>
                              <div>다시 생성할 수 있습니다.</div>
                              <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
+
                     setTimeout(() => {
                         sessionStorage.setItem("homeCalled", "false");
+                        sessionStorage.removeItem("finalStartedAt");
                         location.href = "/";
-
                     }, 2000);
+
                     return;
                 }
 
-                // ✅ 정상 성공 응답
+                clearPendingFinalPreview();
+
                 document.getElementById("loadingBox").innerHTML =
                     `<div>캐릭터 생성이 완료되었습니다.</div>
                          <div>잠시 후 이동합니다.</div>`;
+
                 setTimeout(() => {
                     sessionStorage.setItem("viewCharId", j.id);
                     sessionStorage.setItem("homeCalled", "false");
                     sessionStorage.removeItem("finalStartedAt");
-
-                    // SPA 진입
                     location.href = `/character/${j.id}`;
-
-
                 }, 1200);
 
             } catch (err) {
-                // 네트워크 / 예외 오류
+                clearPendingFinalPreview();
+
                 document.getElementById("loadingBox").innerHTML =
                     `<div>처리 중 문제가 발생했습니다.</div>
                          <div>캐릭터 생성은 종료되었습니다.</div>
                          <div style="margin-top:12px; opacity:.7;">잠시 후 이동합니다.</div>`;
+
                 setTimeout(() => {
                     sessionStorage.setItem("homeCalled", "false");
                     sessionStorage.removeItem("finalStartedAt");
                     location.href = "/";
-
                 }, 2500);
             }
         }
-       
+
         history.replaceState(null, "", "/create");
-        sessionStorage.setItem("finalStartedAt", Date.now().toString());
+
+        if (!sessionStorage.getItem("finalStartedAt")) {
+            sessionStorage.setItem("finalStartedAt", Date.now().toString());
+        }
+
+        savePendingFinalPreview(getPendingRawName());
         gen();
 
-        // 🔥 홈 이동 버튼 이벤트
         const btnGoHome = document.getElementById("btnGoHome");
         btnGoHome?.addEventListener("click", () => {
-
-            // 생성 플래그 종료
-            sessionStorage.removeItem("finalStartedAt");
+            savePendingFinalPreview(getPendingRawName());
             sessionStorage.setItem("homeCalled", "false");
-
-            // 홈으로 이동
             location.href = "/";
-
         });
-
     </script>
 </body>
 </html>
