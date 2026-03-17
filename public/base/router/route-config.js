@@ -16,10 +16,11 @@ export const PAGES = [
 ];
 
 export const PAGE_OPTIONS = {
-  home: { reinitOnBack: true,  scrollTopOnBack: true  },
-  ranking: { reinitOnBack: false, scrollTopOnBack: true  },
-  "character-view": { reinitOnBack: false, scrollTopOnBack: false },
-  "battle-log": { reinitOnBack: false, scrollTopOnBack: false },
+    home: { reinitOnBack: true, scrollTopOnBack: true },
+    ranking: { reinitOnBack: false, scrollTopOnBack: true },
+    battle: { reinitOnBack: true, scrollTopOnBack: true },
+    "character-view": { reinitOnBack: false, scrollTopOnBack: false },
+    "battle-log": { reinitOnBack: false, scrollTopOnBack: false },
 };
 
 export const ANCHOR_PAGES = new Set(["home", "journey", "ranking", "setting"]);

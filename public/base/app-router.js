@@ -158,7 +158,7 @@ export async function showPage(name, options = {}) {
             const redirectPath = buildPath(name, { charId, battleId });
             sessionStorage.setItem("loginRedirect", redirectPath);
 
-            location.href = "/login";
+            location.href = "/base/login";
             return;
         }
 

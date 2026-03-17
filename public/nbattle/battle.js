@@ -39,7 +39,7 @@ function escapeHtml(str) {
         .replaceAll("'", "&#39;");
 }
 
-function trimTextForTwoLines(text, maxChars = 92) {
+function trimIntroText(text, maxChars = 70) {
     const normalized = String(text || "")
         .replace(/\s+/g, " ")
         .trim();
@@ -313,9 +313,9 @@ function renderSidePanel(side, charData, { isLoading = false } = {}) {
     }
 
     const rawPrompt = typeof charData.promptRefined === "string" ? charData.promptRefined : "";
-    const clampedPromptText = trimTextForTwoLines(rawPrompt, 92);
+    const trimmedPromptText = trimIntroText(rawPrompt, 70);
 
-    promptEl.innerHTML = parseStoryText(clampedPromptText || "(소개 없음)");
+    promptEl.innerHTML = parseStoryText(trimmedPromptText || "(소개 없음)");
     promptEl.title = rawPrompt || "";
 
     const skills = Array.isArray(charData.skills) ? charData.skills : [];

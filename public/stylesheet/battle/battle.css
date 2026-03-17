@@ -115,20 +115,25 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 10px;
-        min-height: 58px;
+        min-height: 0;
         font-size: 13px;
         line-height: 1.45;
-        overflow: hidden;
+        overflow: visible;
+        word-break: keep-all;
     }
 
     #battlePrepRoot .battle-intro-clamp {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        word-break: keep-all;
-        overflow: hidden;
+        display: block;
+        overflow: visible;
     }
+
+        #battlePrepRoot .battle-intro-clamp > * {
+            margin: 0;
+        }
+
+        #battlePrepRoot .battle-intro-clamp br {
+            display: none;
+        }
 
     #battlePrepRoot .battle-skill-row {
         display: flex;
