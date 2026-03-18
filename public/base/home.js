@@ -67,21 +67,9 @@ let storyCheckTimer = null;
 =================================================== */
 function getHomeAuthState() {
     const user = window.__authUser || null;
-    if (user) {
-        return { isAuthed: true, user };
-    }
-
-    const uid = sessionStorage.getItem("uid");
-    if (uid) {
-        return {
-            isAuthed: true,
-            user: { uid }
-        };
-    }
-
     return {
-        isAuthed: false,
-        user: null
+        isAuthed: !!user,
+        user: user || null
     };
 }
 
