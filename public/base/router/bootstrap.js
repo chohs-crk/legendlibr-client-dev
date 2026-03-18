@@ -44,9 +44,11 @@ function bindGlobalUI() {
       ]);
 
       if (!PUBLIC_PAGES.has(route.name)) {
+          const currentPath = location.pathname + location.search + location.hash;
 
-          const redirectPath = location.pathname + location.search + location.hash;
-          sessionStorage.setItem("loginRedirect", redirectPath);
+          if (!sessionStorage.getItem("loginRedirect")) {
+              sessionStorage.setItem("loginRedirect", currentPath || "/");
+          }
 
           await requireAuthOrRedirect();
       }

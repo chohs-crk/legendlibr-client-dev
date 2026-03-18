@@ -155,10 +155,10 @@ export async function showPage(name, options = {}) {
         const { isAuthed } = getAuthState();
 
         if (!isAuthed && !PUBLIC_PAGES.has(name)) {
-            const redirectPath = buildPath(name, { charId, battleId });
-            sessionStorage.setItem("loginRedirect", redirectPath);
+            const currentPath = location.pathname + location.search + location.hash;
+            sessionStorage.setItem("loginRedirect", currentPath || "/");
 
-            location.href = "/base/login";
+            location.href = "/base/login.html";
             return;
         }
 

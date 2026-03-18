@@ -109,10 +109,13 @@ function bindHomeEventsOnce() {
         resetCreationFlow();
 
         if (!isAuthed) {
-            sessionStorage.setItem("loginRedirect", "/create");
-            window.location.href = "/base/login";
+            const currentPath = location.pathname + location.search + location.hash;
+            sessionStorage.setItem("loginRedirect", currentPath || "/");
+            window.location.href = "/base/login.html";
             return;
         }
+
+      
 
         window.showPage?.("create", { type: "push" });
     });

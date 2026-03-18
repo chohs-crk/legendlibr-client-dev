@@ -111,7 +111,7 @@ const STYLE_PRESETS = {
             "2D cyberpunk illustration with sharp cel shading and glossy reflections. Neon lighting, futuristic city glow and electric color accents create a high-contrast, holographic atmosphere."
     },
 
-    // 🔹 일본 애니 (2D + 광택 + 선명한 색)  ✅ 안정화: 다른 preset처럼 2D 앵커 보강
+    // 🔹 일본 애니 (2D + 광택 + 선명한 색)
     anime: {
         tags: [
             // 🔥 2D 앵커
@@ -215,9 +215,6 @@ const IMAGE_MODEL_MAP = {
 
         // Together FLUX.1 schnell 기본 4 steps 사용
         steps: 4
-
-        // guidance는 Together FLUX에서 무시되거나 의미가 없을 수 있어 제거
-        // (필요하면 다시 넣어도 되지만, 서버less cost/안정성 목적이면 생략 권장)
     },
 
     together_flux2: {
@@ -229,15 +226,65 @@ const IMAGE_MODEL_MAP = {
     }
 };
 
+const MODEL_PROMPT_POLICY = {
+    gemini: {
+        openai: {
+            tags: { subject: 10, background: 6, composition: 8, style: 10, negative: 8 },
+            sentencesPerSection: 1
+        },
+        final: {
+            subject: 10,
+            background: 8,
+            composition: 12,
+            style: 12,
+            negative: 8
+        }
+    },
+
+    together_sdxl: {
+        openai: {
+            tags: { subject: 12, background: 8, composition: 10, style: 12, negative: 8 },
+            sentencesPerSection: 1
+        },
+        final: {
+            subject: 12,
+            background: 8,
+            composition: 14,
+            style: 16,
+            negative: 8
+        }
+    },
+
+    together_flux2: {
+        openai: {
+            tags: { subject: 14, background: 10, composition: 12, style: 14, negative: 10 },
+            sentencesPerSection: 1
+        },
+        final: {
+            subject: 14,
+            background: 10,
+            composition: 16,
+            style: 20,
+            negative: 10
+        }
+    }
+};
+
+function getModelPromptPolicy(modelKey) {
+    return MODEL_PROMPT_POLICY[modelKey] || MODEL_PROMPT_POLICY.gemini;
+}
+
 const DEFAULT_WIDTH = 1024;
 const DEFAULT_HEIGHT = 1024;
 
 module.exports = {
     STYLE_PRESETS,
     IMAGE_MODEL_MAP,
+    MODEL_PROMPT_POLICY,
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     normalizeStyleKey,
     normalizePromptFormat,
-    resolvePromptFormat
+    resolvePromptFormat,
+    getModelPromptPolicy
 };

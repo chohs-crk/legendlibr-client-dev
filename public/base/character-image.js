@@ -2,11 +2,11 @@
 import { apiFetch } from "/base/api.js";
 
 const MODEL_PRICE_MAP = {
-    together_sdxl: 10, // 🔥 변경
+    together_sdxl: 10,
     together_flux2: 25,
     gemini: 50
 };
-const DEFAULT_AI_MODEL = "together_sdxl"; // 🔥 변경
+const DEFAULT_AI_MODEL = "together_sdxl";
 
 export async function initCharacterImagePage() {
     const charId = sessionStorage.getItem("viewCharId");
@@ -25,21 +25,158 @@ export async function initCharacterImagePage() {
     const aiPromptInput = document.getElementById("aiPromptInput");
     const btnAICancel = document.getElementById("btnAICancel");
     const btnAIGenerate = document.getElementById("btnAIGenerate");
-    const loadingOverlay = document.getElementById("loadingOverlay");
 
     let selectedImage = null;
     let aiImages = [];
     let selectedStyle = null;
     let selectedModel = DEFAULT_AI_MODEL;
+    let isSubmittingGenerate = false;
+    let toastTimer = null;
 
     function updateGenerateButtonPrice() {
         const price = MODEL_PRICE_MAP[selectedModel] || 0;
         btnAIGenerate.textContent = `생성 (${price}원)`;
     }
 
+    function setApplyDisabled(disabled) {
+        btnApply.disabled = disabled;
+        btnApply.classList.toggle("is-disabled", disabled);
+    }
+
+    function findAiImageByUrl(url) {
+        return aiImages.find((ai) => ai?.url === url) || null;
+    }
+
+    function canApplyImage(image = selectedImage) {
+        if (!image) return false;
+        if (image.type !== "ai") return true;
+
+        const found = findAiImageByUrl(image.url);
+        return !!found && found.ready !== false;
+    }
+
+    function syncApplyButtonState() {
+        setApplyDisabled(!canApplyImage());
+    }
+
+    function showJobRequestedToast() {
+        let toast = document.getElementById("jobRequestToast");
+
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "jobRequestToast";
+            toast.className = "job-request-toast";
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = "작업 요청됨";
+        toast.classList.remove("show");
+        void toast.offsetWidth;
+        toast.classList.add("show");
+
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 1000);
+    }
+
+    function upsertLocalAiImage(nextImage) {
+        if (!nextImage?.url) return;
+
+        const index = aiImages.findIndex(
+            (ai) =>
+                (nextImage.jobId && ai?.jobId === nextImage.jobId) ||
+                ai?.url === nextImage.url
+        );
+
+        if (index >= 0) {
+            aiImages[index] = { ...aiImages[index], ...nextImage };
+            return;
+        }
+
+        aiImages.push(nextImage);
+    }
+
+    function removeLocalAiImage({ jobId, url }) {
+        aiImages = aiImages.filter((ai) => {
+            const sameJob = jobId && ai?.jobId === jobId;
+            const sameUrl = url && ai?.url === url;
+            return !(sameJob || sameUrl);
+        });
+    }
+
+    function markLocalAiImageReady({ jobId, url, result }) {
+        const resolvedUrl = url || "";
+        const index = aiImages.findIndex(
+            (ai) =>
+                (jobId && ai?.jobId === jobId) ||
+                (resolvedUrl && ai?.url === resolvedUrl)
+        );
+
+        const prev = index >= 0 ? aiImages[index] : null;
+        const readyImage = {
+            ...(prev || {}),
+            jobId: prev?.jobId || jobId || null,
+            url: resolvedUrl || prev?.url || "",
+            ready: true,
+            fitScore: Number(result?.fitScore || prev?.fitScore || 0),
+            safetyScore: Number(result?.safetyScore || prev?.safetyScore || 0),
+            updatedAt: Date.now()
+        };
+
+        if (index >= 0) {
+            aiImages[index] = readyImage;
+            return;
+        }
+
+        aiImages.push(readyImage);
+    }
+
     imgEl.src = "";
     grid.querySelectorAll(".ai-image-item").forEach((el) => el.remove());
     grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
+
+    function clearSelected() {
+        grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
+    }
+
+    function renderAIImages() {
+        grid.querySelectorAll(".ai-image-item").forEach((el) => el.remove());
+
+        aiImages.forEach((ai) => {
+            if (ai?.ready === false) {
+                const pending = document.createElement("div");
+                pending.className = "ai-image-item ai-image-pending";
+                pending.innerHTML = `
+                    <div class="ai-image-pending-inner">
+                        <div class="ai-image-spinner" aria-hidden="true"></div>
+                    </div>
+                `;
+                grid.insertBefore(pending, aiSlot);
+                return;
+            }
+
+            const img = document.createElement("img");
+            img.src = ai.url;
+            img.className = "ai-image-item";
+
+            if (selectedImage?.type === "ai" && selectedImage.url === ai.url) {
+                img.classList.add("selected");
+            }
+
+            img.onclick = () => {
+                clearSelected();
+                img.classList.add("selected");
+                selectedImage = { type: "ai", key: "ai", url: ai.url };
+                imgEl.src = ai.url;
+                syncApplyButtonState();
+            };
+
+            grid.insertBefore(img, aiSlot);
+        });
+
+        syncApplyButtonState();
+    }
 
     // 스타일 버튼
     function setActiveStyleButton(styleKeyOrNull) {
@@ -47,7 +184,7 @@ export async function initCharacterImagePage() {
 
         const selector = styleKeyOrNull
             ? `.style-btn[data-style="${styleKeyOrNull}"]`
-            : `.style-btn[data-style=""]`; // 설정 안함 버튼
+            : `.style-btn[data-style=""]`;
 
         const btn = document.querySelector(selector);
         if (btn) btn.classList.add("active");
@@ -58,7 +195,6 @@ export async function initCharacterImagePage() {
             document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
 
-            // ✅ ""(설정 안함) → null
             selectedStyle = btn.dataset.style || null;
 
             if (btn.dataset.model) selectedModel = btn.dataset.model;
@@ -102,6 +238,7 @@ export async function initCharacterImagePage() {
             updateStyleVisibilityByModel();
         };
     });
+
     function updateStyleVisibilityByModel() {
         const geminiOnlyBtns = document.querySelectorAll(".gemini-only");
 
@@ -114,17 +251,16 @@ export async function initCharacterImagePage() {
                 btn.style.display = "none";
             });
 
-            // together 선택 시 설정 안함 강제 제거
             if (!selectedStyle) {
                 selectedStyle = "default";
                 setActiveStyleButton("default");
             }
         }
     }
+
     setActiveModelButton(selectedModel);
     updateGenerateButtonPrice();
 
-    // 캐릭터 로드
     const res = await apiFetch(`/base/characters?id=${encodeURIComponent(charId)}`);
     if (!res.ok) {
         alert("캐릭터 정보를 불러올 수 없습니다.");
@@ -141,46 +277,30 @@ export async function initCharacterImagePage() {
     }
 
     selectedImage = character.image;
-    aiImages = character.aiImages || [];
+    aiImages = Array.isArray(character.aiImages) ? character.aiImages : [];
     imgEl.src = resolveCharImage(selectedImage);
-
-    function renderAIImages() {
-        grid.querySelectorAll(".ai-image-item").forEach((el) => el.remove());
-
-        aiImages.forEach((ai) => {
-            const img = document.createElement("img");
-            img.src = ai.url;
-            img.className = "ai-image-item";
-
-            img.onclick = () => {
-                clearSelected();
-                img.classList.add("selected");
-                selectedImage = { type: "ai", key: "ai", url: ai.url };
-                imgEl.src = ai.url;
-            };
-
-            grid.insertBefore(img, aiSlot);
-        });
-    }
-
-    function clearSelected() {
-        grid.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
-    }
 
     renderAIImages();
 
-    // 기본/프리셋 클릭
     grid.querySelectorAll("img[data-type]").forEach((img) => {
+        if (
+            selectedImage?.type === img.dataset.type &&
+            selectedImage?.key === img.dataset.key
+        ) {
+            img.classList.add("selected");
+        }
+
         img.onclick = () => {
             clearSelected();
             img.classList.add("selected");
 
             selectedImage = { type: img.dataset.type, key: img.dataset.key, url: "" };
             imgEl.src = resolveCharImage(selectedImage);
+            syncApplyButtonState();
         };
     });
 
-   
+    syncApplyButtonState();
 
     btnAICancel.onclick = () => {
         aiOverlay.style.display = "none";
@@ -191,13 +311,15 @@ export async function initCharacterImagePage() {
         btnAIGenerate.disabled = !(len >= 20 && len <= 1000);
     };
 
-    // 폴링 유틸
     async function pollJob(jobId, { intervalMs = 2500, timeoutMs = 5 * 60 * 1000 } = {}) {
         const started = Date.now();
 
         while (true) {
             if (Date.now() - started > timeoutMs) {
-                return { ok: false, error: { code: "TIMEOUT", message: "생성 시간이 너무 길어요." } };
+                return {
+                    ok: false,
+                    error: { code: "TIMEOUT", message: "생성 시간이 너무 길어요." }
+                };
             }
 
             const res = await apiFetch(`/base/image-job-status?id=${encodeURIComponent(jobId)}`);
@@ -215,17 +337,16 @@ export async function initCharacterImagePage() {
                 return data;
             }
 
-            // queued/processing이면 대기
             await new Promise((r) => setTimeout(r, intervalMs));
         }
     }
 
-    // AI 생성(비동기 Job)
     btnAIGenerate.onclick = async () => {
-        loadingOverlay.style.display = "flex";
+        if (isSubmittingGenerate) return;
+        isSubmittingGenerate = true;
+        aiOverlay.style.display = "none";
 
         try {
-            // 1) job 생성
             const res = await apiFetch("/base/characters-ai-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -239,61 +360,76 @@ export async function initCharacterImagePage() {
 
             const created = await res.json();
             if (!created.ok) {
-                alert(created.error || "AI 이미지 생성 요청 실패");
+                alert(created.message || created.error || "AI 이미지 생성 요청 실패");
                 return;
             }
 
-            // 선불 차감 결과(userMeta) 즉시 반영
             if (created.userMeta) {
                 sessionStorage.setItem("userMeta", JSON.stringify(created.userMeta));
                 window.__updateChromeResource?.(created.userMeta);
             }
 
-            const jobId = created.jobId;
+            const pendingImage = created.pendingImage || {
+                jobId: created.jobId,
+                url: created.imageUrl,
+                ready: false
+            };
 
-            // 2) 폴링
-            const done = await pollJob(jobId);
+            showJobRequestedToast();
+            upsertLocalAiImage(pendingImage);
+            renderAIImages();
+
+            const done = await pollJob(created.jobId);
 
             if (!done.ok) {
-                alert(done.error || "생성 실패");
+                const msg = done?.error?.message || done?.error || "생성 실패";
+                alert(msg);
                 return;
             }
 
+            if (done.userMeta) {
+                sessionStorage.setItem("userMeta", JSON.stringify(done.userMeta));
+                window.__updateChromeResource?.(done.userMeta);
+            }
+
             if (done.status === "error") {
-                // (환불이 polling에서 처리된 경우 userMeta가 올 수 있음)
-                if (done.userMeta) {
-                    sessionStorage.setItem("userMeta", JSON.stringify(done.userMeta));
-                    window.__updateChromeResource?.(done.userMeta);
-                }
+                removeLocalAiImage({
+                    jobId: created.jobId,
+                    url: created.imageUrl
+                });
+                renderAIImages();
 
                 const msg = done?.error?.message || done?.error?.code || "AI 이미지 생성 실패";
                 alert(msg);
                 return;
             }
 
-            // done
-            const imageUrl = done.imageUrl;
-
-            aiImages.push({ url: imageUrl });
-            selectedImage = { type: "ai", key: "ai", url: imageUrl };
-            imgEl.src = imageUrl;
-
+            markLocalAiImageReady({
+                jobId: created.jobId,
+                url: done.imageUrl || created.imageUrl,
+                result: done.result
+            });
             renderAIImages();
-            aiOverlay.style.display = "none";
-
+        } catch (err) {
+            console.error("AI_IMAGE_REQUEST_FAILED:", err);
+            alert(err?.message || "AI 이미지 생성 요청 실패");
         } finally {
-            loadingOverlay.style.display = "none";
+            isSubmittingGenerate = false;
         }
     };
 
-    // 적용 버튼
     btnApply.onclick = async () => {
         if (!selectedImage) {
             alert("이미지를 선택하세요.");
             return;
         }
 
-        await apiFetch("/base/image-save", {
+        if (!canApplyImage(selectedImage)) {
+            alert("아직 생성 중인 이미지는 적용할 수 없습니다.");
+            return;
+        }
+
+        const saveRes = await apiFetch("/base/image-save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -302,10 +438,25 @@ export async function initCharacterImagePage() {
             })
         });
 
+        const saveData = await saveRes.json();
+        if (!saveData.ok) {
+            alert(saveData.message || saveData.error || "이미지 저장 실패");
+            return;
+        }
+
+        const cacheImage = selectedImage.type === "ai"
+            ? {
+                type: "ai",
+                key: "ai",
+                url: selectedImage.url,
+                fitScore: Number(findAiImageByUrl(selectedImage.url)?.fitScore || 0)
+            }
+            : selectedImage;
+
         const cached = sessionStorage.getItem("homeCharacters");
         if (cached) {
             const arr = JSON.parse(cached);
-            const updated = arr.map((c) => (c.id === charId ? { ...c, image: selectedImage } : c));
+            const updated = arr.map((c) => (c.id === charId ? { ...c, image: cacheImage } : c));
             sessionStorage.setItem("homeCharacters", JSON.stringify(updated));
         }
 
@@ -313,7 +464,7 @@ export async function initCharacterImagePage() {
 
         showPage("character-view", {
             type: "push",
-            charId: charId
+            charId
         });
     };
 }

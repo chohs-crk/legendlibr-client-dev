@@ -667,6 +667,6 @@ async function startFlow() {
 /* ================================
    START
 ================================ */
-history.replaceState(null, "", "/create");
+history.replaceState(null, "", "/create-story");
 startFlow();
 //⚠️

@@ -9,6 +9,7 @@ const nodePath = require("path");
 const { pathToFileURL } = require("url");
 
 let ORIGINS_CACHE = undefined;
+const OPENAI_PROMPT_MODEL = "gpt-5-mini";
 
 /**
  * Loads ORIGINS map from /battles/origins.js (ESM) with a few fallback paths.
@@ -48,7 +49,6 @@ function getOriginBackground(originsMap, originId) {
     return typeof bg === "string" && bg.trim() ? bg.trim() : null;
 }
 
-
 const {
     IMAGE_MODEL_MAP,
     DEFAULT_WIDTH,
@@ -76,21 +76,60 @@ const TOGETHER_KEY = defineSecret("TOGETHER_KEY");
 /* =========================
    utils
 ========================= */
+async function mutateCharacterAiImages(charId, updater) {
+    if (!charId) return;
+
+    const charRef = firestore.collection("characters").doc(charId);
+
+    await firestore.runTransaction(async (tx) => {
+        const charSnap = await tx.get(charRef);
+        if (!charSnap.exists) return;
+
+        const char = charSnap.data() || {};
+        const currentAiImages = Array.isArray(char.aiImages) ? char.aiImages : [];
+        const nextAiImages = updater(currentAiImages, char);
+
+        if (!Array.isArray(nextAiImages)) return;
+
+        tx.update(charRef, { aiImages: nextAiImages });
+    });
+}
+
 async function markError(jobRef, jobData, code, message, extra = {}) {
     const now = Date.now();
     const refundSuggested = code !== "SAFETY_BLOCKED"; // 안전차단은 환불 X
     const refundFrames = Number(jobData?.billing?.refund?.frames || jobData?.costFrames || 0);
 
-    await jobRef.update({
+    const payload = {
         status: "error",
         updatedAt: now,
         finishedAt: now,
         error: { code, message },
-        result: jobData?.result || null,
         "billing.refund.suggested": refundSuggested,
         "billing.refund.frames": refundFrames,
         ...extra
-    });
+    };
+
+    if (!Object.prototype.hasOwnProperty.call(payload, "result") && jobData?.result) {
+        payload.result = jobData.result;
+    }
+
+    await jobRef.update(payload);
+
+    try {
+        const failedJobId = jobRef.id;
+        const failedImageUrl = jobData?.imageUrl || null;
+
+        await mutateCharacterAiImages(jobData?.charId, (currentAiImages) =>
+            currentAiImages.filter((ai) => {
+                const sameJob = typeof ai?.jobId === "string" && ai.jobId === failedJobId;
+                const sameUrl = !!failedImageUrl && ai?.url === failedImageUrl;
+                return !(sameJob || sameUrl);
+            })
+        );
+    } catch (e) {
+        logger.error("PENDING_AI_IMAGE_REMOVE_FAILED", jobRef.id, e);
+    }
 }
 
 /* =========================
@@ -199,19 +238,23 @@ exports.processImageJob = onDocumentCreated(
                 { format: desiredPromptFormat }
             );
 
+            const openaiUsage = promptResult?.usage || null;
+            job.result = {
+                fitScore: Number(promptResult.fitScore || 0),
+                safetyScore: Number(promptResult.safetyScore || 0),
+                provider: null,
+                model: null,
+                openai: {
+                    model: OPENAI_PROMPT_MODEL,
+                    usage: openaiUsage
+                }
+            };
+
             // safety 차단
             if (Number(promptResult.safetyScore || 0) > 95) {
-                await jobRef.update({
-                    updatedAt: Date.now(),
-                    result: {
-                        fitScore: promptResult.fitScore,
-                        safetyScore: promptResult.safetyScore,
-                        provider: null,
-                        model: null
-                    }
+                await markError(jobRef, job, "SAFETY_BLOCKED", "Prompt blocked by safety policy", {
+                    result: job.result
                 });
-
-                await markError(jobRef, job, "SAFETY_BLOCKED", "Prompt blocked by safety policy");
                 return;
             }
 
@@ -222,7 +265,8 @@ exports.processImageJob = onDocumentCreated(
                 jobStyleKey: job.style,
                 userPrompt: job.userPrompt,
                 modelInfo,
-                originBackground
+                originBackground,
+                modelKey
             });
 
             // 5) 이미지 생성
@@ -264,7 +308,7 @@ wide framing,
 establishing composition,
 character sheet layout,
 reference pose,
-concept turnaround
+concept turnaround,
 excessive background,
 establishing shot,
 character sheet,
@@ -317,28 +361,54 @@ multiple poses
             )}?alt=media&token=${downloadToken}`;
 
             // 7) characters 문서 업데이트
-            await charRef.update({
-                image: {
-                    type: "ai",
-                    key: "ai",
-                    url,
-                    fitScore: Number(promptResult.fitScore || 0)
-                },
-                aiImages: admin.firestore.FieldValue.arrayUnion({
-                    url,
-                    fitScore: Number(promptResult.fitScore || 0),
-                    safetyScore: Number(promptResult.safetyScore || 0),
-                    style: normalizeStyleKey(job.style),
-                    modelKey,
-                    model: modelInfo.model || "gemini-2.5-flash-image",
-                    provider: modelInfo.provider,
-                    createdAt: now,
-                    prompt: {
-                        format,
-                        final: finalPrompt,
-                        bundle: promptBundle
+            const completedAt = Date.now();
+            const readyAiImage = {
+                jobId,
+                url,
+                ready: true,
+                fitScore: Number(promptResult.fitScore || 0),
+                safetyScore: Number(promptResult.safetyScore || 0),
+                style: normalizeStyleKey(job.style),
+                modelKey,
+                model: modelInfo.model || "gemini-2.5-flash-image",
+                provider: modelInfo.provider,
+                updatedAt: completedAt,
+                prompt: {
+                    format,
+                    final: finalPrompt,
+                    bundle: promptBundle,
+                    openai: {
+                        model: OPENAI_PROMPT_MODEL,
+                        usage: openaiUsage
                     }
-                })
+                }
+            };
+
+            await mutateCharacterAiImages(charId, (currentAiImages) => {
+                const index = currentAiImages.findIndex(
+                    (ai) =>
+                        (typeof ai?.jobId === "string" && ai.jobId === jobId) ||
+                        ai?.url === url
+                );
+
+                if (index >= 0) {
+                    const nextAiImages = [...currentAiImages];
+                    const prev = nextAiImages[index] || {};
+                    nextAiImages[index] = {
+                        ...prev,
+                        ...readyAiImage,
+                        createdAt: prev.createdAt || now
+                    };
+                    return nextAiImages;
+                }
+
+                return [
+                    ...currentAiImages,
+                    {
+                        ...readyAiImage,
+                        createdAt: completedAt
+                    }
+                ];
             });
 
             // 8) job done
@@ -348,10 +418,14 @@ multiple poses
                 finishedAt: Date.now(),
                 imageUrl: url,
                 result: {
-                    fitScore: promptResult.fitScore,
-                    safetyScore: promptResult.safetyScore,
+                    fitScore: Number(promptResult.fitScore || 0),
+                    safetyScore: Number(promptResult.safetyScore || 0),
                     provider: modelInfo.provider,
-                    model: modelInfo.model || "gemini-2.5-flash-image"
+                    model: modelInfo.model || "gemini-2.5-flash-image",
+                    openai: {
+                        model: OPENAI_PROMPT_MODEL,
+                        usage: openaiUsage
+                    }
                 },
                 error: null,
                 "billing.refund.suggested": false
@@ -362,3 +436,5 @@ multiple poses
         }
     }
 );
+
+
