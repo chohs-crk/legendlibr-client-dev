@@ -1,6 +1,7 @@
 ﻿import { resolveCharImage } from "/base/common/image-util.js";
 import { openConfirm } from "/base/common/ui-confirm.js";
 import { apiFetch } from "/base/api.js";
+import { apiFetchMe } from "/base/auth.js";
 import {
     writeHomeCharactersCache,
     sanitizeHomeCharactersCache,
@@ -72,7 +73,33 @@ function getHomeAuthState() {
         user: user || null
     };
 }
+async function ensureHomeAuthState() {
+    const user = window.__authUser || null;
+    if (user) {
+        return { isAuthed: true, user };
+    }
 
+    try {
+        const res = await apiFetchMe();
+
+        if (!res.ok) {
+            return { isAuthed: false, user: null };
+        }
+
+        const me = await res.json();
+
+        const nextUser = me?.user || me || null;
+        if (nextUser) {
+            window.__authUser = nextUser;
+            return { isAuthed: true, user: nextUser };
+        }
+
+        return { isAuthed: false, user: null };
+    } catch (e) {
+        console.warn("HOME_AUTH_CHECK_FAIL:", e);
+        return { isAuthed: false, user: null };
+    }
+}
 /* ===================================================
    EVENT BIND
 =================================================== */
@@ -444,7 +471,7 @@ function startStoryCheckPolling() {
 export async function initHomePage() {
     bindHomeEventsOnce();
 
-    const { isAuthed } = getHomeAuthState();
+    const { isAuthed } = await ensureHomeAuthState();
 
     if (!isAuthed) {
         stopStoryCheckPolling();

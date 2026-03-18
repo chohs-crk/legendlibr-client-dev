@@ -21,10 +21,25 @@ let isPageTransitioning = false;
 
 function getAuthState() {
     const user = window.__authUser || null;
+    const uid = sessionStorage.getItem("uid");
+
+    if (user) {
+        return {
+            isAuthed: true,
+            user,
+        };
+    }
+
+    if (uid) {
+        return {
+            isAuthed: true,
+            user: { uid },
+        };
+    }
 
     return {
-        isAuthed: !!user,
-        user: user || null,
+        isAuthed: false,
+        user: null,
     };
 }
 
