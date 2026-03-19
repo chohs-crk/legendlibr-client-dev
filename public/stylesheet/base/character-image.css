@@ -75,6 +75,7 @@
 .ai-overlay {
     position: fixed;
     inset: 0;
+    z-index: 9999; /* 👈 핵심 */
     background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
@@ -213,3 +214,7 @@
     .model-btn.active {
         background: #523369;
     }
+.ai-modal {
+    position: relative;
+    z-index: 10000;
+}
