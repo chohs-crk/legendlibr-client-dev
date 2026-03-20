@@ -291,8 +291,7 @@ export async function initCreatePromptPage() {
                     return;
                 }
 
-                const go = confirm("진행 중인 생성이 있습니다.
-해당 단계로 이동하시겠습니까?");
+                const go = confirm("진행 중인 생성이 있습니다. 해당 단계로 이동하시겠습니까 ? ");
                 if (go) {
                     window.location.href = "/create/create-story.html";
                     return;
