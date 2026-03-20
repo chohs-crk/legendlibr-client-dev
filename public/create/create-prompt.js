@@ -300,7 +300,8 @@ export async function initCreatePromptPage() {
             }
         }
     } catch (e) {
-        console.warn("story-check failed:", e);
+        console.warn("story-check failed:", e)
+
     }
 
     promptInput.style.overflow = "hidden";
