@@ -1,25 +1,55 @@
-<section class="page" id="page-create-region">
-<main class="content">
-<div class="scroll-area">
-<div class="compose-wrap">
-<h1>새 지역 만들기</h1>
-<div class="field">
-<span class="label">기원</span>
-<div class="value-box" id="regionOriginName"></div>
-</div>
-<div class="field">
-<span class="label">지역 이름</span>
-<input id="regionNameInput" maxlength="20" placeholder="예) 패왕곡 북단" type="text"/>
-</div>
-<div class="field">
-<span class="label">지역 설명</span>
-<textarea id="regionDetailInput" maxlength="500" placeholder="이 지역의 분위기, 전설 등을 적어주세요"></textarea>
-</div>
-<div class="actions">
-<button class="btn secondary" id="btnRegionCancel">취소</button>
-<button class="btn primary" id="btnRegionCreate">생성</button>
-</div>
-</div>
-</div>
-</main>
+<section class="page create-region-page" id="page-create-region" aria-label="지역 만들기 페이지">
+    <main class="content">
+        <div class="scroll-area">
+            <div class="region-create-shell">
+                <div class="region-create-card">
+                    <h1 class="region-create-title">지역 만들기</h1>
+
+                    <section class="region-create-field region-create-origin-block" aria-label="선택한 기원">
+                        <div class="region-create-label">기원</div>
+                        <div class="region-create-origin-chip" id="regionOriginName"></div>
+                    </section>
+
+                    <section class="region-create-field" aria-label="지역 이름 입력">
+                        <div class="region-create-head">
+                            <label class="region-create-label" for="regionNameInput">지역 이름</label>
+                            <div class="region-create-counter">
+                                <span id="regionNameCount">0</span>/<span id="regionNameMax">15</span>
+                            </div>
+                        </div>
+                        <input
+                            id="regionNameInput"
+                            class="region-create-input"
+                            maxlength="15"
+                            placeholder="예) 패왕굴 북단"
+                            type="text"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </section>
+
+                    <section class="region-create-field" aria-label="지역 설명 입력">
+                        <div class="region-create-head">
+                            <label class="region-create-label" for="regionDetailInput">지역 설명</label>
+                            <div class="region-create-counter">
+                                <span id="regionDetailCount">0</span>/<span id="regionDetailMax">500</span> byte
+                            </div>
+                        </div>
+                        <textarea
+                            id="regionDetailInput"
+                            class="region-create-textarea"
+                            maxlength="500"
+                            placeholder="이 지역의 분위기, 전설 등을 적어주세요"
+                            spellcheck="false"
+                        ></textarea>
+                    </section>
+
+                    <div class="region-create-actions">
+                        <button class="btn secondary region-create-btn" id="btnRegionCancel" type="button">취소</button>
+                        <button class="btn primary region-create-btn" id="btnRegionNext" type="button" disabled>다음</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 </section>

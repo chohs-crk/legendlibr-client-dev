@@ -1,205 +1,245 @@
-﻿/* /create/create-region.css */
-
 :root {
-    --region-bg: #0f0f14;
-    --region-surface: rgba(26, 26, 34, 0.94);
-    --region-surface-strong: rgba(35, 30, 48, 0.96);
-    --region-border: rgba(152, 0, 255, 0.38);
-    --region-border-strong: rgba(152, 0, 255, 0.7);
-    --region-text: #f3e2fe;
-    --region-text-dim: rgba(243, 226, 254, 0.72);
-    --region-danger: #ff8fb1;
-    --region-primary: #523369;
-    --region-primary-2: #9800ff;
+  --cr-bg: #0f0f14;
+  --cr-surface: #1a1a22;
+  --cr-surface-strong: #15151d;
+  --cr-primary: #9800ff;
+  --cr-deep: #523369;
+  --cr-text: #f3e2fe;
+  --cr-text-soft: rgba(243, 226, 254, 0.72);
+  --cr-border: rgba(152, 0, 255, 0.28);
+  --cr-border-strong: rgba(152, 0, 255, 0.52);
+  --cr-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
+  --cr-invalid: #ffc9db;
 }
 
-#regionOriginName {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 16px;
-    border-radius: 16px;
-    border: 1px solid var(--region-border);
-    background: linear-gradient(180deg, rgba(152, 0, 255, 0.14), rgba(82, 51, 105, 0.18)), var(--region-surface);
-    color: var(--region-text);
-    font-weight: 700;
-    font-size: 16px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+#page-create-region {
+  background: var(--cr-bg);
+  color: var(--cr-text);
+  min-width: 0;
 }
 
-#regionNameInput,
-#regionDetailInput {
-    width: 80vw;
-    max-width: 520px;
-    min-width: 260px;
-    color: var(--region-text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)), var(--region-bg);
-    border: 1px solid rgba(152, 0, 255, 0.28);
-    border-radius: 18px;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 28px rgba(0, 0, 0, 0.2);
+#page-create-region .content,
+#page-create-region .scroll-area,
+#page-create-region .region-create-shell,
+#page-create-region .region-create-card,
+#page-create-region .region-create-field,
+#page-create-region .region-create-head,
+#page-create-region .region-create-actions {
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-#regionNameInput {
-    height: 56px;
-    padding: 0 18px;
-    font-size: 16px;
-    line-height: 56px;
+#page-create-region .content {
+  padding-bottom: 28px;
 }
 
-#regionDetailInput {
-    min-height: 132px;
-    height: 132px;
-    padding: 16px 18px;
-    font-size: 15px;
-    line-height: 1.6;
-    resize: vertical;
+#page-create-region .region-create-shell {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 16px 28px;
 }
 
-    #regionNameInput::placeholder,
-    #regionDetailInput::placeholder {
-        color: rgba(243, 226, 254, 0.34);
-    }
-
-    #regionNameInput:focus,
-    #regionDetailInput:focus {
-        border-color: var(--region-border-strong);
-        box-shadow: 0 0 0 3px rgba(152, 0, 255, 0.12), 0 14px 36px rgba(0, 0, 0, 0.28);
-        transform: translateY(-1px);
-    }
-
-    #regionNameInput.is-invalid,
-    #regionDetailInput.is-invalid {
-        border-color: rgba(255, 143, 177, 0.9);
-        box-shadow: 0 0 0 3px rgba(255, 143, 177, 0.12), 0 14px 36px rgba(0, 0, 0, 0.22);
-    }
-
-.region-create-meta {
-    width: 80vw;
-    max-width: 520px;
-    min-width: 260px;
-    margin: 8px 0 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--region-text-dim);
-    font-size: 13px;
-    line-height: 1.2;
+#page-create-region .region-create-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 22px 18px 20px;
+  border-radius: 24px;
+  border: 1px solid var(--cr-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)), var(--cr-surface);
+  box-shadow: var(--cr-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.region-create-meta-right {
-    font-weight: 700;
+#page-create-region .region-create-title {
+  margin: 0 0 20px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.18;
+  color: #ffffff;
 }
 
-    .region-create-meta-right.is-invalid {
-        color: var(--region-danger);
-    }
-
-#btnRegionCancel,
-#btnRegionCreate {
-    width: 120px;
-    height: 56px;
-    border-radius: 18px;
-    border: 1px solid rgba(152, 0, 255, 0.24);
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+#page-create-region .region-create-field + .region-create-field {
+  margin-top: 18px;
 }
 
-#btnRegionCancel {
-    color: var(--region-text);
-    background: rgba(255, 255, 255, 0.04);
+#page-create-region .region-create-origin-block {
+  margin-bottom: 18px;
 }
 
-#btnRegionCreate {
-    color: #f7efff;
-    background: linear-gradient(180deg, rgba(112, 74, 141, 0.95), rgba(82, 51, 105, 0.96));
+#page-create-region .region-create-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-    #btnRegionCancel:hover,
-    #btnRegionCreate:hover {
-        transform: translateY(-1px);
-    }
-
-    #btnRegionCreate:disabled {
-        cursor: default;
-        opacity: 0.52;
-        transform: none;
-        box-shadow: none;
-    }
-
-    #btnRegionCreate.is-loading {
-        position: relative;
-        color: rgba(247, 239, 255, 0.88);
-    }
-
-.region-create-success-popup {
-    width: min(88vw, 420px);
-    color: var(--region-text);
+#page-create-region .region-create-label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
-.region-create-success-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 28px;
-    padding: 0 12px;
-    border-radius: 999px;
-    margin-bottom: 12px;
-    font-size: 12px;
-    font-weight: 800;
-    color: #f7efff;
-    background: rgba(152, 0, 255, 0.18);
-    border: 1px solid rgba(152, 0, 255, 0.28);
+#page-create-region .region-create-counter {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cr-text-soft);
+  word-break: break-word;
+  transition: color 0.18s ease, text-shadow 0.18s ease;
 }
 
-.region-create-success-title {
-    margin: 0 0 12px;
-    font-size: 22px;
-    line-height: 1.25;
-    font-weight: 800;
+#page-create-region .region-create-counter .is-invalid {
+  color: var(--cr-invalid);
+  text-shadow: 0 0 10px rgba(255, 114, 163, 0.22);
 }
 
-.region-create-success-desc {
-    padding: 16px 18px;
-    border-radius: 18px;
-    border: 1px solid rgba(152, 0, 255, 0.24);
-    background: rgba(15, 15, 20, 0.88);
-    color: var(--region-text-dim);
-    font-size: 15px;
-    line-height: 1.65;
-    white-space: pre-wrap;
-    word-break: keep-all;
+#page-create-region .region-create-origin-chip,
+#page-create-region .region-create-input,
+#page-create-region .region-create-textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.012)),
+    #111119;
+  color: var(--cr-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
-.region-create-success-btn {
+#page-create-region .region-create-origin-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 58px;
+  padding: 0 18px;
+  background:
+    linear-gradient(180deg, rgba(152, 0, 255, 0.14), rgba(82, 51, 105, 0.28)),
+    var(--cr-surface-strong);
+  border-color: rgba(152, 0, 255, 0.34);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+#page-create-region .region-create-input::placeholder,
+#page-create-region .region-create-textarea::placeholder {
+  color: rgba(243, 226, 254, 0.34);
+}
+
+#page-create-region .region-create-input:focus,
+#page-create-region .region-create-textarea:focus {
+  outline: none;
+  border-color: var(--cr-border-strong);
+  background:
+    linear-gradient(180deg, rgba(152, 0, 255, 0.08), rgba(255, 255, 255, 0.018)),
+    #111119;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 3px rgba(152, 0, 255, 0.12), 0 10px 22px rgba(82, 51, 105, 0.22);
+}
+
+#page-create-region .region-create-input.is-invalid,
+#page-create-region .region-create-textarea.is-invalid {
+  border-color: rgba(255, 114, 163, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 3px rgba(255, 114, 163, 0.12), 0 10px 22px rgba(82, 51, 105, 0.16);
+}
+
+#page-create-region .region-create-input {
+  height: 58px;
+  padding: 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 58px;
+}
+
+#page-create-region .region-create-textarea {
+  min-height: 172px;
+  padding: 16px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  resize: none;
+}
+
+#page-create-region .region-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+#page-create-region .region-create-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  min-height: 56px;
+  padding: 0 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 15px;
+  font-weight: 800;
+  transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease, box-shadow 0.18s ease;
+}
+
+#page-create-region #btnRegionCancel {
+  background: rgba(82, 51, 105, 0.18);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+#page-create-region #btnRegionNext {
+  background: var(--cr-deep);
+  color: #ffffff;
+  box-shadow: 0 12px 22px rgba(82, 51, 105, 0.34);
+}
+
+#page-create-region .region-create-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+#page-create-region #btnRegionNext:hover:not(:disabled) {
+  box-shadow: 0 16px 24px rgba(82, 51, 105, 0.42);
+}
+
+#page-create-region .region-create-btn:disabled {
+  background: rgba(82, 51, 105, 0.42);
+  color: rgba(243, 226, 254, 0.46);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  #page-create-region .region-create-shell {
+    padding: 10px 12px 24px;
+  }
+
+  #page-create-region .region-create-card {
+    padding: 20px 16px 18px;
+    border-radius: 22px;
+  }
+
+  #page-create-region .region-create-title {
+    font-size: 28px;
+  }
+
+  #page-create-region .region-create-input {
+    font-size: 17px;
+  }
+
+  #page-create-region .region-create-actions {
     width: 100%;
-    height: 54px;
-    margin-top: 16px;
-    border: 0;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(112, 74, 141, 0.95), rgba(82, 51, 105, 0.96));
-    color: #f7efff;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-}
+    flex-wrap: nowrap;
+  }
 
-@media (max-width: 480px) {
-    #regionNameInput,
-    #regionDetailInput,
-    .region-create-meta {
-        width: 82vw;
-        min-width: 0;
-    }
-
-    #btnRegionCancel,
-    #btnRegionCreate {
-        width: 112px;
-        height: 52px;
-    }
+  #page-create-region .region-create-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }

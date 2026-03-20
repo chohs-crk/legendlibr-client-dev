@@ -1,7 +1,6 @@
-﻿// /create/create-region.js
+// /create/create-region.js
 import { apiFetch } from "/base/api.js";
 import { ORIGINS_FRONT } from "./origins.front.js";
-import { openWrap } from "/base/common/ui-wrap.js";
 
 const NAME_MIN = 1;
 const NAME_MAX = 15;
@@ -48,33 +47,14 @@ function getErrorMessage(code) {
     }
 }
 
-function ensureMetaRow(inputEl, type) {
-    const className = `region-create-meta region-create-meta-${type}`;
-    let row = inputEl.parentElement?.querySelector(`.${className}`);
-
-    if (!row) {
-        row = document.createElement("div");
-        row.className = className;
-        row.innerHTML = `
-            <div class="region-create-meta-left"></div>
-            <div class="region-create-meta-right"></div>
-        `;
-        inputEl.insertAdjacentElement("afterend", row);
-    }
-
-    return {
-        root: row,
-        left: row.querySelector(".region-create-meta-left"),
-        right: row.querySelector(".region-create-meta-right"),
-    };
-}
-
 function renderValidationState({
     nameInput,
     detailInput,
-    btnCreate,
-    nameMeta,
-    detailMeta,
+    btnNext,
+    nameCountEl,
+    nameMaxEl,
+    detailCountEl,
+    detailMaxEl,
     isSubmitting,
 }) {
     const name = nameInput.value.trim();
@@ -86,27 +66,30 @@ function renderValidationState({
     const isNameValid = nameLen >= NAME_MIN && nameLen <= NAME_MAX;
     const isDetailValid = detailBytes >= DETAIL_MIN_BYTES && detailBytes <= DETAIL_MAX_BYTES;
 
-    nameMeta.left.textContent = "지역 이름";
-    nameMeta.right.textContent = `${nameLen}/${NAME_MAX}`;
-    nameMeta.right.classList.toggle("is-invalid", !isNameValid && nameLen > 0);
-
-    detailMeta.left.textContent = "지역 설명";
-    detailMeta.right.textContent = `${detailBytes}/${DETAIL_MAX_BYTES} byte`;
-    detailMeta.right.classList.toggle("is-invalid", !isDetailValid && detail.length > 0);
-
-    if (!name) {
-        nameInput.classList.remove("is-invalid");
-    } else {
-        nameInput.classList.toggle("is-invalid", !isNameValid);
+    if (nameCountEl) {
+        nameCountEl.textContent = String(nameLen);
+        nameCountEl.classList.toggle("is-invalid", !isNameValid && nameLen > 0);
     }
 
-    if (!detail) {
-        detailInput.classList.remove("is-invalid");
-    } else {
-        detailInput.classList.toggle("is-invalid", !isDetailValid);
+    if (nameMaxEl) {
+        nameMaxEl.textContent = String(NAME_MAX);
+        nameMaxEl.classList.toggle("is-invalid", !isNameValid && nameLen > 0);
     }
 
-    btnCreate.disabled = isSubmitting || !isNameValid || !isDetailValid;
+    if (detailCountEl) {
+        detailCountEl.textContent = String(detailBytes);
+        detailCountEl.classList.toggle("is-invalid", !isDetailValid && detail.length > 0);
+    }
+
+    if (detailMaxEl) {
+        detailMaxEl.textContent = String(DETAIL_MAX_BYTES);
+        detailMaxEl.classList.toggle("is-invalid", !isDetailValid && detail.length > 0);
+    }
+
+    nameInput.classList.toggle("is-invalid", !!name && !isNameValid);
+    detailInput.classList.toggle("is-invalid", !!detail && !isDetailValid);
+
+    btnNext.disabled = isSubmitting || !isNameValid || !isDetailValid;
 
     return {
         name,
@@ -116,37 +99,45 @@ function renderValidationState({
     };
 }
 
-function bindLiveValidation({ nameInput, detailInput, btnCreate }) {
-    const nameMeta = ensureMetaRow(nameInput, "name");
-    const detailMeta = ensureMetaRow(detailInput, "detail");
-
+function bindLiveValidation({
+    nameInput,
+    detailInput,
+    btnNext,
+    nameCountEl,
+    nameMaxEl,
+    detailCountEl,
+    detailMaxEl,
+}) {
     let isSubmitting = false;
 
     const update = () =>
         renderValidationState({
             nameInput,
             detailInput,
-            btnCreate,
-            nameMeta,
-            detailMeta,
+            btnNext,
+            nameCountEl,
+            nameMaxEl,
+            detailCountEl,
+            detailMaxEl,
             isSubmitting,
         });
 
     const setSubmitting = (value) => {
         isSubmitting = value;
-        btnCreate.classList.toggle("is-loading", value);
-        btnCreate.textContent = value ? "생성 중..." : "생성";
+        btnNext.classList.toggle("is-loading", value);
+        btnNext.textContent = value ? "생성 중..." : "다음";
         nameInput.readOnly = value;
         detailInput.readOnly = value;
         update();
     };
 
     nameInput.maxLength = NAME_MAX;
+    detailInput.maxLength = DETAIL_MAX_BYTES;
     nameInput.placeholder = "예) 패왕굴 북단";
     detailInput.placeholder = "이 지역의 분위기, 전설 등을 적어주세요";
 
-    nameInput.addEventListener("input", update);
-    detailInput.addEventListener("input", update);
+    nameInput.oninput = update;
+    detailInput.oninput = update;
 
     update();
 
@@ -156,36 +147,6 @@ function bindLiveValidation({ nameInput, detailInput, btnCreate }) {
     };
 }
 
-function showSuccessPopup({ name, detail, onConfirm }) {
-    const popupId = `region-create-success-${Date.now()}`;
-
-    if (typeof openWrap === "function") {
-        openWrap(`
-            <div class="region-create-success-popup" id="${popupId}">
-                <div class="region-create-success-badge">생성 완료</div>
-                <h3 class="region-create-success-title">${name}</h3>
-                <div class="region-create-success-desc">${detail}</div>
-                <button type="button" class="region-create-success-btn">확인</button>
-            </div>
-        `);
-
-        requestAnimationFrame(() => {
-            const root = document.getElementById(popupId);
-            const confirmBtn = root?.querySelector(".region-create-success-btn");
-            if (!confirmBtn) return;
-
-            confirmBtn.addEventListener("click", () => {
-                onConfirm?.();
-            });
-        });
-
-        return;
-    }
-
-    alert(`지역 생성 완료\n\n${name}\n\n${detail}`);
-    onConfirm?.();
-}
-
 export function initCreateRegionPage() {
     const $ = (s) => document.querySelector(s);
 
@@ -193,9 +154,23 @@ export function initCreateRegionPage() {
     const nameInput = $("#regionNameInput");
     const detailInput = $("#regionDetailInput");
     const btnCancel = $("#btnRegionCancel");
-    const btnCreate = $("#btnRegionCreate");
+    const btnNext = $("#btnRegionNext");
+    const nameCountEl = $("#regionNameCount");
+    const nameMaxEl = $("#regionNameMax");
+    const detailCountEl = $("#regionDetailCount");
+    const detailMaxEl = $("#regionDetailMax");
 
-    if (!originNameEl || !nameInput || !detailInput || !btnCancel || !btnCreate) {
+    if (
+        !originNameEl ||
+        !nameInput ||
+        !detailInput ||
+        !btnCancel ||
+        !btnNext ||
+        !nameCountEl ||
+        !nameMaxEl ||
+        !detailCountEl ||
+        !detailMaxEl
+    ) {
         console.warn("[create-region] DOM not ready");
         return;
     }
@@ -216,14 +191,18 @@ export function initCreateRegionPage() {
     const { update, setSubmitting } = bindLiveValidation({
         nameInput,
         detailInput,
-        btnCreate,
+        btnNext,
+        nameCountEl,
+        nameMaxEl,
+        detailCountEl,
+        detailMaxEl,
     });
 
     btnCancel.onclick = () => {
         safeShowPage("create");
     };
 
-    btnCreate.onclick = async () => {
+    btnNext.onclick = async () => {
         const { name, detail, isNameValid, isDetailValid } = update();
 
         if (!isNameValid) {
@@ -258,15 +237,9 @@ export function initCreateRegionPage() {
                 return;
             }
 
-            showSuccessPopup({
-                name: json.region?.name || name,
-                detail: json.region?.detail || detail,
-                onConfirm: () => {
-                    sessionStorage.removeItem("regionId");
-                    sessionStorage.removeItem("regionName");
-                    safeShowPage("create");
-                },
-            });
+            sessionStorage.removeItem("regionId");
+            sessionStorage.removeItem("regionName");
+            safeShowPage("create");
         } catch (err) {
             console.error(err);
             alert("서버 요청 중 오류가 발생했습니다.");
@@ -274,4 +247,4 @@ export function initCreateRegionPage() {
             setSubmitting(false);
         }
     };
-} 
+}
