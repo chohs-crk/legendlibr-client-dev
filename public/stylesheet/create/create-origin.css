@@ -1,257 +1,438 @@
-﻿/* ==================================================
+/* ==================================================
    CREATE ORIGIN
    ================================================== */
 
-.origin-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+.compose-wrap {
+    width: 100%;
 }
 
-/* 전체 카드 */
-.origin-item {
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 12px;
-}
-.origin-item {
-    transition: box-shadow 0.25s ease, transform 0.25s ease;
+.origin-mini {
+    font-size: 13px;
+    color: #b8a7ff;
+    margin-bottom: 2px;
 }
 
-    .origin-item.selected {
-        transform: translateY(-2px);
-        box-shadow: inset 0 0 0 2px rgba(180,140,255,0.7), 0 10px 20px rgba(120,80,200,0.35);
-    }
-
-/* 이미지 영역만 높이 고정 */
-.origin-image {
-    position: relative;
-    height: 110px; /* ← 여기서 이미지 크기 결정 */
-    background-size: cover;
-    background-position: center;
-}
-
-    /* 텍스트 가독성 오버레이 */
-    .origin-image::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient( to right, rgba(0,0,0,0.65), rgba(0,0,0,0.2) );
-    }
-
-/* 제목 */
-.origin-title {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    z-index: 1;
-}
-.origin-item.selected .origin-title {
-    color: #caa7ff; /* 연한 보라 */
-}
-
-/* 확장 영역 */
-.origin-expand {
-    display: none;
-    padding: 14px;
-    background: rgba(70, 55, 110, 0.75);
-}
-
-/* 선택된 카드만 열림 */
-.origin-item.selected .origin-expand {
-    display: block;
-}
-.origin-image {
-    height: clamp(96px, 22vw, 130px);
-}
-/* 기본 상태: 닫힘 */
-.origin-expand {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transform: translateY(-6px);
-    transition: max-height 0.45s ease, opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* 열린 상태 */
-.origin-item.selected .origin-expand {
-    max-height: 800px; /* 충분히 큰 값 */
-    opacity: 1;
-    transform: translateY(0);
-}
-
-
-
-
-.origin-desc-box {
-    font-size: 14px;
-    opacity: 0.75;
-}
-.origin-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-    .origin-actions .btn {
-        flex: 1;
-    }
-
-/* ===== 지역 ===== */
-.region-item {
-    background: #4b3f63;
-    padding: 10px;
-    margin-bottom: 6px;
-    border-radius: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-}
-
-    .region-item.selected {
-        background: #6e5aa3;
-    }
-
-.region-info-btn {
-    background: #fff2;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-
-
-/* ===== 미지의 지역 ===== */
-.region-unknown-box {
-    padding: 16px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    text-align: center;
-}
-/* ===============================
-   REGION DIALOG CONTENT
-=============================== */
-
-.region-dialog-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #e9dcff;
-    padding-bottom: 12px;
+.origin-desc-mini {
+    font-size: 12px;
+    color: rgba(230,220,255,0.45);
     margin-bottom: 14px;
-    border-bottom: 1px solid rgba(180,140,255,0.25);
 }
 
-.region-dialog-story {
-    font-size: 15px;
-    line-height: 1.7;
-    color: #e6dbff;
-    opacity: 0.95;
+#byteCounter {
+    font-size: 12px;
+    opacity: 0.7;
 }
-/* create-origin.css */
 
 .origin-wrap {
     padding: 0 12px;
 }
-body.dialog-open .scroll-area {
-    overflow: hidden;
+
+.origin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0 12px 20px;
 }
-body.dialog-open .app .scroll-area {
-    padding: 0 !important;
+
+.origin-item {
+    --origin-bg: none;
+    position: relative;
+    border: 1px solid rgba(152, 0, 255, 0.22);
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(6, 6, 10, 0.95), rgba(13, 10, 20, 0.98));
+    box-shadow: 0 14px 32px rgba(48, 28, 72, 0.28);
+    transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+    .origin-item::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(180deg, rgba(10, 9, 14, 0.12), rgba(10, 9, 14, 0.32) 36%, rgba(10, 9, 14, 0.9) 100%), var(--origin-bg);
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center 12%;
+        opacity: 0.88;
+        transition: opacity 0.35s ease, background-position 0.35s ease;
+        pointer-events: none;
+    }
+
+    .origin-item.selected {
+        transform: translateY(-2px);
+        border-color: rgba(152, 0, 255, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(202, 167, 255, 0.22), 0 18px 34px rgba(82, 51, 105, 0.42), 0 0 24px rgba(152, 0, 255, 0.18);
+    }
+
+        .origin-item.selected::before {
+            opacity: 0.96;
+            background-position: center 12%;
+        }
+
+.origin-image {
+    position: relative;
+    height: clamp(96px, 22vw, 124px);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center 8%;
+    transition: height 0.38s ease;
+}
+
+    .origin-image::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.36) 54%, rgba(0, 0, 0, 0.76) 100%), linear-gradient(90deg, rgba(0, 0, 0, 0.54), rgba(0, 0, 0, 0.1));
+    }
+
+.origin-item.selected .origin-image {
+    height: clamp(150px, 35vw, 196px);
+}
+
+.origin-title {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+    z-index: 1;
+    font-size: clamp(22px, 5vw, 28px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: #f3e2fe;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.origin-item.selected .origin-title {
+    color: #d8c0ff;
+}
+
+.origin-expand {
+    position: relative;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding: 0 16px;
+    transform: translateY(-8px);
+    transition: max-height 0.46s ease, opacity 0.28s ease, transform 0.28s ease, padding 0.28s ease;
+}
+
+    .origin-expand::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(152, 0, 255, 0.14) 0%, rgba(152, 0, 255, 0.2) 16%, rgba(34, 20, 52, 0.78) 52%, rgba(19, 13, 31, 0.92) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+
+.origin-item.selected .origin-expand {
+    max-height: 960px;
+    opacity: 1;
+    padding: 16px 16px 18px;
+    transform: translateY(0);
+}
+
+    .origin-item.selected .origin-expand::before {
+        opacity: 1;
+    }
+
+.origin-expand > * {
+    position: relative;
+    z-index: 1;
+}
+
+.origin-desc-box {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(243, 226, 254, 0.84);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.origin-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+    .origin-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: clamp(108px, 28vw, 124px);
+        height: clamp(52px, 12vw, 60px);
+        min-width: 108px;
+        border-radius: 16px;
+        border: 1px solid rgba(243, 226, 254, 0.08);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        cursor: pointer;
+        color: #f3e2fe;
+        background: #523369;
+        box-shadow: 0 10px 18px rgba(82, 51, 105, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+        .origin-actions .btn.secondary,
+        .origin-actions .btn.primary:not(:disabled) {
+            background: #523369;
+        }
+
+        .origin-actions .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            filter: brightness(1.06);
+            box-shadow: 0 12px 20px rgba(82, 51, 105, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .origin-actions .btn:active:not(:disabled) {
+            transform: translateY(0);
+            filter: brightness(0.97);
+        }
+
+        .origin-actions .btn:disabled {
+            background: rgba(63, 53, 90, 0.88);
+            color: #b9b3cc;
+            border-color: rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+
+.region-list {
+    display: grid;
+    gap: 8px;
+}
+
+.region-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    margin-bottom: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(190, 170, 255, 0.12);
+    background: rgba(75, 63, 99, 0.74);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, opacity 0.22s ease;
+}
+
+    .region-item:hover {
+        transform: translateY(-1px);
+        background: rgba(86, 72, 113, 0.82);
+    }
+
+    .region-item.selected {
+        background: rgba(82, 51, 105, 0.94);
+        border-color: rgba(216, 192, 255, 0.34);
+        box-shadow: 0 8px 18px rgba(82, 51, 105, 0.28);
+    }
+
+    .region-item.region-enter {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+        .region-item.region-enter.region-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+.region-main {
+    min-width: 0;
+}
+
+.region-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #f3e2fe;
 }
 
 .region-actions {
     display: flex;
     gap: 6px;
+    align-items: center;
+}
+
+.region-delete-btn,
+.region-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.region-info-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3e2fe;
 }
 
 .region-delete-btn {
-    background: none;
-    border: none;
+    background: transparent;
     color: #bbb;
-    cursor: pointer;
     font-size: 14px;
 }
 
+    .region-info-btn:hover,
+    .region-delete-btn:hover {
+        transform: translateY(-1px);
+    }
+
     .region-delete-btn:hover {
         color: #ff6666;
+        background: rgba(255, 102, 102, 0.08);
     }
+
 .region-unknown-box {
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    text-align: center;
     pointer-events: none;
 }
-/* ===============================
-   ORIGIN ACTION BUTTONS
-   =============================== */
 
-.origin-actions .btn {
-    height: 46px;
-    border-radius: 14px; /* 곡선 강조 */
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.2px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-    /* ▶ 지역 추가하기 */
-    .origin-actions .btn.secondary {
-        background: linear-gradient( 180deg, #6a4bbf, #5636a8 ); /* 기원 강조색보다 한 톤 진한 보라 */
-        color: #ffffff;
-        box-shadow: 0 4px 10px rgba(80, 40, 150, 0.35);
-    }
-
-    /* ▶ 다음 */
-    .origin-actions .btn.primary {
-        background: linear-gradient( 180deg, #7b5cff, #5b3fe6 );
-        color: #ffffff;
-        box-shadow: 0 6px 14px rgba(120, 90, 255, 0.45);
-    }
-
-    /* hover */
-    .origin-actions .btn:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(140, 100, 255, 0.5);
-    }
-
-    /* active */
-    .origin-actions .btn:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: 0 4px 10px rgba(100, 70, 200, 0.4);
-    }
-
-    /* disabled (다음 버튼 기본 상태) */
-    .origin-actions .btn:disabled {
-        background: #3f355a;
-        color: #b9b3cc;
-        box-shadow: none;
-        cursor: not-allowed;
-        opacity: 0.85;
-    }
-
+.region-dialog-title,
 .region-detail-title {
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 700;
+    color: #e9dcff;
     margin-bottom: 6px;
 }
 
+.region-dialog-story,
+.region-detail-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #e6dbff;
+    opacity: 0.95;
+}
+
 .region-detail-meta {
-    font-size: 16px; /* ← 이름(22)과 본문(14~15) 사이 */
+    font-size: 16px;
     opacity: 0.85;
     margin-bottom: 14px;
     text-align: left;
     letter-spacing: 0.2px;
+    color: #bba8ff;
 }
 
-.region-detail-desc {
-    font-size: 14px;
-    line-height: 1.7;
+body.dialog-open .scroll-area {
+    overflow: hidden;
 }
-.region-detail-meta {
-    color: #bba8ff;
+
+body.dialog-open .app .scroll-area {
+    padding: 0 !important;
+}
+
+.origin-loading-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 170px;
+}
+
+    .origin-loading-box[hidden],
+    .origin-content-box[hidden] {
+        display: none !important;
+    }
+
+.region-skeleton-list {
+    display: grid;
+    gap: 8px;
+    min-height: 56px;
+}
+
+.origin-loading-box .origin-actions {
+    margin-top: auto;
+}
+
+.origin-item.is-loading .origin-content-box {
+    pointer-events: none;
+}
+
+.origin-skeleton-line,
+.region-skeleton-item {
+    position: relative;
+    overflow: hidden;
+}
+
+    .origin-skeleton-line::before,
+    .region-skeleton-item::before,
+    .origin-actions .btn.is-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient( 90deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.08) 18%, rgba(255, 255, 255, 0.18) 32%, rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0.02) 100% );
+        transform: translateX(-100%);
+        animation: originSkeletonShimmer 1.15s ease-in-out infinite;
+    }
+
+.origin-skeleton-line {
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(243, 226, 254, 0.12);
+}
+
+    .origin-skeleton-line.single {
+        width: 100%;
+    }
+
+.region-skeleton-item {
+    height: 56px;
+    border-radius: 12px;
+    background: rgba(243, 226, 254, 0.1);
+    border: 1px solid rgba(190, 170, 255, 0.1);
+    margin-bottom: 0;
+}
+
+.origin-actions .btn.is-skeleton {
+    position: relative;
+    color: transparent !important;
+    border-color: rgba(190, 170, 255, 0.1);
+    background: rgba(243, 226, 254, 0.1) !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+    .origin-actions .btn.is-skeleton::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(243, 226, 254, 0.08);
+    }
+
+@keyframes originSkeletonShimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@media (max-width: 420px) {
+    .origin-list {
+        padding: 0 10px 18px;
+    }
+
+    .origin-actions {
+        gap: 10px;
+    }
+
+        .origin-actions .btn {
+            width: 108px;
+            min-width: 108px;
+            height: 52px;
+            font-size: 14px;
+        }
 }

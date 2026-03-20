@@ -1,9 +1,11 @@
-﻿/**
+/**
  * create.origin-ui.js
  * - 기원(Origin) 카드 UI 렌더링
  * - 클릭/키보드 이벤트 바인딩
  * - 선택 UI 토글 + 확장 영역 참조 반환
  */
+
+const DEFAULT_ORIGIN_BG = "/images/base/black.png";
 
 /**
  * origin 목록을 DOM에 렌더링합니다.
@@ -12,30 +14,48 @@
 export function renderOriginList(originListEl, ORIGINS_FRONT) {
     if (!originListEl) return;
 
-    // 중복 렌더 방지
     originListEl.innerHTML = "";
+    originListEl.classList.add("origin-list");
 
     Object.values(ORIGINS_FRONT).forEach((origin) => {
         const item = document.createElement("div");
         item.className = "origin-item";
         item.dataset.value = origin.id;
-        item.dataset.bg = `/images/origin/${String(origin.id).toLowerCase()}.jpg`; // 규칙 기반
+        item.dataset.bg = DEFAULT_ORIGIN_BG;
+        item.tabIndex = 0;
+        item.setAttribute("role", "button");
+        item.setAttribute("aria-pressed", "false");
 
         item.innerHTML = `
-      <div class="origin-image">
-        <div class="origin-title">${origin.name}</div>
-      </div>
+            <div class="origin-image">
+                <div class="origin-title">${origin.name}</div>
+            </div>
 
-      <div class="origin-expand">
-        <div class="origin-desc-box"></div>
-        <div class="region-list"></div>
+            <div class="origin-expand">
+                <div class="origin-loading-box" hidden>
+                    <div class="origin-skeleton-line single"></div>
 
-        <div class="origin-actions">
-          <button class="btn secondary">지역 추가하기</button>
-          <button class="btn primary btn-next" disabled>다음</button>
-        </div>
-      </div>
-    `;
+                    <div class="region-skeleton-list">
+                        <div class="region-skeleton-item"></div>
+                    </div>
+
+                    <div class="origin-actions">
+                        <div class="btn is-skeleton" aria-hidden="true"></div>
+                        <div class="btn is-skeleton" aria-hidden="true"></div>
+                    </div>
+                </div>
+
+                <div class="origin-content-box">
+                    <div class="origin-desc-box"></div>
+                    <div class="region-list"></div>
+
+                    <div class="origin-actions">
+                        <button type="button" class="btn secondary">지역 추가하기</button>
+                        <button type="button" class="btn primary btn-next" disabled>다음</button>
+                    </div>
+                </div>
+            </div>
+        `;
 
         originListEl.appendChild(item);
     });
@@ -53,22 +73,17 @@ export function bindOriginEvents(originListEl, { onSelectOrigin }) {
     const items = originListEl.querySelectorAll(".origin-item");
 
     items.forEach((el) => {
-        // 클릭
         el.addEventListener("click", () => onSelectOrigin?.(el));
 
-        // 키보드 접근성
-        el.addEventListener("keyup", (e) => {
+        el.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
                 onSelectOrigin?.(el);
             }
         });
 
-        // 배경 이미지 적용
-        const bg = el.dataset.bg;
-        const img = el.querySelector(".origin-image");
-        if (img && bg) {
-            img.style.backgroundImage = `url(${bg})`;
-        }
+        const bg = el.dataset.bg || DEFAULT_ORIGIN_BG;
+        el.style.setProperty("--origin-bg", `url("${bg}")`);
     });
 }
 
@@ -78,11 +93,11 @@ export function bindOriginEvents(originListEl, { onSelectOrigin }) {
 export function setSelectedOriginItem(originListEl, selectedEl) {
     if (!originListEl || !selectedEl) return;
 
-    originListEl
-        .querySelectorAll(".origin-item")
-        .forEach((i) => i.classList.remove("selected"));
-
-    selectedEl.classList.add("selected");
+    originListEl.querySelectorAll(".origin-item").forEach((item) => {
+        const isSelected = item === selectedEl;
+        item.classList.toggle("selected", isSelected);
+        item.setAttribute("aria-pressed", String(isSelected));
+    });
 }
 
 /**
@@ -90,10 +105,12 @@ export function setSelectedOriginItem(originListEl, selectedEl) {
  */
 export function getExpandArea(originItemEl) {
     return {
-        desc: originItemEl.querySelector(".origin-desc-box"),
-        regions: originItemEl.querySelector(".region-list"),
-        nextBtn: originItemEl.querySelector(".btn-next"),
-        addBtn: originItemEl.querySelector(".origin-actions .btn.secondary"),
+        loadingBox: originItemEl?.querySelector(".origin-loading-box"),
+        contentBox: originItemEl?.querySelector(".origin-content-box"),
+        desc: originItemEl?.querySelector(".origin-desc-box"),
+        regions: originItemEl?.querySelector(".region-list"),
+        nextBtn: originItemEl?.querySelector(".origin-content-box .btn-next"),
+        addBtn: originItemEl?.querySelector(".origin-content-box .origin-actions .btn.secondary"),
     };
 }
 
@@ -104,5 +121,4 @@ export function disableAllNextButtons(root = document) {
     root.querySelectorAll(".btn-next").forEach((btn) => {
         btn.disabled = true;
     });
-}
-//⚠️
+} 

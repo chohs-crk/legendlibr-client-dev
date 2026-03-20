@@ -62,6 +62,34 @@ export function initBattleModule({
         return p;
     }
 
+  function renderBattleSkeleton(count = pageSize) {
+        if (!content) return;
+
+        content.innerHTML = `
+        <div class="battle-list">
+            ${Array.from({ length: count }).map(() => `
+                <div class="battle-skeleton-item">
+                    <div class="battle-skeleton-thumb"></div>
+
+                    <div class="battle-skeleton-body">
+                        <div class="battle-skeleton-row">
+                            <div class="battle-skeleton-title"></div>
+                            <div class="battle-skeleton-badge"></div>
+                        </div>
+
+                        <div class="battle-skeleton-elo"></div>
+                        <div class="battle-skeleton-date"></div>
+
+                        <div class="battle-skeleton-line w-92"></div>
+                        <div class="battle-skeleton-line w-78"></div>
+                        <div class="battle-skeleton-line w-55"></div>
+                    </div>
+                </div>
+            `).join("")}
+        </div>
+    `;
+    }
+
     async function load(page = 1) {
         if (!content) return;
 
@@ -74,7 +102,7 @@ export function initBattleModule({
 
         currentBattlePage = clampPage(Number(page));
 
-        content.textContent = "전투 기록 불러오는 중...";
+        renderBattleSkeleton(pageSize);
         if (battlePager) battlePager.style.display = "none";
 
         try {
@@ -249,16 +277,21 @@ export function initBattleModule({
 
 
 
-    function renderBattleList(battles) {
+   function renderBattleList(battles) {
         if (!content) return;
 
         if (!battles || battles.length === 0) {
-            content.innerHTML = '<div class="battle-empty">(전투 기록 없음)</div>';
+            content.innerHTML = `
+            <div class="battle-empty-card">
+                <div class="battle-empty-title">전투를 시작하고 기록하라</div>
+                <div class="battle-empty-sub">첫 전투가 이곳에 남습니다</div>
+            </div>
+        `;
             return;
         }
 
         content.innerHTML = `
-            <div class="battle-list">
+        <div class="battle-list">
                 ${battles
                 .map((b) => {
                     const res = formatBattleResult(b);

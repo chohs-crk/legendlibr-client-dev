@@ -1,42 +1,67 @@
-<section class="page" id="page-create-prompt">
-    <main class="content">
+<section id="page-create-prompt" class="page" aria-label="캐릭터 정보 입력 페이지">
+    <div class="content">
         <div class="scroll-area">
-            <!-- create-prompt.html 안의 실제 내용 복사 -->
-            <h2 class="page-title">캐릭터 이름과 설명</h2>
+            <div class="create-prompt-shell">
+                <section class="selected-info-box" aria-label="선택된 기원과 지역">
+                    <div class="info-stack">
+                        <div class="info-line info-block origin-chip-wrap">
+                            <div class="value" id="originName"></div>
+                        </div>
 
-            <!-- 기원/지역: 라벨과 값이 한 줄이 아니라, 위/아래로 쌓이는 형태 -->
-            <div class="info-stack">
-                <div class="info-line info-block" style="display:flex; flex-direction:column; gap:4px;">
-                    <div class="label">기원</div>
-                    <div class="value" id="originName"></div>
-                </div>
-                <div class="info-line info-block" style="display:flex; flex-direction:column; gap:4px;">
-                    <div class="label">지역</div>
-                    <div class="value" id="regionName"></div>
-                </div>
-            </div>
+                        <button
+                            type="button"
+                            class="info-line info-block region-chip-button"
+                            id="regionInfoButton"
+                            aria-expanded="false"
+                            aria-controls="regionDetailPanel"
+                        >
+                            <span class="value" id="regionName"></span>
+                            <span class="region-chip-icon">⌄</span>
+                        </button>
+                    </div>
 
-            <!-- 이름 작성: 1줄 + 글자수 표시(1~15) -->
-            <div class="field">
-                <input id="nameInput" placeholder="캐릭터 이름" maxlength="15" autocomplete="off" />
-                <div class="field-meta" aria-live="polite">
-                    <span id="nameCount">0</span><span class="sep">/</span><span id="nameMax">15</span><span class="unit">글자</span>
-                </div>
-            </div>
+                    <div id="regionDetailPanel" class="region-detail-panel" hidden>
+                        <div class="region-detail-head">
+                            <div class="region-detail-title" id="regionDetailTitle"></div>
+                            <div class="region-detail-meta" id="regionDetailMeta"></div>
+                        </div>
+                        <div class="region-detail-desc" id="regionDetailDesc"></div>
+                    </div>
+                </section>
 
-            <!-- 프롬프트: 기본 4줄, 입력이 길어지면 자연스럽게 높이 증가 + 바이트 표시(20~1000) -->
-            <div class="field">
-<textarea id="promptInput" rows="4" placeholder="캐릭터에 대한 간단한 설명을 적어주세요"></textarea>
-                <div class="field-meta" aria-live="polite">
-                    <span id="promptByteCount">0</span><span class="sep">/</span><span id="promptByteMax">1000</span><span class="unit">byte</span>
-                    <span class="hint">(최소 20byte)</span>
-                </div>
-            </div>
+                <section class="prompt-input-wrap">
+                    <div class="field-block">
+                        <div class="field-head">
+                            <label class="input-label" for="nameInput">캐릭터 이름</label>
+                            <div class="field-counter"><span id="nameCount">0</span>/<span id="nameMax">15</span></div>
+                        </div>
+                        <input
+                            id="nameInput"
+                            maxlength="15"
+                            class="text-input"
+                            value="프리무스"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
 
-            <!-- 시작 버튼: 조건 만족 시 활성화 -->
-            <div class="actions" style="display:flex; justify-content:flex-end;">
-                <button class="btn primary" id="btnNext" disabled>시작</button>
+                    <div class="field-block">
+                        <div class="field-head">
+                            <label class="input-label" for="promptInput">캐릭터 설명</label>
+                            <div class="field-counter"><span id="promptByteCount">0</span>/<span id="promptByteMax">1000</span> byte</div>
+                        </div>
+                        <textarea
+                            id="promptInput"
+                            maxlength="1000"
+                            class="text-area"
+                            rows="4"
+                            spellcheck="false"
+                        >옛날 옛날 한 천사가 살았다.</textarea>
+                    </div>
+
+                    <button id="btnNext" class="btn primary prompt-next-btn mt-30">다음</button>
+                </section>
             </div>
         </div>
-    </main>
+    </div>
 </section>

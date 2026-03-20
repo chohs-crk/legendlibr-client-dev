@@ -1,137 +1,311 @@
-/* create-prompt.css
-   - 캐릭터 이름/프롬프트 입력 페이지 전용 스타일
-   - 최대한 스코프를 좁혀 다른 페이지에 영향 없도록 구성
-*/
+:root {
+  --cp-bg: #0f0f14;
+  --cp-surface: #1a1a22;
+  --cp-surface-strong: #15151d;
+  --cp-surface-soft: rgba(255, 255, 255, 0.04);
+  --cp-primary: #9800ff;
+  --cp-deep: #523369;
+  --cp-text: #f3e2fe;
+  --cp-text-soft: rgba(243, 226, 254, 0.76);
+  --cp-border: rgba(152, 0, 255, 0.24);
+  --cp-border-strong: rgba(152, 0, 255, 0.48);
+  --cp-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+}
 
-#page-create-prompt .create-prompt-root {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+#page-create-prompt {
+  background: var(--cp-bg);
+  color: var(--cp-text);
+}
 
-  /* 기존 레이아웃이 padding을 이미 가지고 있을 수 있어서 과도하지 않게 */
-  padding: 18px 16px 24px;
-  max-width: 560px;
+#page-create-prompt .content {
+  padding-bottom: 28px;
+}
+
+#page-create-prompt .create-prompt-shell {
+  width: min(86vw, 760px);
   margin: 0 auto;
+  padding: 10px 0 28px;
+}
+
+#page-create-prompt .selected-info-box,
+#page-create-prompt .prompt-input-wrap {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+    var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 24px;
+  box-shadow: var(--cp-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#page-create-prompt .selected-info-box {
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+#page-create-prompt .info-stack {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#page-create-prompt .info-line.info-block {
+  min-width: 0;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(152, 0, 255, 0.12), rgba(82, 51, 105, 0.22)),
+    var(--cp-surface-strong);
+  color: var(--cp-text);
   box-sizing: border-box;
 }
 
-#page-create-prompt .cp-header .page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
+#page-create-prompt .origin-chip-wrap {
+  justify-content: flex-start;
 }
 
-/* =========================
-   META (기원/지역)
-========================= */
-#page-create-prompt .cp-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+#page-create-prompt .region-chip-button {
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
-#page-create-prompt .cp-meta-item {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 12px;
-  padding: 12px 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-#page-create-prompt .cp-meta-label {
-  font-size: 12px;
-  opacity: 0.75;
-  margin-bottom: 6px;
-}
-
-#page-create-prompt .cp-meta-value {
-  font-size: 15px;
-  font-weight: 650;
-  word-break: break-word;
-}
-
-/* =========================
-   FIELD
-========================= */
-#page-create-prompt .cp-field {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 12px;
-  padding: 12px 12px 10px;
-}
-
-#page-create-prompt .cp-field-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-#page-create-prompt .cp-field-label {
-  font-size: 13px;
-  font-weight: 650;
-}
-
-#page-create-prompt .cp-counter {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-#page-create-prompt .cp-help {
-  margin: 8px 0 0;
-  font-size: 12px;
-  opacity: 0.75;
-}
-
-#page-create-prompt .cp-input,
-#page-create-prompt .cp-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  padding: 10px 12px;
+#page-create-prompt .region-chip-button:hover,
+#page-create-prompt .region-chip-button:focus-visible {
+  border-color: var(--cp-border-strong);
+  background:
+    linear-gradient(180deg, rgba(152, 0, 255, 0.18), rgba(82, 51, 105, 0.3)),
+    var(--cp-surface-strong);
+  transform: translateY(-1px);
   outline: none;
+  box-shadow: 0 10px 22px rgba(82, 51, 105, 0.26);
 }
 
-#page-create-prompt .cp-input:focus,
-#page-create-prompt .cp-textarea:focus {
-  border-color: rgba(0, 0, 0, 0.35);
-}
-
-#page-create-prompt .cp-textarea {
-  line-height: 1.5;
-
-  /* 기본 4줄 */
-  min-height: calc(1.5em * 4 + 22px);
-
-  /* 자동 확장 시 스크롤바 안 뜨게 */
+#page-create-prompt .value {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--cp-text);
+  text-align: left;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+#page-create-prompt .region-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(243, 226, 254, 0.12);
+  font-size: 11px;
+  font-weight: 800;
+  font-style: normal;
+  color: rgba(243, 226, 254, 0.92);
+  transition: none;
+}
+
+#page-create-prompt .region-chip-button[aria-expanded="true"] .region-chip-icon {
+  transform: none;
+}
+
+#page-create-prompt .region-detail-panel {
+  display: none !important;
+}
+
+#page-create-prompt .prompt-input-wrap {
+  padding: 22px 18px 20px;
+}
+
+#page-create-prompt .field-block + .field-block {
+  margin-top: 18px;
+}
+
+#page-create-prompt .field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#page-create-prompt .input-label {
+  display: block;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: left;
+}
+
+#page-create-prompt .field-counter {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cp-text-soft);
+  transition: color 0.18s ease, text-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+#page-create-prompt .field-counter.is-invalid,
+#page-create-prompt #promptByteCount.is-invalid,
+#page-create-prompt #promptByteMax.is-invalid {
+  color: #ffc9db;
+  text-shadow: 0 0 10px rgba(255, 114, 163, 0.22);
+}
+
+#page-create-prompt .field-counter.is-valid,
+#page-create-prompt #promptByteCount.is-valid,
+#page-create-prompt #promptByteMax.is-valid {
+  color: var(--cp-text-soft);
+  text-shadow: none;
+}
+
+#page-create-prompt .text-input,
+#page-create-prompt .text-area {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.012)),
+    #111119;
+  color: var(--cp-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 18px rgba(0, 0, 0, 0.18);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+#page-create-prompt .text-input::placeholder,
+#page-create-prompt .text-area::placeholder {
+  color: rgba(243, 226, 254, 0.34);
+}
+
+#page-create-prompt .text-input:focus,
+#page-create-prompt .text-area:focus {
+  outline: none;
+  border-color: var(--cp-border-strong);
+  background:
+    linear-gradient(180deg, rgba(152, 0, 255, 0.08), rgba(255, 255, 255, 0.018)),
+    #111119;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 3px rgba(152, 0, 255, 0.12), 0 10px 22px rgba(82, 51, 105, 0.22);
+}
+
+#page-create-prompt .text-input {
+  height: 58px;
+  padding: 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 58px;
+}
+
+#page-create-prompt .text-area {
+  min-height: 152px;
+  padding: 16px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
   resize: none;
+  overflow: hidden;
 }
 
-#page-create-prompt .cp-field.is-invalid {
-  border-color: rgba(255, 0, 0, 0.35);
+#page-create-prompt .prompt-next-btn,
+#page-create-prompt #btnNext {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  min-width: 116px;
+  min-height: 56px;
+  margin: 18px 0 0 auto;
+  padding: 0 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: var(--cp-deep);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 12px 22px rgba(82, 51, 105, 0.34);
+  transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease, box-shadow 0.18s ease;
 }
 
-#page-create-prompt .cp-field.is-invalid .cp-counter,
-#page-create-prompt .cp-field.is-invalid .cp-help {
-  opacity: 1;
+#page-create-prompt .prompt-next-btn:hover:not(:disabled),
+#page-create-prompt #btnNext:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 16px 24px rgba(82, 51, 105, 0.42);
 }
 
-/* =========================
-   START BUTTON
-========================= */
-#page-create-prompt .cp-start {
-  align-self: flex-end;
-  min-width: 90px;
-  padding: 10px 18px;
-  border-radius: 12px;
+#page-create-prompt .prompt-next-btn:active:not(:disabled),
+#page-create-prompt #btnNext:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-#page-create-prompt .cp-start[disabled] {
-  opacity: 0.45;
+#page-create-prompt .prompt-next-btn:disabled,
+#page-create-prompt .prompt-next-btn.disabled,
+#page-create-prompt #btnNext:disabled,
+#page-create-prompt #btnNext.disabled {
+  background: rgba(82, 51, 105, 0.42);
+  color: rgba(243, 226, 254, 0.46);
+  box-shadow: none;
   cursor: not-allowed;
-  pointer-events: none;
-  filter: grayscale(0.2);
+}
+
+.cp-region-popup {
+  padding: 2px 2px 4px;
+  color: #f3e2fe;
+}
+
+.cp-region-popup-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #f3e2fe;
+}
+
+.cp-region-popup-meta {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(216, 192, 255, 0.86);
+}
+
+.cp-region-popup-desc {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.72;
+  color: rgba(243, 226, 254, 0.94);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  #page-create-prompt .create-prompt-shell {
+    width: min(90vw, 760px);
+  }
+
+  #page-create-prompt .selected-info-box,
+  #page-create-prompt .prompt-input-wrap {
+    border-radius: 22px;
+  }
+
+  #page-create-prompt .text-input {
+    font-size: 17px;
+  }
+
+  #page-create-prompt .info-line.info-block {
+    max-width: 100%;
+  }
 }

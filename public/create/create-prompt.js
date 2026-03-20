@@ -1,26 +1,31 @@
-﻿import { ORIGINS_FRONT } from "./origins.front.js";
+import { ORIGINS_FRONT } from "./origins.front.js";
 import { apiFetch } from "/base/api.js";
+import { openWrap } from "/base/common/ui-wrap.js";
 
 export async function initCreatePromptPage() {
-    const $ = (s) => document.querySelector(s);
+    const root = document.getElementById("page-create-prompt");
+    if (!root) return;
 
-    /* ==========================
-       입력 길이 규칙
+    const firstInit = root.dataset.initialized !== "true";
+    if (firstInit) {
+        root.dataset.initialized = "true";
+    }
 
-       - 이름: 1~15글자(문자 기준)
-       - 프롬프트: 20~1000byte(UTF-8)
-       - 시작 버튼: 위 조건 만족 시만 활성화
-    ========================== */
+    const $ = (selector) => root.querySelector(selector);
+
     const NAME_MIN = 1;
     const NAME_MAX = 15;
     const PROMPT_MIN_BYTES = 20;
     const PROMPT_MAX_BYTES = 1000;
+    const NAME_PLACEHOLDER = "프리무스";
+    const PROMPT_PLACEHOLDER = "옛날 옛날 한 천사가 살았다.";
 
     const encoder = new TextEncoder();
     const charCount = (s) => Array.from(String(s || "")).length;
     const byteCount = (s) => encoder.encode(String(s || "")).length;
 
-    // 1000byte 초과 입력을 즉시 잘라내기(UTF-8 기준)
+    let currentRegionDetail = null;
+
     function trimToMaxBytes(str, maxBytes) {
         const s = String(str || "");
         if (byteCount(s) <= maxBytes) return s;
@@ -29,13 +34,13 @@ export async function initCreatePromptPage() {
         let lo = 0;
         let hi = chars.length;
 
-        // binary search: 최대 maxBytes를 만족하는 가장 긴 prefix
         while (lo < hi) {
             const mid = Math.ceil((lo + hi) / 2);
             const candidate = chars.slice(0, mid).join("");
             if (byteCount(candidate) <= maxBytes) lo = mid;
             else hi = mid - 1;
         }
+
         return chars.slice(0, lo).join("");
     }
 
@@ -44,32 +49,53 @@ export async function initCreatePromptPage() {
         el.style.height = "auto";
 
         const cs = window.getComputedStyle(el);
-        const lineHeight = parseFloat(cs.lineHeight) || 20;
+        const lineHeight = parseFloat(cs.lineHeight) || 24;
         const paddingTop = parseFloat(cs.paddingTop) || 0;
         const paddingBottom = parseFloat(cs.paddingBottom) || 0;
         const borderTop = parseFloat(cs.borderTopWidth) || 0;
         const borderBottom = parseFloat(cs.borderBottomWidth) || 0;
 
         const minHeight = lineHeight * 4 + paddingTop + paddingBottom + borderTop + borderBottom;
-        const nextHeight = Math.max(el.scrollHeight, minHeight);
-        el.style.height = nextHeight + "px";
+        el.style.height = Math.max(el.scrollHeight, minHeight) + "px";
     }
 
     function setBtnEnabled(btn, enabled) {
         if (!btn) return;
         btn.disabled = !enabled;
-
-        // 기존 CSS가 있을 수도 있으니, “활성/비활성 느낌”을 위해 class도 같이 토글
         btn.classList.toggle("disabled", !enabled);
     }
 
-    function updateUiValidity({ nameInput, promptInput, btnNext }) {
-        const nameTrim = nameInput.value.trim();
-        const promptTrim = promptInput.value.trim();
+    function getRegionMetaText(detail) {
+        if (detail?.source === "user") {
+            const ownerName = detail?.ownerchar?.name || "대표 없음";
+            const charCountText = Number(detail?.charnum || 0);
+            return `${ownerName} · ${charCountText}명의 캐릭터`;
+        }
+        return detail?.meta || "기본 지역";
+    }
 
-        // 카운터 UI
-        const nameLen = charCount(nameTrim);
-        const promptBytes = byteCount(promptTrim);
+    function setPromptCounterState({ okPrompt }) {
+        const promptCounter = $("#promptByteCounter") || $("#promptByteCount")?.closest(".field-counter");
+        const promptCount = $("#promptByteCount");
+        const promptMax = $("#promptByteMax");
+
+        [promptCounter, promptCount, promptMax].forEach((el) => {
+            if (!el) return;
+            el.classList.toggle("is-invalid", !okPrompt);
+            el.classList.toggle("is-valid", okPrompt);
+        });
+    }
+
+    function updateUiValidity({ nameInput, promptInput, btnNext }) {
+        if (!nameInput || !promptInput) return;
+
+        const rawName = String(nameInput.value || "");
+        const rawPrompt = String(promptInput.value || "");
+        const nameTrim = rawName.trim();
+        const promptTrim = rawPrompt.trim();
+
+        const nameLen = charCount(rawName);
+        const promptBytes = byteCount(rawPrompt);
 
         const $nameCount = $("#nameCount");
         const $promptByteCount = $("#promptByteCount");
@@ -81,183 +107,288 @@ export async function initCreatePromptPage() {
         if ($nameMax) $nameMax.textContent = String(NAME_MAX);
         if ($promptByteMax) $promptByteMax.textContent = String(PROMPT_MAX_BYTES);
 
-        const okName = nameLen >= NAME_MIN && nameLen <= NAME_MAX;
-        const okPrompt = promptBytes >= PROMPT_MIN_BYTES && promptBytes <= PROMPT_MAX_BYTES;
+        const okName = charCount(nameTrim) >= NAME_MIN && charCount(nameTrim) <= NAME_MAX;
+        const okPrompt = byteCount(promptTrim) >= PROMPT_MIN_BYTES && byteCount(promptTrim) <= PROMPT_MAX_BYTES;
 
+        setPromptCounterState({ okPrompt });
         setBtnEnabled(btnNext, okName && okPrompt);
     }
 
-    /* ==========================
-       🔥 서버 생성 상태 확인
-    ========================== */
-
-
-
-    /* ==========================
-       🔽 기존 로직 유지
-    ========================== */
-    $("#nameInput").value = "";
-    $("#promptInput").value = "";
-
-
-    /* ==========================
-       클라이언트 스토리 세션 리셋
-    ========================== */
     function resetClientStorySession() {
         sessionStorage.removeItem("story_log");
         sessionStorage.removeItem("choices_backup_story1");
-
         sessionStorage.removeItem("choices_backup_story3");
         sessionStorage.removeItem("aiIntro");
         sessionStorage.removeItem("currentSceneKey");
         sessionStorage.removeItem("displayNameRaw");
     }
 
-    /* ==========================
-       세션 검증
-    ========================== */
+    function goCreatePage() {
+        if (typeof window.showPage === "function") {
+            window.showPage("create", { type: "push" });
+            return;
+        }
+        window.location.href = "/create";
+    }
+
+    function escapeHtml(str) {
+        return String(str || "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    function setRegionDetail(detail) {
+        const regionNameEl = $("#regionName");
+        const normalizedDetail = {
+            name: detail?.name || regionNameEl?.textContent || "지역 정보",
+            meta: getRegionMetaText(detail),
+            detail: detail?.detail || "지역 설명을 불러올 수 없습니다.",
+            source: detail?.source || "base",
+            ownerchar: detail?.ownerchar,
+            charnum: detail?.charnum,
+        };
+
+        currentRegionDetail = normalizedDetail;
+
+        const panel = $("#regionDetailPanel");
+        const title = $("#regionDetailTitle");
+        const meta = $("#regionDetailMeta");
+        const desc = $("#regionDetailDesc");
+
+        if (title) title.textContent = normalizedDetail.name;
+        if (meta) meta.textContent = normalizedDetail.meta;
+        if (desc) desc.innerHTML = escapeHtml(normalizedDetail.detail);
+        if (panel) panel.hidden = true;
+    }
+
+    function openRegionDetailPopup() {
+        if (typeof openWrap !== "function") return;
+
+        const detail = currentRegionDetail || {
+            name: $("#regionName")?.textContent || "지역 정보",
+            meta: "기본 지역",
+            detail: "지역 설명을 불러올 수 없습니다.",
+        };
+
+        openWrap(`
+            <div class="cp-region-popup">
+                <h3 class="cp-region-popup-title">${escapeHtml(detail.name)}</h3>
+                <div class="cp-region-popup-meta">${escapeHtml(detail.meta)}</div>
+                <div class="text-flow cp-region-popup-desc">${escapeHtml(detail.detail)}</div>
+            </div>
+        `);
+    }
+
+    function bindRegionDetailPopup() {
+        const button = $("#regionInfoButton");
+        const panel = $("#regionDetailPanel");
+        if (!button || button.dataset.bound === "true") return;
+
+        button.dataset.bound = "true";
+        button.setAttribute("aria-haspopup", "dialog");
+        button.removeAttribute("aria-expanded");
+        button.setAttribute("title", "지역 정보 보기");
+
+        const icon = button.querySelector(".region-chip-icon");
+        if (icon) {
+            icon.textContent = "i";
+            icon.setAttribute("aria-hidden", "true");
+        }
+
+        if (panel) {
+            panel.hidden = true;
+            panel.setAttribute("aria-hidden", "true");
+        }
+
+        button.addEventListener("click", () => {
+            openRegionDetailPopup();
+        });
+    }
+
+    async function hydrateSelectedRegionDetail(originId, regionId) {
+        try {
+            const res = await apiFetch("/base/get-regions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ originId }),
+            });
+            const json = await res.json();
+
+            if (!json?.ok || !Array.isArray(json.regions)) {
+                setRegionDetail(null);
+                return;
+            }
+
+            const target = json.regions.find((r) => String(r.id) === String(regionId));
+            setRegionDetail(target || null);
+        } catch (error) {
+            console.warn("failed to load selected region detail", error);
+            setRegionDetail(null);
+        }
+    }
+
     const originId = sessionStorage.getItem("origin");
     const regionId = sessionStorage.getItem("regionId");
     const regionName = sessionStorage.getItem("regionName");
 
     if (!originId || !regionId) {
         alert("기원과 지역을 다시 선택해주세요.");
-        showPage("create");
+        goCreatePage();
         throw new Error("invalid create state");
     }
 
     const originData = ORIGINS_FRONT[originId];
     if (!originData) {
         alert("잘못된 기원 선택입니다.");
-        showPage("create");
+        goCreatePage();
         throw new Error("invalid origin");
     }
 
-    $("#originName").textContent = originData.name;
-    $("#regionName").textContent = regionName || "알 수 없음";
+    const nameInput = $("#nameInput");
+    const promptInput = $("#promptInput");
+    const btnNext = $("#btnNext");
+    const originNameEl = $("#originName");
+    const regionNameEl = $("#regionName");
+
+    if (!nameInput || !promptInput || !btnNext || !originNameEl || !regionNameEl) {
+        root.dataset.initialized = "false";
+        throw new Error("create-prompt DOM not ready");
+    }
+
+    originNameEl.textContent = originData.name;
+    regionNameEl.textContent = regionName || "알 수 없음";
+
+    nameInput.placeholder = NAME_PLACEHOLDER;
+    promptInput.placeholder = PROMPT_PLACEHOLDER;
+
+    nameInput.value = "";
+    promptInput.value = "";
+
+    setRegionDetail({
+        name: regionName || "알 수 없음",
+        meta: "기본 지역",
+        detail: "지역 설명을 불러오는 중입니다.",
+    });
+    bindRegionDetailPopup();
+    hydrateSelectedRegionDetail(originId, regionId);
+
     try {
         const res = await apiFetch("/create/story-check");
         const j = await res.json();
 
-
         if (j.ok) {
-            // 🔥 final + FF 인 경우만 final 이동
             if (j.isFinalFF) {
                 location.href = "/create/create-final.html";
                 return;
             }
 
-            // ❌ 그 외 세션 존재 → 생성 불가
             if (j.flow) {
-
                 if (j.flow === "final") {
                     alert("이미 최종 생성 단계에 있는 캐릭터가 있습니다.");
                     return;
                 }
 
-                const go = confirm("진행 중인 생성이 있습니다.\n해당 단계로 이동하시겠습니까?");
+                const go = confirm("진행 중인 생성이 있습니다.
+해당 단계로 이동하시겠습니까?");
                 if (go) {
                     window.location.href = "/create/create-story.html";
                     return;
-                } else {
-                    return; // 아무 것도 안 함
                 }
+                return;
             }
-
         }
     } catch (e) {
         console.warn("story-check failed:", e);
     }
-    const nameInput = $("#nameInput");
-    const promptInput = $("#promptInput");
-    const btnNext = $("#btnNext");
 
-    // textarea: 자동 높이 증가 UX
-    if (promptInput) {
-        promptInput.style.overflow = "hidden";
-        promptInput.style.resize = "none";
-    }
+    promptInput.style.overflow = "hidden";
+    promptInput.style.resize = "none";
 
-    // 초기 카운터/버튼 상태
     updateUiValidity({ nameInput, promptInput, btnNext });
-    autosizeTextarea(promptInput);
-
-    // 입력 이벤트로 실시간 카운팅 + 버튼 활성화
-    let isComposingName = false;
-    let isComposingPrompt = false;
-
-    nameInput.addEventListener("compositionstart", () => {
-        isComposingName = true;
-    });
-    nameInput.addEventListener("compositionend", () => {
-        isComposingName = false;
-
-        // composition 종료 시 최종 정리
-        const chars = Array.from(nameInput.value.trimStart());
-        nameInput.value = chars.slice(0, NAME_MAX).join("");
-        updateUiValidity({ nameInput, promptInput, btnNext });
-    });
-
-    nameInput.addEventListener("input", () => {
-        if (isComposingName) return;
-
-        // maxlength=15가 있어도, 붙여넣기 등 edge case 대비
-        const trimmed = nameInput.value.trimStart();
-        // 이름 앞쪽 공백만 과하게 들어오면 UX가 나빠서, 앞 공백은 정리(뒤 공백은 사용자가 의도했을 수 있으니 trim은 저장시에만)
-        if (trimmed !== nameInput.value) nameInput.value = trimmed;
-
-        // JS 기준 글자수(코드포인트) 15 초과 시 잘라내기 (emoji 등도 안정적으로 처리)
-        const chars = Array.from(nameInput.value);
-        if (chars.length > NAME_MAX) {
-            nameInput.value = chars.slice(0, NAME_MAX).join("");
-        }
-
-        updateUiValidity({ nameInput, promptInput, btnNext });
-    });
-
-    // 프롬프트: 페이지 진입 직후에도 "기본 4줄"을 자연스럽게 유지
-    // (폰트/라인하이트 적용 후 실제 높이 계산을 위해 rAF 사용)
     requestAnimationFrame(() => autosizeTextarea(promptInput));
 
-    promptInput.addEventListener("compositionstart", () => {
-        isComposingPrompt = true;
-    });
-    promptInput.addEventListener("compositionend", () => {
-        isComposingPrompt = false;
+    if (firstInit) {
+        let isComposingName = false;
+        let isComposingPrompt = false;
 
-        // composition 종료 시 바이트 컷 + autosize
-        const raw = promptInput.value;
-        const trimmed = trimToMaxBytes(raw, PROMPT_MAX_BYTES);
-        if (trimmed !== raw) promptInput.value = trimmed;
-        autosizeTextarea(promptInput);
-        updateUiValidity({ nameInput, promptInput, btnNext });
-    });
+        nameInput.addEventListener("compositionstart", () => {
+            isComposingName = true;
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
 
-    promptInput.addEventListener("input", () => {
-        if (isComposingPrompt) return;
+        nameInput.addEventListener("compositionupdate", () => {
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
 
-        // 1000byte 초과 방지
-        const raw = promptInput.value;
-        const trimmed = trimToMaxBytes(raw, PROMPT_MAX_BYTES);
-        if (trimmed !== raw) promptInput.value = trimmed;
+        nameInput.addEventListener("compositionend", () => {
+            isComposingName = false;
 
-        autosizeTextarea(promptInput);
-        updateUiValidity({ nameInput, promptInput, btnNext });
-    });
+            const chars = Array.from(nameInput.value.trimStart());
+            nameInput.value = chars.slice(0, NAME_MAX).join("");
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
+
+        nameInput.addEventListener("input", () => {
+            const trimmedStart = nameInput.value.trimStart();
+            if (!isComposingName && trimmedStart !== nameInput.value) {
+                nameInput.value = trimmedStart;
+            }
+
+            if (!isComposingName) {
+                const chars = Array.from(nameInput.value);
+                if (chars.length > NAME_MAX) {
+                    nameInput.value = chars.slice(0, NAME_MAX).join("");
+                }
+            }
+
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
+
+        promptInput.addEventListener("compositionstart", () => {
+            isComposingPrompt = true;
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
+
+        promptInput.addEventListener("compositionupdate", () => {
+            updateUiValidity({ nameInput, promptInput, btnNext });
+            autosizeTextarea(promptInput);
+        });
+
+        promptInput.addEventListener("compositionend", () => {
+            isComposingPrompt = false;
+
+            const raw = promptInput.value;
+            const trimmed = trimToMaxBytes(raw, PROMPT_MAX_BYTES);
+            if (trimmed !== raw) promptInput.value = trimmed;
+
+            autosizeTextarea(promptInput);
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
+
+        promptInput.addEventListener("input", () => {
+            if (!isComposingPrompt) {
+                const raw = promptInput.value;
+                const trimmed = trimToMaxBytes(raw, PROMPT_MAX_BYTES);
+                if (trimmed !== raw) promptInput.value = trimmed;
+            }
+
+            autosizeTextarea(promptInput);
+            updateUiValidity({ nameInput, promptInput, btnNext });
+        });
+    }
 
     btnNext.onclick = async () => {
         window.__startGlobalLoading?.();
         const stopLoading = () => window.__stopGlobalLoading?.();
 
-        // 🔒 서버 세션 존재 여부 확인
         const checkRes = await apiFetch("/create/story-check");
         const check = await checkRes.json();
 
         if (check.ok && check.flow) {
-
             if (check.flow === "final") {
-
-                // 🔥 30초 초과 시 재생성 허용
                 if (check.canRecreateFinal) {
                     const go = confirm("이전 최종 생성이 중단되었습니다.\n새로 생성하시겠습니까?");
                     if (!go) {
@@ -271,18 +402,13 @@ export async function initCreatePromptPage() {
                 }
             }
 
-
             const go = confirm("기존 생성 세션을 초기화하고 새로 시작하시겠습니까?");
             if (!go) {
                 stopLoading();
                 return;
             }
-
-            // 🔥 서버에서 자동 삭제되므로 그냥 진행
         }
 
-
-        // ⬇️ 생성 로직(입력 검증 강화: FE/BE 동일 기준)
         const name = nameInput.value.trim();
         const prompt = promptInput.value.trim();
 
@@ -302,35 +428,31 @@ export async function initCreatePromptPage() {
         }
 
         resetClientStorySession();
-
         sessionStorage.setItem("displayNameRaw", name);
 
         const payload = {
             originId,
             regionId,
             displayNameRaw: name,
-            prompt
+            prompt,
         };
 
         try {
             const res = await apiFetch("/create/prompt-init", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
             });
-
 
             const json = await res.json();
 
             if (!json.ok) {
-                window.__stopGlobalLoading?.();
+                stopLoading();
 
                 if (json.error === "INSUFFICIENT_SCROLL") {
                     alert("두루마리가 부족합니다.");
                     return;
                 }
-
-                // 입력 검증 관련 에러(서버 기준)
                 if (json.error === "INVALID_NAME_LENGTH") {
                     alert(`이름은 ${NAME_MIN}~${NAME_MAX}글자이어야 합니다.`);
                     return;
@@ -343,22 +465,18 @@ export async function initCreatePromptPage() {
                 alert("서버 응답 오류: " + json.error);
                 return;
             }
-            window.__stopGlobalLoading?.();
 
-            // 🔥 userMeta 즉시 반영 (DB 재조회 방지)
+            stopLoading();
+
             if (json.userMeta) {
                 sessionStorage.setItem("userMeta", JSON.stringify(json.userMeta));
                 window.__updateChromeResource?.(json.userMeta);
             }
 
-            // 🔥 이동
             window.location.href = "/create/create-story.html";
-
-
         } catch (err) {
             console.error(err);
-            window.__stopGlobalLoading?.();
-
+            stopLoading();
             alert("서버 요청 중 오류 발생");
         }
     };

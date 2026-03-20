@@ -1,4 +1,4 @@
-﻿import { ORIGINS_FRONT } from "./origins.front.js";
+import { ORIGINS_FRONT } from "./origins.front.js";
 import { openWrap } from "/base/common/ui-wrap.js";
 import { apiFetch } from "/base/api.js";
 
@@ -48,22 +48,39 @@ function clearSelectedRegion() {
 ========================================= */
 const originListEl = document.getElementById("originList");
 
+function setOriginLoading(originItemEl, isLoading) {
+    if (!originItemEl) return;
+
+    const ui = getExpandArea(originItemEl);
+    originItemEl.classList.toggle("is-loading", isLoading);
+    originItemEl.setAttribute("aria-busy", String(!!isLoading));
+
+    if (!ui) return;
+
+    if (ui.loadingBox) {
+        ui.loadingBox.hidden = !isLoading;
+    }
+
+    if (ui.contentBox) {
+        ui.contentBox.hidden = !!isLoading;
+    }
+}
+
 /* =========================================
    🔥 CREATE PAGE RESET (SPA router에서 호출)
 ========================================= */
 export function resetCreatePageState() {
-    // JS 상태
     state.selectedOrigin = null;
     state.selectedRegion = null;
 
-    // sessionStorage 정리
     sessionStorage.removeItem(STORAGE_KEYS.origin);
     sessionStorage.removeItem(STORAGE_KEYS.regionId);
     sessionStorage.removeItem(STORAGE_KEYS.regionName);
 
-    // DOM 상태 초기화
     document.querySelectorAll(".origin-item").forEach((el) => {
-        el.classList.remove("selected");
+        el.classList.remove("selected", "is-loading");
+        el.setAttribute("aria-pressed", "false");
+        el.setAttribute("aria-busy", "false");
     });
 
     document.querySelectorAll(".region-list").forEach((el) => {
@@ -76,10 +93,17 @@ export function resetCreatePageState() {
         el.style.display = "none";
     });
 
+   document.querySelectorAll(".origin-loading-box").forEach((el) => {
+       el.hidden = true;
+   });
+
+    document.querySelectorAll(".origin-content-box").forEach((el) => {
+        el.hidden = false;
+    });
+
     disableAllNextButtons(document);
 }
 
-// SPA router에서 호출 가능하게 노출
 window.resetCreatePageState = resetCreatePageState;
 
 /* =========================================
@@ -91,47 +115,50 @@ function initCreatePage() {
         return;
     }
 
-    // ✅ origin 목록 렌더 + 이벤트 바인딩 (기존 create.js에서 하던 작업을 모듈로 분리)
     renderOriginList(originListEl, ORIGINS_FRONT);
 
     bindOriginEvents(originListEl, {
         onSelectOrigin: async (originItemEl) => {
-            // 이미 선택된 기원이라면 noop
             if (originItemEl.classList.contains("selected")) return;
 
-            // 🔥 region / 다음 버튼 상태 리셋
             clearSelectedRegion();
-
-            // 모든 next 버튼 비활성화 (안전)
             disableAllNextButtons(document);
-
-            // UI: 선택 표시
             setSelectedOriginItem(originListEl, originItemEl);
 
-            // 상태 + sessionStorage
             const originId = originItemEl.dataset.value;
             setSelectedOrigin(originId);
 
-            // 확장 영역 참조
             const ui = getExpandArea(originItemEl);
 
-            // 상세 + region 목록 렌더
-            await renderOriginDetail({
-                originId,
-                ui,
-                origins: ORIGINS_FRONT,
-                apiFetch,
-                openWrap,
-                state,
-                setRegion: setSelectedRegion,
-                clearRegion: clearSelectedRegion,
-                showPage: window.showPage,
-            });
+            setOriginLoading(originItemEl, true);
+            const loadingStartedAt = Date.now();
+
+            try {
+                await renderOriginDetail({
+                    originId,
+                    ui,
+                    origins: ORIGINS_FRONT,
+                    apiFetch,
+                    openWrap,
+                    state,
+                    setRegion: setSelectedRegion,
+                    clearRegion: clearSelectedRegion,
+                    showPage: window.showPage,
+                });
+            } finally {
+                const elapsed = Date.now() - loadingStartedAt;
+                const minSkeletonMs = 220;
+
+                if (elapsed < minSkeletonMs) {
+                    await new Promise((resolve) => setTimeout(resolve, minSkeletonMs - elapsed));
+                }
+
+                setOriginLoading(originItemEl, false);
+            }
         },
     });
 }
 
-// 기존과 동일하게 스크립트 로드 시 초기화
 initCreatePage();
 
 /* =========================================
@@ -142,4 +169,3 @@ window.addEventListener("DOMContentLoaded", () => {
         document.body.classList.add("show");
     });
 });
-//⚠️

@@ -385,6 +385,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center 30%;
     }
 
 .battle-thumb-overlay {
@@ -624,3 +625,112 @@
         background-position: -200% 0;
     }
 }
+/* ===============================
+   BATTLE SKELETON / EMPTY
+=============================== */
+
+.battle-empty-card,
+.battle-skeleton-item {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid rgba(143,75,255,0.55);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.battle-empty-card {
+    min-height: 190px;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.battle-empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #F3E2FE;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    line-height: 1.7;
+}
+
+.battle-empty-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: rgba(243,226,254,0.72);
+}
+
+.battle-skeleton-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background-size: 200% 100%;
+    animation: skeletonMove 1.2s infinite linear;
+}
+
+.battle-skeleton-body {
+    padding: 12px 14px 14px;
+}
+
+.battle-skeleton-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.battle-skeleton-title,
+.battle-skeleton-badge,
+.battle-skeleton-elo,
+.battle-skeleton-date,
+.battle-skeleton-line {
+    border-radius: 6px;
+    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background-size: 200% 100%;
+    animation: skeletonMove 1.2s infinite linear;
+}
+
+.battle-skeleton-title {
+    width: 42%;
+    height: 16px;
+}
+
+.battle-skeleton-badge {
+    width: 44px;
+    height: 22px;
+    border-radius: 999px;
+}
+
+.battle-skeleton-elo {
+    width: 54px;
+    height: 14px;
+    margin-bottom: 8px;
+}
+
+.battle-skeleton-date {
+    width: 110px;
+    height: 12px;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.battle-skeleton-line {
+    height: 13px;
+    margin-bottom: 8px;
+}
+
+    .battle-skeleton-line.w-92 {
+        width: 92%;
+    }
+
+    .battle-skeleton-line.w-78 {
+        width: 78%;
+    }
+
+    .battle-skeleton-line.w-55 {
+        width: 55%;
+    }
