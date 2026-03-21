@@ -11,6 +11,10 @@
         "source": "/creating",
         "destination": "/create/create-final.html"
       },
+      {
+        "source": "/admin-region",
+        "destination": "/admin/admin-region.html"
+      },
 
       {
         "source": "/battle/**",

@@ -11,8 +11,7 @@ const { pickRandom3Skills, calcOrderWeight, simulateTurn } = require("./skillEng
 const {
     SYSTEM_PROMPT,
     buildUserPrompt,
-    evaluateBattleFlow,
-    pickOpening
+    evaluateBattleFlow
 } = require("./battleNarrationPrompt");
 
 /* =========================================================
@@ -149,7 +148,6 @@ async function generateBattleNarrationStream({
         enemySkills: enemyPicked,
         myTop2Idx,
         enemyTop2Idx,
-        openingType: pickOpening(),
         midResultType: evaluateBattleFlow(turnLogs),
         winnerName,
         loserName,
