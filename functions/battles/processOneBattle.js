@@ -4,7 +4,7 @@ const { VertexAI } = require("@google-cloud/vertexai"); // ✅ Vertex
 const { admin, db } = require("../admin/admin");
 const { ORIGINS } = require("./origins");
 
-const { getSkillEvaluation } = require("./aiSkillEval");
+const { getSkillEvaluationWithUsage } = require("./aiSkillEval");
 const { calcHP } = require("./calcBattle");
 const { pickRandom3Skills, calcOrderWeight, simulateTurn } = require("./skillEngine");
 
@@ -27,11 +27,15 @@ function getVertex() {
     return new VertexAI({ project: projectId, location });
 }
 
+function toSafeNumber(value) {
+    return Number.isFinite(Number(value)) ? Number(value) : 0;
+}
+
 function extractTextFromVertexResponse(response) {
     // candidates[0].content.parts[].text 를 전부 합침
     const parts = response?.candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts)) return "";
-    return parts.map(p => p?.text || "").join("");
+    return parts.map((p) => p?.text || "").join("");
 }
 
 function extractTextFromVertexChunk(chunk) {
@@ -43,7 +47,74 @@ function extractTextFromVertexChunk(chunk) {
 
     const parts = chunk?.candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts)) return "";
-    return parts.map(p => p?.text || "").join("");
+    return parts.map((p) => p?.text || "").join("");
+}
+
+function extractUsageMetadata(response) {
+    const meta = response?.usageMetadata || response?.usage_metadata || {};
+
+    const promptTokens = toSafeNumber(meta.promptTokenCount ?? meta.prompt_token_count);
+    const outputTokens = toSafeNumber(meta.candidatesTokenCount ?? meta.candidates_token_count);
+    const thoughtsTokens = toSafeNumber(meta.thoughtsTokenCount ?? meta.thoughts_token_count);
+    const cachedContentTokens = toSafeNumber(
+        meta.cachedContentTokenCount ?? meta.cached_content_token_count
+    );
+    const toolUsePromptTokens = toSafeNumber(
+        meta.toolUsePromptTokenCount ?? meta.tool_use_prompt_token_count
+    );
+
+    const totalTokens = toSafeNumber(
+        meta.totalTokenCount ??
+        meta.total_token_count ??
+        promptTokens + outputTokens + thoughtsTokens + toolUsePromptTokens
+    );
+
+    return {
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        thoughtsTokens,
+        cachedContentTokens,
+        toolUsePromptTokens,
+        trafficType: meta.trafficType ?? meta.traffic_type ?? null
+    };
+}
+
+function normalizeUsage(stage, model, usage = {}) {
+    return {
+        stage,
+        model,
+        promptTokens: toSafeNumber(usage.promptTokens),
+        outputTokens: toSafeNumber(usage.outputTokens),
+        totalTokens: toSafeNumber(usage.totalTokens),
+        thoughtsTokens: toSafeNumber(usage.thoughtsTokens),
+        cachedContentTokens: toSafeNumber(usage.cachedContentTokens),
+        toolUsePromptTokens: toSafeNumber(usage.toolUsePromptTokens),
+        trafficType: usage.trafficType ?? null
+    };
+}
+
+function sumTokenUsage(...usages) {
+    return usages.reduce(
+        (acc, usage) => {
+            const current = usage || {};
+            acc.promptTokens += toSafeNumber(current.promptTokens);
+            acc.outputTokens += toSafeNumber(current.outputTokens);
+            acc.totalTokens += toSafeNumber(current.totalTokens);
+            acc.thoughtsTokens += toSafeNumber(current.thoughtsTokens);
+            acc.cachedContentTokens += toSafeNumber(current.cachedContentTokens);
+            acc.toolUsePromptTokens += toSafeNumber(current.toolUsePromptTokens);
+            return acc;
+        },
+        {
+            promptTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            thoughtsTokens: 0,
+            cachedContentTokens: 0,
+            toolUsePromptTokens: 0
+        }
+    );
 }
 
 /* =========================================================
@@ -81,14 +152,16 @@ async function generateBattleNarrationStream({
         openingType: pickOpening(),
         midResultType: evaluateBattleFlow(turnLogs),
         winnerName,
-        loserName
+        loserName,
+        turnLogs
     });
 
     const vertexAI = getVertex();
+    const narrationModelName = "gemini-2.5-flash-lite";
 
     // ✅ 유저 요구: gemini-2.5-flash-lite
     const model = vertexAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
+        model: narrationModelName,
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
     });
 
@@ -153,7 +226,13 @@ async function generateBattleNarrationStream({
         await flushChunk(buffer);
     }
 
-    return fullText;
+    const finalResponse = await stream.response;
+    const finalText = extractTextFromVertexResponse(finalResponse) || fullText;
+
+    return {
+        text: finalText,
+        usage: normalizeUsage("narration", narrationModelName, extractUsageMetadata(finalResponse))
+    };
 }
 
 /* =========================================================
@@ -171,7 +250,12 @@ async function runBattleLogic(battleId, myId, enemyId) {
     const enemy = enemySnap.data();
 
     // 1) AI에게 4개 스킬 기반 평가 요청 (aiSkillEval.js가 Vertex로 바뀐 상태)
-    const aiEval = await getSkillEvaluation(my, enemy);
+    const { data: aiEval, usage: skillEvalUsageRaw } = await getSkillEvaluationWithUsage(my, enemy);
+    const skillEvalUsage = normalizeUsage(
+        "skillEval",
+        skillEvalUsageRaw?.model || "gemini-2.0-flash-lite",
+        skillEvalUsageRaw
+    );
 
     // 2) 4개 중 3개 랜덤 추출
     const myPicked = pickRandom3Skills(my.skills);
@@ -266,14 +350,19 @@ async function runBattleLogic(battleId, myId, enemyId) {
         winnerId,
         loserId,
         status: "streaming",
-        finished: false
+        finished: false,
+        tokenUsage: {
+            skillEval: skillEvalUsage,
+            total: sumTokenUsage(skillEvalUsage)
+        }
     });
 
     const battleLogicEndTime = Date.now();
     const usedTurnCount = turnLogs.length;
+    let narrationUsage = normalizeUsage("narration", "gemini-2.5-flash-lite");
 
     try {
-        await generateBattleNarrationStream({
+        const narrationResult = await generateBattleNarrationStream({
             battleRef,
             my,
             enemy,
@@ -286,16 +375,44 @@ async function runBattleLogic(battleId, myId, enemyId) {
             myId,
             enemyId
         });
+
+        narrationUsage = normalizeUsage(
+            "narration",
+            narrationResult?.usage?.model || "gemini-2.5-flash-lite",
+            narrationResult?.usage
+        );
     } catch (streamErr) {
         console.error("[STREAM_FAIL]", streamErr?.message || String(streamErr));
+
+        const narrationEndTime = Date.now();
+        const logicTime = battleLogicEndTime - callStartTime;
+        const logTime = narrationEndTime - battleLogicEndTime;
+        const totalTime = narrationEndTime - callStartTime;
+        const tokenUsage = {
+            skillEval: skillEvalUsage,
+            narration: narrationUsage,
+            total: sumTokenUsage(skillEvalUsage, narrationUsage)
+        };
 
         await battleRef.update({
             status: "stream_error",
             streamFailed: true,
             finished: true,
             tarotEligible: false,
+            tokenUsage,
             finishedAt: admin.firestore.Timestamp.now()
         });
+
+        return {
+            winnerId,
+            loserId,
+            turnLogs,
+            myName: my.displayRawName,
+            enemyName: enemy.displayRawName,
+            timing: { logicTime, logTime, totalTime },
+            tokenUsage,
+            streamFailed: true
+        };
     }
 
     const narrationEndTime = Date.now();
@@ -309,7 +426,12 @@ async function runBattleLogic(battleId, myId, enemyId) {
         turnLogs,
         myName: my.displayRawName,
         enemyName: enemy.displayRawName,
-        timing: { logicTime, logTime, totalTime }
+        timing: { logicTime, logTime, totalTime },
+        tokenUsage: {
+            skillEval: skillEvalUsage,
+            narration: narrationUsage,
+            total: sumTokenUsage(skillEvalUsage, narrationUsage)
+        }
     };
 }
 
@@ -322,6 +444,10 @@ exports.processOneBattle = async (battleId, battleData) => {
     try {
         const result = await runBattleLogic(battleId, battleData.myId, battleData.enemyId);
 
+        if (result?.streamFailed) {
+            return;
+        }
+
         await ref.update({
             status: "done",
             finished: true,
@@ -331,6 +457,7 @@ exports.processOneBattle = async (battleId, battleData) => {
             myName: result.myName,
             enemyName: result.enemyName,
             timing: result.timing,
+            tokenUsage: result.tokenUsage,
             finishedAt: admin.firestore.Timestamp.now()
         });
     } catch (e) {

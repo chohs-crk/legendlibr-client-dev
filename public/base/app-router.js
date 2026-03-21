@@ -174,15 +174,17 @@ export async function showPage(name, options = {}) {
             pageHooks[currentPageName].onHide();
         }
 
-        await ensurePageMounted(name);
+               await ensurePageMounted(name);
 
-        // 모든 페이지 공통: 전환 전에 대상 페이지의 초기 표시 상태를 먼저 준비하고,
-        // init도 먼저 시작해서 cross-fade 동안 로딩이 진행되게 한다.
+    // init가 실제로 실행되는 경우에만 초기 표시 상태를 비운다.
+    // 그렇지 않으면 back 복귀 시 기존 DOM만 지워지고 다시 채워지지 않는 문제가 생긴다.
+    if (shouldInit) {
         preparePageBeforeInit(name, { fromPop });
+    }
 
-        const initPromise = shouldInit
-            ? Promise.resolve(initPage(name, { charId, battleId }))
-            : Promise.resolve();
+    const initPromise = shouldInit
+        ? Promise.resolve(initPage(name, { charId, battleId }))
+        : Promise.resolve();
 
         const shouldAnimate = !!currentPageName;
         const page = await activatePage(name, { animate: shouldAnimate });

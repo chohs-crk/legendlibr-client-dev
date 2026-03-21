@@ -3,7 +3,44 @@
 
 const { VertexAI } = require("@google-cloud/vertexai");
 
-module.exports.getSkillEvaluation = async function (my, enemy) {
+const LOCATION = "us-central1";
+const MODEL_NAME = "gemini-2.0-flash-lite";
+
+function toSafeNumber(value) {
+    return Number.isFinite(Number(value)) ? Number(value) : 0;
+}
+
+function extractUsageMetadata(response) {
+    const meta = response?.usageMetadata || response?.usage_metadata || {};
+
+    const promptTokens = toSafeNumber(meta.promptTokenCount ?? meta.prompt_token_count);
+    const outputTokens = toSafeNumber(meta.candidatesTokenCount ?? meta.candidates_token_count);
+    const thoughtsTokens = toSafeNumber(meta.thoughtsTokenCount ?? meta.thoughts_token_count);
+    const cachedContentTokens = toSafeNumber(
+        meta.cachedContentTokenCount ?? meta.cached_content_token_count
+    );
+    const toolUsePromptTokens = toSafeNumber(
+        meta.toolUsePromptTokenCount ?? meta.tool_use_prompt_token_count
+    );
+
+    const totalTokens = toSafeNumber(
+        meta.totalTokenCount ??
+        meta.total_token_count ??
+        promptTokens + outputTokens + thoughtsTokens + toolUsePromptTokens
+    );
+
+    return {
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        thoughtsTokens,
+        cachedContentTokens,
+        toolUsePromptTokens,
+        trafficType: meta.trafficType ?? meta.traffic_type ?? null
+    };
+}
+
+async function getSkillEvaluationWithUsage(my, enemy) {
     // Firebase Functions 내부라면 보통 ADC(기본 서비스계정)로 자동 인증됨
     // project는 GCLOUD_PROJECT가 기본으로 잡히는 경우가 많음
     const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -13,14 +50,11 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
         );
     }
 
-    const location = "us-central1";
-    const modelName = "gemini-2.0-flash-lite";
-
-    const vertexAI = new VertexAI({ project: projectId, location });
+    const vertexAI = new VertexAI({ project: projectId, location: LOCATION });
 
     // Vertex에서는 systemInstruction을 object 형태로 주는 패턴이 안정적
     const model = vertexAI.getGenerativeModel({
-        model: modelName,
+        model: MODEL_NAME,
         systemInstruction: {
             parts: [{ text: SYSTEM_PROMPT }],
         },
@@ -64,11 +98,24 @@ module.exports.getSkillEvaluation = async function (my, enemy) {
     }
 
     try {
-        return JSON.parse(text.trim());
+        return {
+            data: JSON.parse(text.trim()),
+            usage: {
+                stage: "skillEval",
+                model: MODEL_NAME,
+                ...extractUsageMetadata(response)
+            }
+        };
     } catch (e) {
         console.error("[SKILL_EVAL_PARSE_FAIL]", text);
         throw e;
     }
+}
+
+module.exports.getSkillEvaluationWithUsage = getSkillEvaluationWithUsage;
+module.exports.getSkillEvaluation = async function (my, enemy) {
+    const { data } = await getSkillEvaluationWithUsage(my, enemy);
+    return data;
 };
 
 /* =========================================================
