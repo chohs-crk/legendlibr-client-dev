@@ -169,22 +169,31 @@ export async function showPage(name, options = {}) {
         const pageOpt = PAGE_OPTIONS[name] || {};
         const shouldInit = !fromPop || pageOpt.reinitOnBack === true;
         const shouldScrollTop = !fromPop || pageOpt.scrollTopOnBack === true;
+        const shouldBlockEnterUntilReady = shouldInit && pageOpt.blockingLoadBeforeEnter === true;
 
         if (currentPageName && pageHooks[currentPageName]?.onHide) {
             pageHooks[currentPageName].onHide();
         }
 
-               await ensurePageMounted(name);
+        if (shouldBlockEnterUntilReady) {
+            window.__startGlobalLoading?.();
+        }
 
-    // init가 실제로 실행되는 경우에만 초기 표시 상태를 비운다.
-    // 그렇지 않으면 back 복귀 시 기존 DOM만 지워지고 다시 채워지지 않는 문제가 생긴다.
-    if (shouldInit) {
-        preparePageBeforeInit(name, { fromPop });
-    }
+        await ensurePageMounted(name);
 
-    const initPromise = shouldInit
-        ? Promise.resolve(initPage(name, { charId, battleId }))
-        : Promise.resolve();
+        // init가 실제로 실행되는 경우에만 초기 표시 상태를 비운다.
+        // 그렇지 않으면 back 복귀 시 기존 DOM만 지워지고 다시 채워지지 않는 문제가 생긴다.
+        if (shouldInit) {
+            preparePageBeforeInit(name, { fromPop });
+        }
+
+        const initPromise = shouldInit
+            ? Promise.resolve(initPage(name, { charId, battleId }))
+            : Promise.resolve();
+
+        if (shouldBlockEnterUntilReady) {
+            await initPromise;
+        }
 
         const shouldAnimate = !!currentPageName;
         const page = await activatePage(name, { animate: shouldAnimate });
@@ -237,7 +246,9 @@ export async function showPage(name, options = {}) {
             requestAnimationFrame(scrollToTop);
         }
 
-        await initPromise;
+        if (!shouldBlockEnterUntilReady) {
+            await initPromise;
+        }
 
         currentPageName = name;
         window.__currentPageName = name;
@@ -247,6 +258,7 @@ export async function showPage(name, options = {}) {
         window.__setChromeActive?.(name);
         window.__updateBackBtn?.();
     } finally {
+        window.__stopGlobalLoading?.();
         isPageTransitioning = false;
     }
 }

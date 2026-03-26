@@ -21,20 +21,6 @@ function closeWrapOverlay() {
     if (overlay) overlay.style.display = "none";
 }
 
-function formatDateTime(ms) {
-    const value = Number(ms);
-    if (!Number.isFinite(value) || value <= 0) return "";
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    return `${y}.${m}.${d} ${hh}:${mm}`;
-}
 
 function escapeHtml(value = "") {
     return String(value || "")
@@ -55,18 +41,19 @@ function renderArcanaEmptyState(listEl, message, sub = "") {
     `;
 }
 
-function renderArcanaSkeleton(listEl, count = 3) {
+function renderArcanaSkeleton(listEl, count = 6) {
     if (!listEl) return;
     listEl.innerHTML = `
-        <div class="arcana-list">
+        <div class="arcana-list arcana-list-grid">
             ${Array.from({ length: count }).map(() => `
-                <div class="arcana-card skeleton">
-                    <div class="arcana-card-top">
+                <div class="arcana-card arcana-card-face skeleton" aria-hidden="true">
+                    <div class="arcana-card-frame">
+                        <div class="arcana-card-mark"></div>
                         <div class="skeleton-line short"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-block"></div>
                         <div class="skeleton-line short"></div>
                     </div>
-                    <div class="skeleton-block"></div>
-                    <div class="skeleton-line"></div>
                 </div>
             `).join("")}
         </div>
@@ -82,20 +69,19 @@ function renderArcanaCards(listEl, cards = []) {
     }
 
     listEl.innerHTML = `
-        <div class="arcana-list">
+        <div class="arcana-list arcana-list-grid">
             ${cards.map((card) => `
-                <button class="arcana-card clickable-preview" type="button" data-battle-id="${escapeHtml(card.battleId || "")}">
-                    <div class="arcana-card-top">
-                        <div>
+                <button class="arcana-card arcana-card-face clickable-preview" type="button" data-battle-id="${escapeHtml(card.battleId || "")}">
+                    <div class="arcana-card-frame">
+                        <div class="arcana-card-mark"></div>
+                        <div class="arcana-card-top arcana-card-top-face">
                             <div class="arcana-card-name">${escapeHtml(card.tarotName || "이름 없는 카드")}</div>
-                            <div class="arcana-card-meta">${escapeHtml(card.opponentName || "상대")}</div>
+                            <div class="arcana-result-tag ${card.resultType === "loser" ? "loser" : "winner"}">
+                                ${card.resultType === "loser" ? "보완" : "강화"}
+                            </div>
                         </div>
-                        <div class="arcana-result-tag ${card.resultType === "loser" ? "loser" : "winner"}">
-                            ${card.resultType === "loser" ? "보완" : "강화"}
-                        </div>
+                        <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
                     </div>
-                    <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
-                    <div class="arcana-card-date">${escapeHtml(formatDateTime(card.createdAtMs))}</div>
                 </button>
             `).join("")}
         </div>
@@ -182,7 +168,7 @@ export async function initCharacterArcanaPage() {
     }
 
     async function refreshCards() {
-        renderArcanaSkeleton(listEl, 3);
+        renderArcanaSkeleton(listEl, 6);
 
         try {
             const res = await apiFetchArcanaCards(charId);

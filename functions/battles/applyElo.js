@@ -30,7 +30,8 @@ function calcEloDelta(winnerElo, loserElo) {
 }
 
 function toSafeDailyBattle(value) {
-    return Number.isFinite(Number(value)) ? Number(value) : 0;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
 }
 
 exports.applyEloOnBattleFinish = onDocumentUpdated(
@@ -43,14 +44,13 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
         if (!after?.finished) return;
 
         const battleRef = event.data.after.ref;
-        const { winnerId, loserId, myId, enemyId } = after;
+        const { winnerId, loserId, myId } = after;
 
-        if (!winnerId || !loserId || !myId || !enemyId) return;
+        if (!winnerId || !loserId || !myId) return;
 
         const winnerRef = db.collection("characters").doc(winnerId);
         const loserRef = db.collection("characters").doc(loserId);
         const myRef = db.collection("characters").doc(myId);
-        const enemyRef = db.collection("characters").doc(enemyId);
 
         const needElo = after.eloApplied !== true;
 
@@ -65,16 +65,11 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
 
                     const winnerSnap = await tx.get(winnerRef);
                     const loserSnap = await tx.get(loserRef);
-                    const mySnap = await tx.get(myRef);
-                    const enemySnap = await tx.get(enemyRef);
 
-                    if (!winnerSnap.exists || !loserSnap.exists || !mySnap.exists || !enemySnap.exists) {
-                        return;
-                    }
+                    if (!winnerSnap.exists || !loserSnap.exists) return;
 
                     const winner = winnerSnap.data() || {};
                     const loser = loserSnap.data() || {};
-                    const my = mySnap.data() || {};
 
                     const eloA = typeof winner.rankScore === "number" ? winner.rankScore : 1000;
                     const eloB = typeof loser.rankScore === "number" ? loser.rankScore : 1000;
@@ -83,59 +78,30 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                     const winnerAfter = eloA + win;
                     const loserAfter = Math.max(0, eloB - lose);
 
-                    const myDailyBattleBefore = toSafeDailyBattle(my.dailybattle);
-                    const myDailyBattleAfter = myDailyBattleBefore + 1;
-                    const tarotDailyEligible = myDailyBattleBefore < 3;
-
-                    const winnerUpdate = {
+                    tx.update(winnerRef, {
                         rankScore: winnerAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
                         battleCount: admin.firestore.FieldValue.increment(1),
-                    };
+                    });
 
-                    const loserUpdate = {
+                    tx.update(loserRef, {
                         rankScore: loserAfter,
                         lastBattleAt: admin.firestore.FieldValue.serverTimestamp(),
                         battleCount: admin.firestore.FieldValue.increment(1),
-                    };
+                    });
 
-                    if (winnerId === myId) {
-                        winnerUpdate.dailybattle = myDailyBattleAfter;
-                    }
-
-                    if (loserId === myId) {
-                        loserUpdate.dailybattle = myDailyBattleAfter;
-                    }
-
-                    tx.update(winnerRef, winnerUpdate);
-                    tx.update(loserRef, loserUpdate);
-
-                    const battleUpdate = {
+                    tx.update(battleRef, {
                         eloApplied: true,
                         eloAppliedAt: admin.firestore.FieldValue.serverTimestamp(),
-                        tarotDailyEligible,
-                        dailybattleSnapshot: {
-                            myBefore: myDailyBattleBefore,
-                            myAfter: myDailyBattleAfter,
-                        },
                         elo: {
                             winnerBefore: eloA,
                             winnerAfter,
                             winnerDelta: win,
-
                             loserBefore: eloB,
                             loserAfter,
-                            loserDelta: -lose
-                        }
-                    };
-
-                    if (battle?.tarotEligible === true && !battle?.tarotCreatedAt && myDailyBattleBefore >= 3) {
-                        battleUpdate.tarotStatus = "skipped_daily_limit";
-                        battleUpdate.tarotSkippedAt = admin.firestore.FieldValue.serverTimestamp();
-                        battleUpdate.tarotError = admin.firestore.FieldValue.delete();
-                    }
-
-                    tx.update(battleRef, battleUpdate);
+                            loserDelta: -lose,
+                        },
+                    });
                 });
             } catch (err) {
                 console.error("[ELO_APPLY_FAIL]", err?.message || String(err));
@@ -148,28 +114,55 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
 
         const needTarot =
             latestBattle.tarotEligible === true &&
-            latestBattle.tarotDailyEligible !== false &&
             !latestBattle.tarotCreatedAt &&
             !latestBattle.tarotStatus;
 
         if (!needTarot) return;
 
         let lockedBattle = null;
+        let myDailyBattleBefore = 0;
 
         try {
             await db.runTransaction(async (tx) => {
-                const snap = await tx.get(battleRef);
-                const battle = snap.data();
+                const [battleSnap, mySnap] = await Promise.all([
+                    tx.get(battleRef),
+                    tx.get(myRef),
+                ]);
+
+                const battle = battleSnap.data();
+                const my = mySnap.exists ? (mySnap.data() || {}) : {};
 
                 if (!battle?.finished) return;
                 if (battle?.tarotEligible !== true) return;
-                if (battle?.tarotDailyEligible === false) return;
                 if (battle?.tarotCreatedAt) return;
                 if (battle?.tarotStatus) return;
 
+                myDailyBattleBefore = toSafeDailyBattle(my.dailybattle);
+                const tarotDailyEligible = myDailyBattleBefore < 3;
+
+                if (!tarotDailyEligible) {
+                    tx.update(battleRef, {
+                        tarotDailyEligible: false,
+                        tarotStatus: "skipped_daily_limit",
+                        tarotSkippedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        tarotError: admin.firestore.FieldValue.delete(),
+                        dailybattleSnapshot: {
+                            myBefore: myDailyBattleBefore,
+                            myAfter: myDailyBattleBefore,
+                        },
+                    });
+                    return;
+                }
+
                 tx.update(battleRef, {
+                    tarotDailyEligible: true,
                     tarotStatus: "creating",
                     tarotRequestedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    tarotError: admin.firestore.FieldValue.delete(),
+                    dailybattleSnapshot: {
+                        myBefore: myDailyBattleBefore,
+                        myAfter: myDailyBattleBefore,
+                    },
                 });
 
                 lockedBattle = battle;
@@ -197,10 +190,8 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                 enemyIntro: loser.promptRefined || "",
                 battleLog,
                 winnerName: winner.displayRawName || "",
-
                 myOriginName: winner.origin || "",
                 myRegionName: winner.region || "",
-
                 enemyOriginName: loser.origin || "",
                 enemyRegionName: loser.region || "",
             });
@@ -209,7 +200,7 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                 winner.origin,
                 winner.region,
                 loser.origin,
-                loser.region
+                loser.region,
             ].filter(Boolean);
 
             if (!tarotResult || typeof tarotResult !== "object") {
@@ -239,18 +230,49 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
                 throw new Error("TAROT_TOO_LONG");
             }
 
-            if (!tarotResult?.myTarot || !tarotResult?.enemyTarot) {
+            if (!tarotResult.myTarot || !tarotResult.enemyTarot) {
                 throw new Error("TAROT_INVALID_FORMAT");
             }
 
-            await battleRef.update({
-                tarot: {
-                    winner: tarotResult.myTarot,
-                    loser: tarotResult.enemyTarot,
-                },
-                tarotCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                tarotStatus: "done",
-                tarotError: admin.firestore.FieldValue.delete(),
+            await db.runTransaction(async (tx) => {
+                const [battleSnap, mySnap] = await Promise.all([
+                    tx.get(battleRef),
+                    tx.get(myRef),
+                ]);
+
+                const battle = battleSnap.data();
+                const my = mySnap.exists ? (mySnap.data() || {}) : {};
+
+                if (!battle?.finished) {
+                    throw new Error("BATTLE_NOT_FINISHED");
+                }
+                if (battle?.tarotCreatedAt) {
+                    return;
+                }
+                if (battle?.tarotStatus !== "creating") {
+                    throw new Error("TAROT_LOCK_LOST");
+                }
+
+                const myDailyBattleCurrent = toSafeDailyBattle(my.dailybattle);
+
+                tx.update(battleRef, {
+                    tarot: {
+                        winner: tarotResult.myTarot,
+                        loser: tarotResult.enemyTarot,
+                    },
+                    tarotCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    tarotStatus: "done",
+                    tarotError: admin.firestore.FieldValue.delete(),
+                    tarotDailyEligible: true,
+                    dailybattleSnapshot: {
+                        myBefore: myDailyBattleBefore,
+                        myAfter: myDailyBattleCurrent + 1,
+                    },
+                });
+
+                tx.update(myRef, {
+                    dailybattle: admin.firestore.FieldValue.increment(1),
+                });
             });
         } catch (err) {
             console.error("[TAROT_FAIL]", err?.message || String(err));
@@ -258,6 +280,11 @@ exports.applyEloOnBattleFinish = onDocumentUpdated(
             await battleRef.update({
                 tarotStatus: "error",
                 tarotError: err?.message || String(err),
+                tarotDailyEligible: true,
+                dailybattleSnapshot: {
+                    myBefore: myDailyBattleBefore,
+                    myAfter: myDailyBattleBefore,
+                },
             });
         }
     }

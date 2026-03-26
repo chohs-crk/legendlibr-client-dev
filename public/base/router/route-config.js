@@ -21,7 +21,7 @@ export const PAGE_OPTIONS = {
     ranking: { reinitOnBack: false, scrollTopOnBack: true },
     battle: { reinitOnBack: true, scrollTopOnBack: true },
     "character-view": { reinitOnBack: false, scrollTopOnBack: false },
-    "character-arcana": { reinitOnBack: true, scrollTopOnBack: true },
+    "character-arcana": { reinitOnBack: true, scrollTopOnBack: true, blockingLoadBeforeEnter: true },
     "battle-log": { reinitOnBack: false, scrollTopOnBack: false },
 };
 

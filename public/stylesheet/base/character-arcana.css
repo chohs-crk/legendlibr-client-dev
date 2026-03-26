@@ -237,3 +237,128 @@ button.arcana-card {
         width: 100%;
     }
 }
+
+
+.arcana-list-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.arcana-card-face {
+    min-height: 220px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(152, 0, 255, 0.34);
+    background:
+        radial-gradient(circle at top, rgba(152, 0, 255, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(26, 16, 44, 0.98), rgba(14, 9, 28, 0.96));
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.3),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.arcana-card-frame {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(188, 117, 255, 0.18);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+}
+
+.arcana-card-mark {
+    width: 100%;
+    height: 84px;
+    border-radius: 14px;
+    border: 1px solid rgba(152, 0, 255, 0.22);
+    background:
+        radial-gradient(circle at 50% 40%, rgba(196, 145, 255, 0.28), rgba(196, 145, 255, 0) 42%),
+        linear-gradient(180deg, rgba(37, 23, 61, 0.98), rgba(24, 16, 43, 0.98));
+    position: relative;
+}
+
+.arcana-card-mark::before,
+.arcana-card-mark::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+}
+
+.arcana-card-mark::before {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.arcana-card-mark::after {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 18px rgba(196, 145, 255, 0.65);
+}
+
+.arcana-card-top-face {
+    align-items: center;
+}
+
+.arcana-card-name {
+    font-size: 18px;
+    letter-spacing: 0.01em;
+    word-break: keep-all;
+}
+
+.arcana-card-line {
+    margin-top: 0;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    color: #f6efff;
+    font-size: 14px;
+    line-height: 1.75;
+    word-break: keep-all;
+}
+
+.arcana-card-date,
+.arcana-card-meta {
+    display: none;
+}
+
+.arcana-card.clickable-preview {
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.arcana-card.clickable-preview:hover {
+    transform: translateY(-2px);
+    border-color: rgba(196, 145, 255, 0.5);
+}
+
+.arcana-card.skeleton .arcana-card-mark {
+    opacity: 0.75;
+}
+
+.skeleton-line.medium {
+    width: 62%;
+}
+
+@media (max-width: 980px) {
+    .arcana-list-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .arcana-list-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .arcana-card-face {
+        min-height: 196px;
+    }
+}
