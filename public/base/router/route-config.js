@@ -29,7 +29,8 @@ export const PUBLIC_PAGES = new Set([
     "journey",
     "ranking",
     "setting",
-    "character-view"
+    "character-view",
+    "battle-log"
 ]);
 const PARTIALS = Object.fromEntries(
   PAGES.map((name) => [name, `/base/router/pages/${name}.html`])
