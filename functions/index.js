@@ -39,3 +39,10 @@ AI IMAGE JOB WORKER (추가)
 exports.processImageJob =
     require("./images/processImageJob")
         .processImageJob;
+
+/* ============================
+DAILY BATTLE RESET
+============================ */
+exports.resetDailyBattle =
+    require("./battles/resetDailyBattle")
+        .resetDailyBattle;

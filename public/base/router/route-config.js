@@ -11,6 +11,7 @@ export const PAGES = [
   "create-prompt",
   "ranking",
   "character-view",
+  "character-arcana",
   "character-image",
   "battle-log",
 ];
@@ -20,6 +21,7 @@ export const PAGE_OPTIONS = {
     ranking: { reinitOnBack: false, scrollTopOnBack: true },
     battle: { reinitOnBack: true, scrollTopOnBack: true },
     "character-view": { reinitOnBack: false, scrollTopOnBack: false },
+    "character-arcana": { reinitOnBack: true, scrollTopOnBack: true },
     "battle-log": { reinitOnBack: false, scrollTopOnBack: false },
 };
 
@@ -53,8 +55,6 @@ export function buildPath(name, options = {}) {
     if (name === "create-region") return "/create-region";
     if (name === "create-prompt") return "/create-prompt";
 
-    // 별도 단일 battle 페이지가 있으면 그 경로를 쓰고,
-    // 없으면 보호 페이지 대표 경로 하나를 사용
     if (name === "battle") return "/battle";
 
     if (name === "battle-log") {
@@ -64,6 +64,13 @@ export function buildPath(name, options = {}) {
 
     if (name === "character-view") {
         if (options?.charId) return `/character/${options.charId}`;
+        return "/";
+    }
+
+    if (name === "character-arcana") {
+        if (options?.charId) return `/character/${options.charId}/arcana`;
+        const sid = sessionStorage.getItem("viewCharId");
+        if (sid) return `/character/${sid}/arcana`;
         return "/";
     }
 
@@ -101,6 +108,11 @@ export function parseInitialRoute(pathname = location.pathname) {
     if (path.startsWith("/character/") && path.endsWith("/image")) {
         const id = path.split("/")[2];
         if (id) return { name: "character-image", charId: id };
+    }
+
+    if (path.startsWith("/character/") && path.endsWith("/arcana")) {
+        const id = path.split("/")[2];
+        if (id) return { name: "character-arcana", charId: id };
     }
 
     if (path.startsWith("/character/")) {

@@ -5,6 +5,7 @@ import { initHomePage } from "../home.js";
 import { initJourneyPage } from "../journey.js";
 import { initSettingPage } from "../setting.js";
 import { initCharacterViewPage } from "../char-view/character-view.view.js";
+import { initCharacterArcanaPage } from "../char-view/character-arcana.view.js";
 
 import { initCreatePromptPage } from "/create/create-prompt.js";
 import { initCreateRegionPage } from "/create/create-region.js";
@@ -24,6 +25,11 @@ export async function initPage(name, { charId = null, battleId = null } = {}) {
   if (name === "character-view") {
     if (charId) sessionStorage.setItem("viewCharId", charId);
     return initCharacterViewPage();
+  }
+
+  if (name === "character-arcana") {
+    if (charId) sessionStorage.setItem("viewCharId", charId);
+    return initCharacterArcanaPage();
   }
 
   if (name === "character-image") {

@@ -1,4 +1,4 @@
-﻿// /base/char-view/character-view.ui.js//✅
+// /base/char-view/character-view.ui.js//✅
 import { resolveCharImage } from "../common/image-util.js";
 import { parseStoryText } from "../common/story-parser.js";
 import { openWrap } from "/base/common/ui-wrap.js";
@@ -203,7 +203,13 @@ export function initCharacterViewUI() {
                     </div>
                 </div>
 
-                <div class="info-cell placeholder"></div>
+                <div class="info-cell arcana-cell ${data.isMine ? "" : "placeholder"}">
+                    ${data.isMine ? `
+                        <button class="arcana-entry-btn" id="openArcanaBtn" type="button">
+                            아르카나
+                        </button>
+                    ` : ""}
+                </div>
             </div>
 
             <div class="intro-title-label">캐릭터 소개</div>
@@ -215,6 +221,15 @@ export function initCharacterViewUI() {
 
         const originBtn = document.getElementById("originInfoBtn");
         const regionBtn = document.getElementById("regionInfoBtn");
+        const arcanaBtn = document.getElementById("openArcanaBtn");
+
+        arcanaBtn?.addEventListener("click", () => {
+            sessionStorage.setItem("viewCharId", id);
+            showPage("character-arcana", {
+                type: "push",
+                charId: id
+            });
+        });
 
         originBtn?.addEventListener("click", () => {
             openWrap(`

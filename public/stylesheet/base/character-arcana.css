@@ -1,0 +1,239 @@
+.arcana-entry-btn {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 14px;
+    border: 1px solid rgba(152, 0, 255, 0.65);
+    background: rgba(44, 27, 66, 0.92);
+    color: #f5eaff;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 0 0 1px rgba(152, 0, 255, 0.12) inset;
+}
+
+.arcana-cell {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+}
+
+.arcana-page-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 0 18px;
+}
+
+.arcana-header-box,
+.arcana-summary-box,
+.arcana-card,
+.arcana-empty-card {
+    border-radius: 18px;
+    border: 1px solid rgba(152, 0, 255, 0.28);
+    background: rgba(18, 12, 35, 0.82);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.arcana-header-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+}
+
+.arcana-title {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.arcana-desc {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.arcana-create-btn {
+    flex: 0 0 auto;
+    min-width: 84px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(152, 0, 255, 0.7);
+    background: rgba(82, 51, 105, 0.98);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.arcana-create-btn:disabled {
+    opacity: 0.45;
+}
+
+.arcana-summary-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+}
+
+.arcana-summary-label {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+}
+
+.arcana-summary-value {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.arcana-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.arcana-card {
+    width: 100%;
+    display: block;
+    text-align: left;
+    padding: 16px;
+}
+
+button.arcana-card {
+    appearance: none;
+    cursor: pointer;
+}
+
+.arcana-card-top,
+.arcana-candidate-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.arcana-card-name,
+.arcana-candidate-name {
+    color: #fff;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.arcana-card-meta,
+.arcana-candidate-meta,
+.arcana-card-date,
+.arcana-popup-sub {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.arcana-card-meta,
+.arcana-candidate-meta {
+    margin-top: 4px;
+}
+
+.arcana-card-line,
+.arcana-created-line {
+    margin-top: 12px;
+    color: #f9f3ff;
+    font-size: 15px;
+    line-height: 1.7;
+    word-break: keep-all;
+}
+
+.arcana-card-date {
+    margin-top: 12px;
+}
+
+.arcana-result-tag {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(152, 0, 255, 0.55);
+    background: rgba(152, 0, 255, 0.12);
+    color: #f4e9ff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.arcana-result-tag.loser {
+    border-color: rgba(255, 152, 152, 0.4);
+    background: rgba(255, 152, 152, 0.12);
+}
+
+.arcana-empty-card {
+    padding: 22px 16px;
+    text-align: center;
+}
+
+.arcana-empty-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.arcana-empty-sub {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.arcana-popup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.arcana-popup h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.arcana-candidate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.arcana-candidate-btn {
+    width: 100%;
+    padding: 14px;
+    text-align: left;
+    border-radius: 16px;
+    border: 1px solid rgba(152, 0, 255, 0.32);
+    background: rgba(22, 15, 39, 0.92);
+    color: #fff;
+}
+
+.arcana-candidate-preview {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+@media (max-width: 420px) {
+    .arcana-header-box {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .arcana-create-btn {
+        width: 100%;
+    }
+}

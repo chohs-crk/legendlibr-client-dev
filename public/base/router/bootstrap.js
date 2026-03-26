@@ -40,7 +40,8 @@ function bindGlobalUI() {
           "journey",
           "ranking",
           "setting",
-          "character-view"
+          "character-view",
+          "battle-log"
       ]);
 
       if (!PUBLIC_PAGES.has(route.name)) {
