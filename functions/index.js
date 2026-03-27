@@ -34,11 +34,18 @@ exports.onBattleCreated =
     require("./battles/battleTrigger")
         .onBattleCreated;
 /* ============================
-AI IMAGE JOB WORKER (추가)
+AI IMAGE JOB WORKER
 ============================ */
 exports.processImageJob =
     require("./images/processImageJob")
         .processImageJob;
+
+/* ============================
+BATTLE IMAGE JOB WORKER
+============================ */
+exports.processBattleImageJob =
+    require("./images/processBattleImageJob")
+        .processBattleImageJob;
 
 /* ============================
 DAILY BATTLE RESET

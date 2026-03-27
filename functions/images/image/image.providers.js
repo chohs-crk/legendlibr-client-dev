@@ -19,7 +19,9 @@ async function generateImageWithGemini(prompt, geminiKey) {
             },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { responseModalities: ["IMAGE"] }
+                generationConfig: {
+                    responseModalities: ["IMAGE"]
+                }
             })
         }
     );
@@ -29,6 +31,70 @@ async function generateImageWithGemini(prompt, geminiKey) {
 
     const part = json?.candidates?.[0]?.content?.parts?.find((p) => p?.inlineData?.data);
     if (!part) throw new Error("GEMINI_IMAGE_FAILED: No image data returned.");
+
+    return Buffer.from(part.inlineData.data, "base64");
+}
+
+/* =========================
+   Gemini 배틀 이미지 생성
+   - 텍스트 + 참조 이미지 2장 멀티모달 입력
+========================= */
+async function generateBattleImageWithGemini(
+    {
+        prompt,
+        aspectRatio = "16:9",
+        references = []
+    },
+    geminiKey
+) {
+    const MODEL_ID = "gemini-2.5-flash-image";
+    const API_VERSION = "v1beta";
+
+    const parts = [];
+
+    if (typeof prompt === "string" && prompt.trim()) {
+        parts.push({ text: prompt.trim() });
+    }
+
+    for (const ref of references) {
+        if (!ref?.data || !ref?.mimeType) continue;
+        parts.push({
+            inlineData: {
+                mimeType: ref.mimeType,
+                data: ref.data
+            }
+        });
+    }
+
+    if (!parts.length) {
+        throw new Error("GEMINI_BATTLE_INPUT_EMPTY");
+    }
+
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL_ID}:generateContent`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": geminiKey
+            },
+            body: JSON.stringify({
+                contents: [{ parts }],
+                generationConfig: {
+                    responseModalities: ["IMAGE"],
+                    imageConfig: {
+                        aspectRatio
+                    }
+                }
+            })
+        }
+    );
+
+    const json = await res.json().catch(() => ({}));
+    if (json.error) throw new Error(`GEMINI_API_ERROR: ${json.error.message}`);
+
+    const part = json?.candidates?.[0]?.content?.parts?.find((p) => p?.inlineData?.data);
+    if (!part) throw new Error("GEMINI_BATTLE_IMAGE_FAILED: No image data returned.");
 
     return Buffer.from(part.inlineData.data, "base64");
 }
@@ -84,5 +150,6 @@ async function generateImageWithTogether(
 
 module.exports = {
     generateImageWithGemini,
+    generateBattleImageWithGemini,
     generateImageWithTogether
 };
