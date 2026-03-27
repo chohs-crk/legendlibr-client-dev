@@ -93,6 +93,23 @@ function renderArcanaCards(listEl, cards = []) {
     });
 }
 
+
+function formatRemainingMs(ms = 0) {
+    const safeMs = Math.max(0, Number(ms) || 0);
+    const totalSeconds = Math.floor(safeMs / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+function getAvailabilityMessage(reason = "") {
+    if (reason === "ALREADY_CREATED") return "오늘은 생성 불가";
+    if (reason === "INSUFFICIENT_BATTLE_POOL") return "후보가 3개 미만이라 생성 불가";
+    if (reason === "ALREADY_USED_OR_INSUFFICIENT") return "남은 후보가 3개 미만이라 생성 불가";
+    return "오늘은 생성 불가";
+}
+
 function buildCandidatePopupHtml(candidates = []) {
     if (!Array.isArray(candidates) || candidates.length === 0) {
         return `
@@ -127,7 +144,48 @@ export async function initCharacterArcanaPage() {
     const descEl = document.getElementById("arcanaDesc");
     const countEl = document.getElementById("arcanaCount");
     const createBtn = document.getElementById("arcanaCreateBtn");
+    const createStatusEl = document.getElementById("arcanaCreateStatus");
     const listEl = document.getElementById("arcanaList");
+
+    let currentIsMine = false;
+    let availabilityTimer = null;
+
+    function stopAvailabilityTimer() {
+        if (!availabilityTimer) return;
+        clearInterval(availabilityTimer);
+        availabilityTimer = null;
+    }
+
+    function applyCreateAvailability(availability = null) {
+        stopAvailabilityTimer();
+
+        const unavailable = availability && availability.state === "UNAVAILABLE";
+        const nextResetAtMs = Number(availability?.nextResetAtMs) || 0;
+
+        if (createBtn) {
+            createBtn.disabled = !currentIsMine || unavailable;
+            createBtn.textContent = unavailable ? "불가" : "생성";
+            createBtn.classList.toggle("is-unavailable", !!unavailable);
+        }
+
+        if (!createStatusEl) return;
+        if (!currentIsMine) {
+            createStatusEl.textContent = "";
+            return;
+        }
+        if (!unavailable) {
+            createStatusEl.textContent = "";
+            return;
+        }
+
+        const render = () => {
+            const remainMs = Math.max(0, nextResetAtMs - Date.now());
+            createStatusEl.textContent = `${getAvailabilityMessage(availability?.reason)} · ${formatRemainingMs(remainMs)}`;
+        };
+
+        render();
+        availabilityTimer = window.setInterval(render, 1000);
+    }
 
     if (!charId) {
         renderArcanaEmptyState(listEl, "잘못된 접근입니다.");
@@ -146,6 +204,7 @@ export async function initCharacterArcanaPage() {
             const res = await apiFetchCharacterById(charId);
             if (!res.ok) return;
             const data = await res.json();
+            currentIsMine = !!data.isMine;
             if (titleEl) {
                 titleEl.textContent = `${data.displayRawName || "캐릭터"}의 아르카나`;
             }
@@ -190,6 +249,23 @@ export async function initCharacterArcanaPage() {
         }
     }
 
+    async function refreshCreateAvailability() {
+        try {
+            const res = await apiFetchArcanaCandidates(charId);
+            const json = await res.json().catch(() => ({ ok: false }));
+            if (!res.ok || !json.ok) {
+                applyCreateAvailability(null);
+                return null;
+            }
+            applyCreateAvailability(json.availability || null);
+            return json;
+        } catch (err) {
+            console.error(err);
+            applyCreateAvailability(null);
+            return null;
+        }
+    }
+
     async function createFromCandidate(poolId) {
         if (!poolId) return;
 
@@ -199,6 +275,7 @@ export async function initCharacterArcanaPage() {
             const json = await res.json().catch(() => ({ ok: false }));
 
             if (!res.ok || !json.ok) {
+                await refreshCreateAvailability();
                 alert("아르카나 생성에 실패했습니다.");
                 return;
             }
@@ -212,8 +289,10 @@ export async function initCharacterArcanaPage() {
             `);
 
             await refreshCards({ showSkeleton: false });
+            await refreshCreateAvailability();
         } catch (err) {
             console.error(err);
+            await refreshCreateAvailability();
             alert("아르카나 생성에 실패했습니다.");
         } finally {
             window.__stopGlobalLoading?.();
@@ -232,6 +311,11 @@ export async function initCharacterArcanaPage() {
                 } else {
                     alert("아르카나 후보를 불러오지 못했습니다.");
                 }
+                return;
+            }
+
+            applyCreateAvailability(json.availability || null);
+            if (json.availability?.state === "UNAVAILABLE") {
                 return;
             }
 
@@ -254,7 +338,9 @@ export async function initCharacterArcanaPage() {
     }
 
     createBtn?.addEventListener("click", openCreatePopup);
+    window.addEventListener("pagehide", stopAvailabilityTimer, { once: true });
 
     await refreshCharacterHead();
     await refreshCards();
+    await refreshCreateAvailability();
 }

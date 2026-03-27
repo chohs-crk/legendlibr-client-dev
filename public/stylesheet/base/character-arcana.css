@@ -277,3 +277,25 @@ button.arcana-card {
         width: 100%;
     }
 }
+
+
+.arcana-create-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.arcana-create-status {
+    min-height: 18px;
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: right;
+}
+
+.arcana-create-btn.is-unavailable {
+    background: rgba(66, 46, 84, 0.72);
+    border-color: rgba(152, 0, 255, 0.32);
+    color: rgba(255, 255, 255, 0.8);
+}
