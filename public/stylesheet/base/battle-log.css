@@ -163,3 +163,43 @@
         content: "";
         margin: 0.6em 0;
     }
+
+
+.battle-image-action-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 20px;
+}
+
+.battle-image-create-btn {
+    min-width: 220px;
+    padding: 12px 18px;
+    border: 1px solid #9800FF;
+    border-radius: 14px;
+    background: linear-gradient(145deg,#2a1040,#1a0830);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.battle-image-create-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(152,0,255,0.28);
+}
+
+.battle-image-create-btn:disabled {
+    opacity: 0.65;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+.battle-image-action-status {
+    font-size: 13px;
+    color: rgba(255,255,255,0.78);
+    text-align: center;
+}

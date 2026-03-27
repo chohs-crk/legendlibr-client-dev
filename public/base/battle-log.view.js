@@ -109,6 +109,37 @@ async function fetchBattle(id, onlyLogs = false) {
     return await res.json();
 }
 
+
+async function requestBattleImageQueue(battleId) {
+    const res = await apiFetch("/base/battle-image-queue", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ battleId })
+    });
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch {
+        data = null;
+    }
+
+    if (!res.ok) {
+        const error = data?.error || "배틀 이미지 요청 실패";
+        throw new Error(error);
+    }
+
+    return data || { ok: true };
+}
+
+function getBattleImageButtonText(imageStatus, isSubmitting) {
+    if (isSubmitting) return "생성 요청 중...";
+    if (imageStatus === "called") return "이미지 생성 호출됨";
+    return "배틀 이미지 생성";
+}
+
 /* =========================================================
    폴링 상태 머신
 ========================================================= */
@@ -306,7 +337,8 @@ function renderBattle(battle) {
     }
 
     const logs = Array.isArray(battle.logs) ? battle.logs : [];
-
+    const imageStatus = typeof battle.image === "string" ? battle.image : "";
+    const isImageCalled = imageStatus === "called";
     const isRunning =
         battle.status !== "done" &&
         battle.status !== "error";
@@ -355,6 +387,22 @@ function renderBattle(battle) {
 
     </div>
 
+    ${battle.status === "done" ? `
+      <div class="battle-image-action-wrap">
+        <button
+          type="button"
+          id="battleImageCreateBtn"
+          class="battle-image-create-btn"
+          ${isImageCalled ? "disabled" : ""}
+        >
+          ${getBattleImageButtonText(imageStatus, false)}
+        </button>
+        <div class="battle-image-action-status">
+          ${isImageCalled ? "이미지 생성 작업이 이미 호출되었습니다." : "배틀 로그를 바탕으로 전투 이미지를 생성합니다."}
+        </div>
+      </div>
+    ` : ""}
+
     <div class="battle-log-body text-flow">
       ${fullText || "<div class='battle-empty'>로그 없음</div>"}
     </div>
@@ -400,6 +448,33 @@ function renderBattle(battle) {
         });
     }
 
+
+    const battleImageCreateBtn = container.querySelector("#battleImageCreateBtn");
+
+    if (battleImageCreateBtn) {
+        battleImageCreateBtn.addEventListener("click", async () => {
+            if (battleImageCreateBtn.disabled) return;
+
+            battleImageCreateBtn.disabled = true;
+            battleImageCreateBtn.textContent = getBattleImageButtonText(imageStatus, true);
+
+            try {
+                await requestBattleImageQueue(battle.id);
+
+                const nextBattle = {
+                    ...battle,
+                    image: "called"
+                };
+
+                cacheBattle(nextBattle);
+                renderBattle(nextBattle);
+            } catch (err) {
+                battleImageCreateBtn.disabled = false;
+                battleImageCreateBtn.textContent = getBattleImageButtonText(imageStatus, false);
+                alert(err?.message || "배틀 이미지 요청에 실패했습니다.");
+            }
+        });
+    }
 
     // 🔥 클릭 안전 처리
     document.querySelectorAll(".battle-card").forEach(card => {
