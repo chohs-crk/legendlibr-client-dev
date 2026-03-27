@@ -97,6 +97,12 @@
     gap: 12px;
 }
 
+.arcana-list-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
 .arcana-card {
     width: 100%;
     display: block;
@@ -113,7 +119,7 @@ button.arcana-card {
 .arcana-candidate-top {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 12px;
 }
 
@@ -123,20 +129,13 @@ button.arcana-card {
     font-size: 17px;
     font-weight: 800;
     line-height: 1.35;
+    word-break: keep-all;
 }
 
-.arcana-card-meta,
-.arcana-candidate-meta,
-.arcana-card-date,
 .arcana-popup-sub {
     color: rgba(255, 255, 255, 0.66);
     font-size: 12px;
     line-height: 1.5;
-}
-
-.arcana-card-meta,
-.arcana-candidate-meta {
-    margin-top: 4px;
 }
 
 .arcana-card-line,
@@ -146,30 +145,6 @@ button.arcana-card {
     font-size: 15px;
     line-height: 1.7;
     word-break: keep-all;
-}
-
-.arcana-card-date {
-    margin-top: 12px;
-}
-
-.arcana-result-tag {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 56px;
-    height: 28px;
-    border-radius: 999px;
-    border: 1px solid rgba(152, 0, 255, 0.55);
-    background: rgba(152, 0, 255, 0.12);
-    color: #f4e9ff;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.arcana-result-tag.loser {
-    border-color: rgba(255, 152, 152, 0.4);
-    background: rgba(255, 152, 152, 0.12);
 }
 
 .arcana-empty-card {
@@ -216,7 +191,6 @@ button.arcana-card {
     text-align: left;
     border-radius: 16px;
     border: 1px solid rgba(152, 0, 255, 0.32);
-    background: rgba(22, 15, 39, 0.92);
     color: #fff;
 }
 
@@ -227,33 +201,11 @@ button.arcana-card {
     line-height: 1.6;
 }
 
-@media (max-width: 420px) {
-    .arcana-header-box {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .arcana-create-btn {
-        width: 100%;
-    }
-}
-
-
-.arcana-list-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-}
-
 .arcana-card-face {
     min-height: 220px;
     padding: 0;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(152, 0, 255, 0.34);
-    background:
-        radial-gradient(circle at top, rgba(152, 0, 255, 0.14), transparent 34%),
-        linear-gradient(180deg, rgba(26, 16, 44, 0.98), rgba(14, 9, 28, 0.96));
     box-shadow:
         0 12px 30px rgba(0, 0, 0, 0.3),
         inset 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -263,102 +215,65 @@ button.arcana-card {
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 12px;
-    padding: 16px;
-    border: 1px solid rgba(188, 117, 255, 0.18);
+    padding: 18px 16px;
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
-}
-
-.arcana-card-mark {
-    width: 100%;
-    height: 84px;
-    border-radius: 14px;
-    border: 1px solid rgba(152, 0, 255, 0.22);
-    background:
-        radial-gradient(circle at 50% 40%, rgba(196, 145, 255, 0.28), rgba(196, 145, 255, 0) 42%),
-        linear-gradient(180deg, rgba(37, 23, 61, 0.98), rgba(24, 16, 43, 0.98));
-    position: relative;
-}
-
-.arcana-card-mark::before,
-.arcana-card-mark::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 999px;
-}
-
-.arcana-card-mark::before {
-    width: 30px;
-    height: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-.arcana-card-mark::after {
-    width: 8px;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 0 18px rgba(196, 145, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .arcana-card-top-face {
-    align-items: center;
+    align-items: flex-start;
 }
 
-.arcana-card-name {
-    font-size: 18px;
-    letter-spacing: 0.01em;
-    word-break: keep-all;
+.arcana-card-winner {
+    border: 1px solid rgba(152, 0, 255, 0.34);
+    background:
+        radial-gradient(circle at top, rgba(152, 0, 255, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(26, 16, 44, 0.98), rgba(14, 9, 28, 0.96));
 }
 
-.arcana-card-line {
-    margin-top: 0;
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    color: #f6efff;
-    font-size: 14px;
-    line-height: 1.75;
-    word-break: keep-all;
+.arcana-card-loser {
+    border: 1px solid rgba(255, 153, 112, 0.34);
+    background:
+        radial-gradient(circle at top, rgba(255, 153, 112, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(47, 21, 28, 0.98), rgba(24, 11, 18, 0.96));
 }
 
-.arcana-card-date,
-.arcana-card-meta {
-    display: none;
+.arcana-candidate-btn.arcana-card-winner {
+    background:
+        radial-gradient(circle at top, rgba(152, 0, 255, 0.12), transparent 44%),
+        linear-gradient(180deg, rgba(28, 18, 47, 0.98), rgba(17, 11, 31, 0.98));
 }
 
-.arcana-card.clickable-preview {
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+.arcana-candidate-btn.arcana-card-loser {
+    background:
+        radial-gradient(circle at top, rgba(255, 153, 112, 0.1), transparent 44%),
+        linear-gradient(180deg, rgba(48, 21, 31, 0.98), rgba(27, 12, 19, 0.98));
 }
 
-.arcana-card.clickable-preview:hover {
-    transform: translateY(-2px);
-    border-color: rgba(196, 145, 255, 0.5);
+.arcana-card.skeleton {
+    border: 1px solid rgba(152, 0, 255, 0.2);
+    background:
+        linear-gradient(180deg, rgba(26, 16, 44, 0.95), rgba(14, 9, 28, 0.92));
 }
 
-.arcana-card.skeleton .arcana-card-mark {
-    opacity: 0.75;
+.arcana-skeleton-block {
+    height: 92px;
+    border-radius: 14px;
 }
 
 .skeleton-line.medium {
-    width: 62%;
+    width: 72%;
 }
 
-@media (max-width: 980px) {
-    .arcana-list-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 640px) {
-    .arcana-list-grid {
-        grid-template-columns: 1fr;
+@media (max-width: 420px) {
+    .arcana-header-box {
+        align-items: stretch;
+        flex-direction: column;
     }
 
-    .arcana-card-face {
-        min-height: 196px;
+    .arcana-create-btn {
+        width: 100%;
     }
 }

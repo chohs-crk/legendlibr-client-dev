@@ -140,6 +140,35 @@ function preparePageBeforeInit(name, { fromPop = false } = {}) {
             list.style.opacity = "1";
         }
     }
+
+    // character-arcana도 페이지 진입 전에 이전 카드가 보이지 않도록
+    // 제목/카운트/리스트를 즉시 초기화해 스켈레톤 상태를 먼저 보여준다.
+    if (name === "character-arcana") {
+        const titleEl = document.getElementById("arcanaTitle");
+        const descEl = document.getElementById("arcanaDesc");
+        const countEl = document.getElementById("arcanaCount");
+        const listEl = document.getElementById("arcanaList");
+
+        if (titleEl) titleEl.textContent = "아르카나";
+        if (descEl) descEl.textContent = "전투의 여운을 카드로 새기는 중입니다.";
+        if (countEl) countEl.textContent = "...";
+        if (listEl) {
+            listEl.innerHTML = `
+                <div class="arcana-list arcana-list-grid">
+                    ${Array.from({ length: 6 }).map(() => `
+                        <div class="arcana-card arcana-card-face skeleton" aria-hidden="true">
+                            <div class="arcana-card-frame">
+                                <div class="skeleton-line short"></div>
+                                <div class="skeleton-block arcana-skeleton-block"></div>
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line medium"></div>
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+    }
 }
 
 /* =======================================

@@ -21,13 +21,12 @@ function closeWrapOverlay() {
     if (overlay) overlay.style.display = "none";
 }
 
-
 function escapeHtml(value = "") {
     return String(value || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
 
@@ -48,11 +47,10 @@ function renderArcanaSkeleton(listEl, count = 6) {
             ${Array.from({ length: count }).map(() => `
                 <div class="arcana-card arcana-card-face skeleton" aria-hidden="true">
                     <div class="arcana-card-frame">
-                        <div class="arcana-card-mark"></div>
                         <div class="skeleton-line short"></div>
+                        <div class="skeleton-block arcana-skeleton-block"></div>
+                        <div class="skeleton-line"></div>
                         <div class="skeleton-line medium"></div>
-                        <div class="skeleton-block"></div>
-                        <div class="skeleton-line short"></div>
                     </div>
                 </div>
             `).join("")}
@@ -71,14 +69,10 @@ function renderArcanaCards(listEl, cards = []) {
     listEl.innerHTML = `
         <div class="arcana-list arcana-list-grid">
             ${cards.map((card) => `
-                <button class="arcana-card arcana-card-face clickable-preview" type="button" data-battle-id="${escapeHtml(card.battleId || "")}">
+                <button class="arcana-card arcana-card-face arcana-card-${card.resultType === "loser" ? "loser" : "winner"} clickable-preview" type="button" data-battle-id="${escapeHtml(card.battleId || "")}">
                     <div class="arcana-card-frame">
-                        <div class="arcana-card-mark"></div>
                         <div class="arcana-card-top arcana-card-top-face">
                             <div class="arcana-card-name">${escapeHtml(card.tarotName || "이름 없는 카드")}</div>
-                            <div class="arcana-result-tag ${card.resultType === "loser" ? "loser" : "winner"}">
-                                ${card.resultType === "loser" ? "보완" : "강화"}
-                            </div>
                         </div>
                         <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
                     </div>
@@ -115,14 +109,10 @@ function buildCandidatePopupHtml(candidates = []) {
             <div class="arcana-popup-sub">세 가지 계시 중 하나를 선택해 카드로 새기세요.</div>
             <div class="arcana-candidate-list">
                 ${candidates.map((candidate) => `
-                    <button class="arcana-candidate-btn" type="button" data-pool-id="${escapeHtml(candidate.poolId)}">
+                    <button class="arcana-candidate-btn arcana-card-${candidate.resultType === "loser" ? "loser" : "winner"}" type="button" data-pool-id="${escapeHtml(candidate.poolId)}">
                         <div class="arcana-candidate-top">
                             <div class="arcana-candidate-name">${escapeHtml(candidate.tarotName || "이름 없는 계시")}</div>
-                            <div class="arcana-result-tag ${candidate.resultType === "loser" ? "loser" : "winner"}">
-                                ${candidate.resultType === "loser" ? "보완" : "강화"}
-                            </div>
                         </div>
-                        <div class="arcana-candidate-meta">상대 · ${escapeHtml(candidate.opponentName || "상대")}</div>
                         <div class="arcana-candidate-preview">${escapeHtml(candidate.previewText || "전투의 여운이 아직 뜨겁게 남아 있습니다.")}</div>
                     </button>
                 `).join("")}
@@ -146,6 +136,11 @@ export async function initCharacterArcanaPage() {
 
     sessionStorage.setItem("viewCharId", charId);
 
+    if (titleEl) titleEl.textContent = "아르카나";
+    if (descEl) descEl.textContent = "전투의 여운을 카드로 새기는 중입니다.";
+    if (countEl) countEl.textContent = "...";
+    renderArcanaSkeleton(listEl, 6);
+
     async function refreshCharacterHead() {
         try {
             const res = await apiFetchCharacterById(charId);
@@ -167,8 +162,10 @@ export async function initCharacterArcanaPage() {
         }
     }
 
-    async function refreshCards() {
-        renderArcanaSkeleton(listEl, 6);
+    async function refreshCards({ showSkeleton = true } = {}) {
+        if (showSkeleton) {
+            renderArcanaSkeleton(listEl, 6);
+        }
 
         try {
             const res = await apiFetchArcanaCards(charId);
@@ -210,12 +207,11 @@ export async function initCharacterArcanaPage() {
             openWrap(`
                 <div class="arcana-popup">
                     <h3>${escapeHtml(card.tarotName || "이름 없는 카드")}</h3>
-                    <div class="arcana-popup-sub">${card.resultType === "loser" ? "보완" : "강화"}의 계시</div>
                     <div class="arcana-created-line">${escapeHtml(card.line || "해석 없음")}</div>
                 </div>
             `);
 
-            await refreshCards();
+            await refreshCards({ showSkeleton: false });
         } catch (err) {
             console.error(err);
             alert("아르카나 생성에 실패했습니다.");
@@ -245,6 +241,7 @@ export async function initCharacterArcanaPage() {
             document.querySelectorAll(".arcana-candidate-btn[data-pool-id]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     const selectedPoolId = btn.getAttribute("data-pool-id") || "";
+                    closeWrapOverlay();
                     await createFromCandidate(selectedPoolId);
                 });
             });
