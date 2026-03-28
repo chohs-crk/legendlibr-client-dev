@@ -6,10 +6,12 @@ import { apiFetch } from "/base/api.js";
 const API = {
     check: "/create/story-check",
     story1: "/create/story1",
-    story3: "/create/story3"
+    story3: "/create/story3",
+    final: "/create/final"
 };
 
 const INTRO_ANIMATED_KEY = "create_story_intro_animated";
+const FINAL_MOVE_BUTTON_TEXT = "캐릭터 정보로 이동하기";
 
 
 /* ================================
@@ -34,6 +36,11 @@ let currentSceneKey = null;
 let collectedChoices = [];
 let isPrinting = false;
 let outputQueue = [];
+
+let finalPreviewStarted = false;
+let finalCompletePromise = null;
+let finalCompleteResult = null;
+let finalMoveRequested = false;
 
 function createParseState() {
     return {
@@ -229,6 +236,261 @@ async function typeTextIntoElement(target, text, speed = 14) {
     }
 }
 
+async function waitForPrinterIdle() {
+    while (isPrinting || outputQueue.length > 0) {
+        await sleep(40);
+    }
+}
+
+function clearCreationFlowCache() {
+    sessionStorage.removeItem("story_log");
+    sessionStorage.removeItem("choices_backup_story1");
+    sessionStorage.removeItem("choices_backup_story3");
+    sessionStorage.removeItem("currentSceneKey");
+    sessionStorage.removeItem(INTRO_ANIMATED_KEY);
+}
+
+function moveToCharacter(id) {
+    if (!id) return;
+
+    clearCreationFlowCache();
+    sessionStorage.setItem("viewCharId", id);
+    sessionStorage.setItem("homeCalled", "false");
+    location.href = `/character/${id}`;
+}
+
+function getFinalMoveButton() {
+    return choiceBox.querySelector("[data-final-move-btn='1']");
+}
+
+function setFinalMoveButtonLoading(message = "준비 중…") {
+    const btn = getFinalMoveButton();
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="choice-btn__text">${escapeHtml(message)}</span>`;
+}
+
+function renderFinalMoveButton() {
+    choiceBox.innerHTML = "";
+
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.type = "button";
+    btn.setAttribute("data-final-move-btn", "1");
+    btn.innerHTML = `<span class="choice-btn__text">${FINAL_MOVE_BUTTON_TEXT}</span>`;
+    btn.addEventListener("click", onClickFinalMoveButton);
+
+    choiceBox.appendChild(btn);
+
+    if (followScroll) {
+        scrollToBottom();
+    }
+}
+
+function buildFinalErrorMessage(data) {
+    const code = data?.error;
+
+    if (code === "CHARACTER_LIMIT_REACHED") {
+        return "보유 가능한 캐릭터 수를 초과했습니다.";
+    }
+    if (code === "NO_REGION") {
+        return "선택한 지역 정보를 확인할 수 없습니다.";
+    }
+    if (code === "REGION_NOT_REGISTERED") {
+        return "해당 지역에 캐릭터를 등록할 수 없습니다.";
+    }
+    if (code === "AI_ENDING_INVALID") {
+        return "결말 생성 형식이 올바르지 않아 다시 시도해야 합니다.";
+    }
+    if (code === "AI_STATS_INVALID") {
+        return "스킬 생성 형식이 올바르지 않아 다시 시도해야 합니다.";
+    }
+
+    return "캐릭터 생성 중 문제가 발생했습니다.";
+}
+
+async function requestFinalPreview() {
+    while (true) {
+        const res = await apiFetch(API.final, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "preview" })
+        });
+        const data = await res.json();
+
+        if (data?.ok && (data.status === "preview_done" || data.status === "done")) {
+            return data;
+        }
+
+        if (data?.ok && data.status === "waiting") {
+            infoArea.textContent = "결말을 정리하고 있습니다…";
+            await sleep(700);
+            continue;
+        }
+
+        throw new Error(buildFinalErrorMessage(data));
+    }
+}
+
+async function requestFinalComplete() {
+    while (true) {
+        const res = await apiFetch(API.final, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "complete" })
+        });
+        const data = await res.json();
+
+        if (data?.ok && data.status === "done" && data.id) {
+            return data;
+        }
+
+        if (data?.ok && data.status === "waiting") {
+            await sleep(800);
+            continue;
+        }
+
+        throw new Error(buildFinalErrorMessage(data));
+    }
+}
+
+function ensureFinalCompleteStarted() {
+    if (finalCompleteResult?.id) {
+        return Promise.resolve(finalCompleteResult);
+    }
+
+    if (!finalCompletePromise) {
+        finalCompletePromise = requestFinalComplete()
+            .then((data) => {
+                finalCompleteResult = data;
+                return data;
+            })
+            .catch((err) => {
+                finalCompletePromise = null;
+                throw err;
+            });
+    }
+
+    return finalCompletePromise;
+}
+
+async function animateFinalStory(endingText) {
+    const cleanText = String(endingText || "");
+    if (!cleanText) return;
+
+    const log = getStoryLog();
+    const last = log[log.length - 1];
+
+    if (!last || last.scene !== "final") {
+        log.push({ scene: "final", story: "", choice: null });
+        setStoryLog(log);
+    }
+
+    renderStoryFromLog();
+
+    const localState = createParseState();
+    const tokens = parseTextToTokens(cleanText, localState);
+
+    completed = false;
+    collectedChoices = [];
+    outputQueue = [];
+    isPrinting = false;
+    choicesRendered = false;
+    isRevealingChoices = false;
+
+    if (tokens.length > 0) {
+        outputQueue.push(tokens);
+        startPrinter("final");
+        await waitForPrinterIdle();
+    }
+
+    const newLog = getStoryLog();
+    const newLast = newLog[newLog.length - 1];
+    if (newLast && newLast.scene === "final") {
+        newLast.story = cleanText;
+        setStoryLog(newLog);
+    }
+
+    completed = true;
+}
+
+async function beginFinalFlow() {
+    if (finalPreviewStarted) return;
+    finalPreviewStarted = true;
+    currentSceneKey = "final";
+
+    try {
+        renderStoryFromLog();
+        choiceBox.innerHTML = "";
+        infoArea.textContent = "결말을 정리하고 있습니다…";
+
+        const preview = await requestFinalPreview();
+        ensureFinalCompleteStarted();
+
+        const log = getStoryLog();
+        const last = log[log.length - 1];
+        const hasRenderedFinal = last?.scene === "final" && String(last?.story || "").trim().length > 0;
+
+        if (!hasRenderedFinal) {
+            await animateFinalStory(preview.ending || "");
+        } else {
+            renderStoryFromLog();
+        }
+
+        renderFinalMoveButton();
+
+        if (finalCompleteResult?.id) {
+            infoArea.textContent = "캐릭터 정보가 준비되었습니다.";
+        } else {
+            infoArea.textContent = "캐릭터의 힘을 정리하고 있습니다…";
+            finalCompletePromise
+                ?.then(() => {
+                    if (!finalMoveRequested) {
+                        infoArea.textContent = "캐릭터 정보가 준비되었습니다.";
+                    }
+                })
+                .catch((err) => {
+                    if (!finalMoveRequested) {
+                        infoArea.textContent = err?.message || "캐릭터 정보를 정리하는 중 문제가 발생했습니다.";
+                    }
+                });
+        }
+    } catch (err) {
+        finalPreviewStarted = false;
+        infoArea.textContent = "";
+        alert(err?.message || "캐릭터 생성 중 문제가 발생했습니다.");
+        location.href = "/";
+    }
+}
+
+async function onClickFinalMoveButton() {
+    if (finalMoveRequested) return;
+    finalMoveRequested = true;
+
+    try {
+        if (finalCompleteResult?.id) {
+            moveToCharacter(finalCompleteResult.id);
+            return;
+        }
+
+        infoArea.textContent = "캐릭터 정보를 준비하고 있습니다…";
+        setFinalMoveButtonLoading("준비 중…");
+
+        const result = await ensureFinalCompleteStarted();
+        moveToCharacter(result.id);
+    } catch (err) {
+        finalMoveRequested = false;
+        infoArea.textContent = err?.message || "캐릭터 정보를 준비하는 중 문제가 발생했습니다.";
+
+        const btn = getFinalMoveButton();
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="choice-btn__text">${FINAL_MOVE_BUTTON_TEXT}</span>`;
+        }
+    }
+}
+
 
 /* ================================
    CHARACTER INTRO
@@ -345,11 +607,14 @@ function startPrinter(flow) {
         }
 
         let sentence = outputQueue.shift();
+        const currentText = storyBox.textContent || "";
+        const endsWithWhitespace = currentText.length === 0 ? true : /\s$/.test(currentText);
 
         if (
-            storyBox.textContent.length > 0 &&
+            currentText.length > 0 &&
+            !endsWithWhitespace &&
             sentence.length > 0 &&
-            sentence[0].char !== " "
+            !/\s/.test(sentence[0].char)
         ) {
             sentence.unshift({ char: " ", em: false });
         }
@@ -564,6 +829,10 @@ async function selectChoice(index) {
         setStoryLog(log);
     }
 
+    choiceBox.querySelectorAll("button").forEach((btn) => {
+        btn.disabled = true;
+    });
+
     await apiFetch(API[currentSceneKey], {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -633,12 +902,9 @@ async function startFlow() {
     }
 
     if (flow === "final") {
-        sessionStorage.removeItem("story_log");
-        sessionStorage.removeItem("choices_backup_story1");
-        sessionStorage.removeItem("choices_backup_story3");
-        sessionStorage.removeItem("currentSceneKey");
-        sessionStorage.removeItem(INTRO_ANIMATED_KEY);
-        location.href = "/creating";
+        await ensureCharIntro(flow, false);
+        renderStoryFromLog();
+        await beginFinalFlow();
         return;
     }
 
