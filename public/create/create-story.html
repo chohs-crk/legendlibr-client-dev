@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <link rel="stylesheet" href="/stylesheet/base/common.css">
-
     <link rel="stylesheet" href="/stylesheet/create/create-story.css">
 </head>
 
@@ -18,20 +17,14 @@
             <main class="content">
                 <div class="bar"></div>
 
-                <!-- ✅ 캐릭터 이름 / 소개 / 스토리 / 선택지: 하나의 스크롤 영역에서 같이 처리 -->
                 <div id="createScroll" class="scroll-area create-scroll">
-                    <div class="section-label">캐릭터 이름</div>
                     <div id="charName" class="char-name"></div>
-
-                    <div class="section-label">캐릭터 소개</div>
                     <div id="charIntro" class="char-intro"></div>
 
-                    <div class="section-label">캐릭터 스토리 스트림</div>
+                    <div class="story-divider" aria-hidden="true"></div>
+
                     <div id="storyBox" class="story-box"></div>
-
-                    <div class="section-label">선택지</div>
                     <div id="choiceBox" class="choice-box"></div>
-
                     <div id="infoArea" class="info-text"></div>
                 </div>
             </main>

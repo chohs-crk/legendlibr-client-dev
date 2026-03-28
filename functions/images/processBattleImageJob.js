@@ -45,7 +45,108 @@ function parseJsonLoose(text) {
 
 function asSafeString(v, max = 8000) {
     if (typeof v !== "string") return "";
-    return v.trim().slice(0, max);
+    return v.trim().replace(/\s+/g, " ").slice(0, max);
+}
+
+function getBattleImageUrl(imageField) {
+    if (typeof imageField === "string") {
+        return asSafeString(imageField, 2000);
+    }
+
+    if (typeof imageField?.url === "string") {
+        return asSafeString(imageField.url, 2000);
+    }
+
+    return "";
+}
+
+function safeLines(list, maxItems = 12, maxItemLength = 240) {
+    if (!Array.isArray(list)) return [];
+    return list
+        .map((v) => asSafeString(v, maxItemLength))
+        .filter(Boolean)
+        .slice(0, maxItems);
+}
+
+function resolveBattleSides({ battle, job }) {
+    const myId = asSafeString(job?.myId || battle?.myId || "", 200);
+    const enemyId = asSafeString(job?.enemyId || battle?.enemyId || "", 200);
+    const winnerId = asSafeString(battle?.winnerId || job?.winnerId || "", 200);
+    const loserId = asSafeString(battle?.loserId || job?.loserId || "", 200);
+
+    let winnerSide = null;
+    let loserSide = null;
+
+    if (winnerId && myId && winnerId === myId) winnerSide = "my";
+    else if (winnerId && enemyId && winnerId === enemyId) winnerSide = "enemy";
+
+    if (loserId && myId && loserId === myId) loserSide = "my";
+    else if (loserId && enemyId && loserId === enemyId) loserSide = "enemy";
+
+    if (!winnerSide && loserSide === "my") winnerSide = "enemy";
+    if (!winnerSide && loserSide === "enemy") winnerSide = "my";
+    if (!loserSide && winnerSide === "my") loserSide = "enemy";
+    if (!loserSide && winnerSide === "enemy") loserSide = "my";
+
+    return {
+        myId,
+        enemyId,
+        winnerId,
+        loserId,
+        winnerSide,
+        loserSide
+    };
+}
+
+function buildReferenceLockedBattlePrompt({
+    scenePrompt,
+    myName,
+    enemyName,
+    winnerSide,
+    loserSide,
+    violenceLevel,
+    negativePrompt
+}) {
+    const winnerName = winnerSide === "my" ? myName : winnerSide === "enemy" ? enemyName : "the winner";
+    const loserName = loserSide === "my" ? myName : loserSide === "enemy" ? enemyName : "the loser";
+
+    const styleLine = winnerSide
+        ? `If the two reference images have different illustration styles, unify the final rendering primarily around ${winnerName}'s reference style because ${winnerName} has the winning momentum, while still keeping ${loserName}'s own design language, silhouette, and visual vibe clearly recognizable.`
+        : `Blend the illustration feel of both reference images naturally. If their styles differ, choose one coherent render style without erasing either character's unique visual identity.`;
+
+    const violenceLine =
+        violenceLevel === "softened"
+            ? "Keep the violence cinematic and emotionally intense, but soften any gore beyond an R/19+ feel. No explicit mutilation, exposed organs, or graphic dismemberment."
+            : "Fantasy violence is allowed, but keep it cinematic rather than graphically gory. No explicit mutilation, exposed organs, or graphic dismemberment.";
+
+    const avoidLine = negativePrompt
+        ? `Avoid: ${asSafeString(negativePrompt, 500)}.`
+        : "Avoid: split panels, UI, text, logos, character sheets, reference turnarounds, exact pose copying, face swaps, and generic redesigns.";
+
+    return [
+        "Create one single wide 16:9 battle illustration with both characters in the same shared frame.",
+        `The FIRST attached image is ${myName}. The SECOND attached image is ${enemyName}. Never swap which character each reference image belongs to.`,
+        `Use the first image as the ground-truth visual identity for ${myName}, and the second image as the ground-truth visual identity for ${enemyName}.`,
+        "Preserve each character's recognizable face, hairstyle, eye feel, outfit silhouette, weapon, wings or major body traits, accessories, and color language from their own reference image.",
+        styleLine,
+        "Do not force a separate preset art style such as photorealism, oil painting, 3D render, or a fixed anime template. Let the final image inherit its overall illustration feel from the two character references.",
+        "Do not copy the exact static pose, camera angle, crop, or composition from either reference image.",
+            "Instead, you MUST reinterpret both characters into completely new, dynamic, action-driven poses that reflect motion, impact, and interaction between them.",
+            "Both characters must be actively engaged in the same moment (attack, clash, dodge, impact, or aftermath), not standing or posing independently.",
+            "Use strong motion cues such as body twist, limb extension, weapon swing arcs, hair or cloth movement, energy trails, or environmental interaction (dust, debris, shockwaves).",
+            "Camera must NOT be a neutral portrait angle. Use cinematic framing such as low-angle, over-the-shoulder, diagonal composition, or dynamic perspective.",
+            "Avoid static character sheet feeling, idle standing poses, or symmetrical front-facing compositions.",
+            "Do NOT generate a result where both characters are simply standing, facing camera, or lightly interacting.",
+            "The scene must clearly show motion, tension, and a decisive moment (impact, clash, or turning point).",
+            "At least one character must be mid-action (attacking, reacting, or being affected).",
+        `${myName} and ${enemyName} must both feel like the same characters from their own references, even though the battle scene is newly staged and dynamically composed.`,
+        "Make the winner or momentum readable at a glance, but keep the loser expressive and visually meaningful rather than disposable.",
+        violenceLine,
+        avoidLine,
+        `Scene direction: ${asSafeString(scenePrompt, 1400)}`
+    ]
+        .filter(Boolean)
+        .join(" ");
 }
 
 async function markBattleError(jobRef, battleRef, jobData, code, message, extra = {}) {
@@ -105,27 +206,33 @@ async function fetchImageAsInlineData(url, label) {
 
 async function buildBattlePromptWithOpenAI(payload, openaiKey) {
     const systemPrompt = `
-You are a professional battle illustration prompt engineer.
+You are a professional battle illustration scene planner.
 
 Your task:
 - Read the battle log and both characters' identity references.
 - Choose either the ending scene or the single most dramatic peak moment.
-- Preserve both characters' identity from the supplied references and input images.
-- Output a single cinematic image prompt for one wide 16:9 frame.
-- Do NOT create a split image, card layout, UI, text, or multiple panels.
+- Produce a concise SCENE DIRECTION prompt for one wide 16:9 illustration.
+- Focus on action, camera, staging, environment, momentum, emotion, and readability.
+- Both characters must appear in the same frame.
+- Do NOT create split images, cards, UI, text, multiple panels, or character sheets.
+
+Identity + style rules:
+- The attached reference images will define the characters' visual identity and illustration feel.
+- Do NOT invent a replacement art style such as photorealistic, oil painting, 3D render, or fixed anime preset.
+- Do NOT overwrite the reference identities with a generic dark fantasy redesign.
+- Do NOT ask for the characters to repeat the exact pose or crop from their reference images.
+- Instead, describe new scene-appropriate movement and staging.
 
 Violence policy:
 - Mild to strong fantasy violence is allowed.
 - If the source implies gore beyond an R/19+ level, reduce gore while keeping the dramatic impact.
 - Never include exposed organs, dismemberment detail, or extreme mutilation.
 - If there is blood, keep it limited and cinematic rather than explicit.
-
-Composition goals:
-- Both characters must appear in the same frame.
-- The winner or momentum should be visually readable.
-- Use dynamic camera, environment, lighting, and action beat.
-- Prioritise readability, identity consistency, and cinematic staging.
-
+Action requirements:
+        - The scene must depict motion, not a static pose.
+        - Prefer moments like impact, clash, or mid-action rather than idle stance.
+        - Include dynamic body movement (twist, jump, strike, recoil, etc.).
+        - Avoid neutral standing or portrait-like framing.
 Return JSON only in this exact shape:
 {
   "sceneType": "ending|climax",
@@ -163,8 +270,8 @@ Return JSON only in this exact shape:
     return {
         sceneType: parsed?.sceneType === "ending" ? "ending" : "climax",
         violenceLevel: parsed?.violenceLevel === "softened" ? "softened" : "allowed",
-        prompt: asSafeString(parsed?.prompt, 6000),
-        negativePrompt: asSafeString(parsed?.negativePrompt, 2000),
+        prompt: asSafeString(parsed?.prompt, 1600),
+        negativePrompt: asSafeString(parsed?.negativePrompt, 700),
         reason: asSafeString(parsed?.reason, 1000),
         safetyScore: Number(parsed?.safetyScore || 0),
         usage: json?.usage || null
@@ -172,7 +279,7 @@ Return JSON only in this exact shape:
 }
 
 /* =========================
-   Trigger
+      Trigger
 ========================= */
 exports.processBattleImageJob = onDocumentCreated(
     {
@@ -235,13 +342,12 @@ exports.processBattleImageJob = onDocumentCreated(
             const battle = battleSnap2.data() || {};
             const myChar = myCharSnap?.exists ? (myCharSnap.data() || {}) : null;
             const enemyChar = enemyCharSnap?.exists ? (enemyCharSnap.data() || {}) : null;
+            const sideInfo = resolveBattleSides({ battle, job });
 
-            const myImageUrl =
-                asSafeString(myChar?.image?.url, 2000) ||
-                asSafeString(job?.myImage, 2000);
-            const enemyImageUrl =
-                asSafeString(enemyChar?.image?.url, 2000) ||
-                asSafeString(job?.enemyImage, 2000);
+            const myName = asSafeString(battle?.myName || job?.myName || myChar?.name || "공격자", 120);
+            const enemyName = asSafeString(battle?.enemyName || job?.enemyName || enemyChar?.name || "수비자", 120);
+            const myImageUrl = getBattleImageUrl(battle?.myImage) || getBattleImageUrl(job?.myImage);
+            const enemyImageUrl = getBattleImageUrl(battle?.enemyImage) || getBattleImageUrl(job?.enemyImage);
 
             if (!myImageUrl || !enemyImageUrl) {
                 await markBattleError(
@@ -257,37 +363,41 @@ exports.processBattleImageJob = onDocumentCreated(
             const promptResult = await buildBattlePromptWithOpenAI(
                 {
                     battleId,
-                    myName: battle?.myName || job?.myName || "공격자",
-                    enemyName: battle?.enemyName || job?.enemyName || "수비자",
-                    winnerId: battle?.winnerId || job?.winnerId || null,
-                    loserId: battle?.loserId || job?.loserId || null,
-                    battleLogs: Array.isArray(job?.battleContext?.logs)
-                        ? job.battleContext.logs
-                        : [],
-                    previewText: asSafeString(job?.battleContext?.previewText || battle?.previewText || "", 2000),
-                    userPrompt: asSafeString(job?.userPromptRaw || "", 2000),
-                    queuePrompt: asSafeString(job?.userPrompt || "", 4000),
+                    myName,
+                    enemyName,
+                    winnerId: sideInfo.winnerId || null,
+                    loserId: sideInfo.loserId || null,
+                    winnerSide: sideInfo.winnerSide || null,
+                    loserSide: sideInfo.loserSide || null,
+                    battleLogs: safeLines(
+                        Array.isArray(job?.battleContext?.logs) ? job.battleContext.logs : battle?.logs,
+                        14,
+                        320
+                    ),
+                    previewText: asSafeString(job?.battleContext?.previewText || battle?.previewText || "", 1800),
+                    userPrompt: asSafeString(job?.userPromptRaw || "", 1200),
+                    queuePrompt: asSafeString(job?.userPrompt || "", 2200),
                     characters: {
                         my: {
-                            name: battle?.myName || job?.myName || "공격자",
+                            name: myName,
                             promptRefined: asSafeString(
                                 myChar?.promptRefined || job?.battleContext?.promptRefined?.my || "",
-                                3000
+                                1800
                             ),
                             fullStory: asSafeString(
                                 myChar?.fullStory || myChar?.finalStory || job?.battleContext?.fullStory?.my || "",
-                                5000
+                                2400
                             )
                         },
                         enemy: {
-                            name: battle?.enemyName || job?.enemyName || "수비자",
+                            name: enemyName,
                             promptRefined: asSafeString(
                                 enemyChar?.promptRefined || job?.battleContext?.promptRefined?.enemy || "",
-                                3000
+                                1800
                             ),
                             fullStory: asSafeString(
                                 enemyChar?.fullStory || enemyChar?.finalStory || job?.battleContext?.fullStory?.enemy || "",
-                                5000
+                                2400
                             )
                         }
                     }
@@ -306,6 +416,16 @@ exports.processBattleImageJob = onDocumentCreated(
                 return;
             }
 
+            const finalPrompt = buildReferenceLockedBattlePrompt({
+                scenePrompt: promptResult.prompt,
+                myName,
+                enemyName,
+                winnerSide: sideInfo.winnerSide,
+                loserSide: sideInfo.loserSide,
+                violenceLevel: promptResult.violenceLevel,
+                negativePrompt: promptResult.negativePrompt
+            });
+
             const [myRefImage, enemyRefImage] = await Promise.all([
                 fetchImageAsInlineData(myImageUrl, "my"),
                 fetchImageAsInlineData(enemyImageUrl, "enemy")
@@ -313,16 +433,30 @@ exports.processBattleImageJob = onDocumentCreated(
 
             const buffer = await generateBattleImageWithGemini(
                 {
-                    prompt: promptResult.prompt,
+                    prompt: finalPrompt,
                     aspectRatio: "16:9",
-                    references: [myRefImage, enemyRefImage]
+                    references: [
+                        {
+                            ...myRefImage,
+                            label: "FIRST",
+                            name: myName,
+                            role: sideInfo.winnerSide === "my" ? "winner" : sideInfo.loserSide === "my" ? "loser" : "fighter"
+                        },
+                        {
+                            ...enemyRefImage,
+                            label: "SECOND",
+                            name: enemyName,
+                            role: sideInfo.winnerSide === "enemy" ? "winner" : sideInfo.loserSide === "enemy" ? "loser" : "fighter"
+                        }
+                    ]
                 },
                 GEMINI_API_KEY.value()
             );
 
             const storagePath = job?.storage?.path || `battles/${battleId}/images/${jobId}.png`;
             const downloadToken = job?.storage?.downloadToken || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-            const bucket = admin.storage().bucket();
+            const bucketName = asSafeString(job?.storage?.bucket, 500);
+            const bucket = bucketName ? admin.storage().bucket(bucketName) : admin.storage().bucket();
 
             await bucket.file(storagePath).save(buffer, {
                 metadata: {
@@ -349,9 +483,18 @@ exports.processBattleImageJob = onDocumentCreated(
                     violenceLevel: promptResult.violenceLevel,
                     safetyScore: Number(promptResult.safetyScore || 0),
                     prompt: {
-                        final: promptResult.prompt,
+                        final: finalPrompt,
+                        scene: promptResult.prompt,
                         negative: promptResult.negativePrompt || "",
                         reason: promptResult.reason || "",
+                        referenceMode: {
+                            firstImage: myName,
+                            secondImage: enemyName,
+                            winnerSide: sideInfo.winnerSide || null,
+                            loserSide: sideInfo.loserSide || null,
+                            winnerStylePrimary: !!sideInfo.winnerSide,
+                            poseReuseForbidden: true
+                        },
                         openai: {
                             model: OPENAI_PROMPT_MODEL,
                             usage: promptResult.usage || null

@@ -35,40 +35,67 @@ async function generateImageWithGemini(prompt, geminiKey) {
     return Buffer.from(part.inlineData.data, "base64");
 }
 
-/* =========================
-   Gemini 배틀 이미지 생성
-   - 텍스트 + 참조 이미지 2장 멀티모달 입력
-========================= */
-async function generateBattleImageWithGemini(
-    {
-        prompt,
-        aspectRatio = "16:9",
-        references = []
-    },
-    geminiKey
-) {
-    const MODEL_ID = "gemini-2.5-flash-image";
-    const API_VERSION = "v1beta";
+function getGeminiTextParts(json) {
+    const parts = json?.candidates?.[0]?.content?.parts || [];
+    return parts
+        .map((p) => (typeof p?.text === "string" ? p.text.trim() : ""))
+        .filter(Boolean);
+}
+
+function getGeminiImagePart(json) {
+    const parts = json?.candidates?.[0]?.content?.parts || [];
+    return parts.find((p) => p?.inlineData?.data) || null;
+}
+
+function buildBattlePromptParts(prompt, references, { simplified = false } = {}) {
+    const safePrompt = typeof prompt === "string" ? prompt.trim() : "";
+    const refs = Array.isArray(references) ? references.filter((ref) => ref?.data && ref?.mimeType) : [];
 
     const parts = [];
 
-    if (typeof prompt === "string" && prompt.trim()) {
-        parts.push({ text: prompt.trim() });
+    if (simplified) {
+        if (refs[0]) {
+            parts.push({ text: `Reference image 1 is ${refs[0]?.name || "character one"}. Never swap this identity.` });
+            parts.push({ inlineData: { mimeType: refs[0].mimeType, data: refs[0].data } });
+        }
+        if (refs[1]) {
+            parts.push({ text: `Reference image 2 is ${refs[1]?.name || "character two"}. Never swap this identity.` });
+            parts.push({ inlineData: { mimeType: refs[1].mimeType, data: refs[1].data } });
+        }
+        parts.push({
+            text:
+                `${safePrompt} Generate exactly one image. Keep both characters recognizable from their own reference images. ` +
+                `Do not copy the exact original pose or crop from the references. Re-stage them into a new dynamic battle moment.`
+        });
+        return parts;
     }
 
-    for (const ref of references) {
-        if (!ref?.data || !ref?.mimeType) continue;
+    parts.push({
+        text:
+            "You will receive two labeled reference images for a single battle illustration. Keep the identities attached to each image fixed and never swap them."
+    });
+
+    refs.forEach((ref, index) => {
+        const ordinal = ref?.label || `IMAGE_${index + 1}`;
+        const role = ref?.role ? ` This character's battle role is ${ref.role}.` : "";
+        parts.push({
+            text: `${ordinal} attached image: ${ref?.name || `character ${index + 1}`}.${role} Use this image as that character's exact visual identity reference.`
+        });
         parts.push({
             inlineData: {
                 mimeType: ref.mimeType,
                 data: ref.data
             }
         });
-    }
+    });
 
-    if (!parts.length) {
-        throw new Error("GEMINI_BATTLE_INPUT_EMPTY");
-    }
+    parts.push({ text: safePrompt });
+    return parts;
+}
+
+async function requestBattleImage(parts, aspectRatio, geminiKey) {
+    const MODEL_ID = "gemini-2.5-flash-image";
+    const API_VERSION = "v1beta";
 
     const res = await fetch(
         `https://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL_ID}:generateContent`,
@@ -81,7 +108,7 @@ async function generateBattleImageWithGemini(
             body: JSON.stringify({
                 contents: [{ parts }],
                 generationConfig: {
-                    responseModalities: ["IMAGE"],
+                    responseModalities: ["Image"],
                     imageConfig: {
                         aspectRatio
                     }
@@ -93,10 +120,57 @@ async function generateBattleImageWithGemini(
     const json = await res.json().catch(() => ({}));
     if (json.error) throw new Error(`GEMINI_API_ERROR: ${json.error.message}`);
 
-    const part = json?.candidates?.[0]?.content?.parts?.find((p) => p?.inlineData?.data);
-    if (!part) throw new Error("GEMINI_BATTLE_IMAGE_FAILED: No image data returned.");
+    const imagePart = getGeminiImagePart(json);
+    if (imagePart?.inlineData?.data) {
+        return {
+            ok: true,
+            buffer: Buffer.from(imagePart.inlineData.data, "base64"),
+            textParts: getGeminiTextParts(json)
+        };
+    }
 
-    return Buffer.from(part.inlineData.data, "base64");
+    return {
+        ok: false,
+        textParts: getGeminiTextParts(json)
+    };
+}
+
+/* =========================
+   Gemini 배틀 이미지 생성
+   - 텍스트 + 참조 이미지 2장 멀티모달 입력
+   - 캐릭터 이미지 생성 로직과 분리된 battle 전용 보강
+========================= */
+async function generateBattleImageWithGemini(
+    {
+        prompt,
+        aspectRatio = "16:9",
+        references = []
+    },
+    geminiKey
+) {
+    const refs = Array.isArray(references) ? references.filter((ref) => ref?.data && ref?.mimeType) : [];
+    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+        throw new Error("GEMINI_BATTLE_INPUT_EMPTY");
+    }
+    if (!refs.length) {
+        throw new Error("GEMINI_BATTLE_REFERENCE_EMPTY");
+    }
+
+    const firstAttempt = await requestBattleImage(buildBattlePromptParts(prompt, refs), aspectRatio, geminiKey);
+    if (firstAttempt.ok) return firstAttempt.buffer;
+
+    const fallbackAttempt = await requestBattleImage(
+        buildBattlePromptParts(prompt, refs, { simplified: true }),
+        aspectRatio,
+        geminiKey
+    );
+    if (fallbackAttempt.ok) return fallbackAttempt.buffer;
+
+    const firstText = firstAttempt.textParts.join(" ").slice(0, 500) || "EMPTY";
+    const fallbackText = fallbackAttempt.textParts.join(" ").slice(0, 500) || "EMPTY";
+    throw new Error(
+        `GEMINI_BATTLE_IMAGE_FAILED: No image data returned. attempt1_text=${firstText} fallback_text=${fallbackText}`
+    );
 }
 
 /* =========================
