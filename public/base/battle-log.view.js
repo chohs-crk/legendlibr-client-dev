@@ -28,6 +28,25 @@ import {
 let battleImagePollCtx = null;
 let pollCtx = null;
 
+function syncUserMetaCache(userMeta) {
+    if (!userMeta || typeof userMeta !== "object") return;
+    sessionStorage.setItem("userMeta", JSON.stringify(userMeta));
+    window.__updateChromeResource?.(userMeta);
+}
+
+async function refreshUserMetaCache() {
+    try {
+        const res = await apiFetch("/base/user-meta");
+        if (!res.ok) return null;
+
+        const userMeta = await res.json();
+        syncUserMetaCache(userMeta);
+        return userMeta;
+    } catch {
+        return null;
+    }
+}
+
 function buildBattleCard({ id, name, image, delta, isWinner }) {
     return `
         <div class="battle-card ${isWinner ? "winner" : "loser"}" data-id="${id || ""}">
@@ -102,6 +121,8 @@ async function handleBattleImageRequest(battle) {
 
     try {
         const queued = await requestBattleImageQueue(battle.id);
+        syncUserMetaCache(queued?.userMeta);
+
         const merged = mergeBattleImageStatusIntoBattle(pendingBattle, queued);
         persistBattleImageState(merged);
         renderBattle(merged);
@@ -218,6 +239,10 @@ async function tickBattleImagePolling() {
         const statusRes = await requestBattleImageStatus({ battleId, jobId });
         const cached = getCachedBattle(battleId) || { id: battleId };
         const merged = mergeBattleImageStatusIntoBattle(cached, statusRes);
+
+        if (merged?.battleImage?.status === "done") {
+            await refreshUserMetaCache();
+        }
 
         persistBattleImageState(merged);
         renderBattle(merged);

@@ -38,16 +38,28 @@ function appendSpinnerToLastText(logBody) {
     logBody.appendChild(spinner);
 }
 
+function applyBattleEndingEmphasis(html) {
+    if (!html) return "";
+
+    return html.replace(/\$&([\s\S]+?)\$&/g, (_, txt) => {
+        const inner = String(txt || "").trim();
+        if (!inner) return "";
+
+        return `<span class="battle-ending-emphasis">${inner}</span>`;
+    });
+}
+
 export function buildBattleLogSection(battle) {
     const logs = Array.isArray(battle?.logs) ? battle.logs : [];
 
-    let rawText = logs.map((item) => item?.text || "").join("\n");
+    let rawText = logs.map((item) => item?.text || "").join("
+");
     if (!logs.length && isBattleRunning(battle)) {
         rawText = "전투 진행 중";
     }
 
     const formattedRaw = formatStoryWithDialogue(rawText);
-    const parsedText = parseStoryText(formattedRaw);
+    const parsedText = applyBattleEndingEmphasis(parseStoryText(formattedRaw));
 
     return `
         <section class="battle-log-section">
