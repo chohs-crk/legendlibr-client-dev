@@ -4,6 +4,34 @@
  * - 지역 선택/정보/삭제 + 다음/지역추가 버튼 로직
  */
 
+export function openRegionDetailModal(region, openWrap, extraHtml = "") {
+    if (!region || typeof openWrap !== "function") return;
+
+    openWrap(`
+        ${extraHtml}
+        <h3 class="region-detail-title">${region.name}</h3>
+
+        <div class="region-detail-meta">
+            ${region.source === "user"
+                ? `[${region.ownerchar?.name || "대표 없음"}] · ${region.charnum || 0}명의 캐릭터`
+                : "기본 지역"
+            }
+        </div>
+
+        <div class="text-flow region-detail-desc">
+            ${region.detail}
+        </div>
+    `);
+}
+
+function updateAddButton(ui, userRegionCount = 0) {
+    if (!ui?.addBtn) return;
+
+    const isRegionLimitReached = Number(userRegionCount) >= 10;
+    ui.addBtn.style.display = isRegionLimitReached ? "none" : "inline-flex";
+    ui.addBtn.disabled = isRegionLimitReached;
+}
+
 /**
  * 지역 선택 UI(하이라이트)
  */
@@ -70,20 +98,7 @@ function createRegionRow(r, { ui, openWrap, apiFetch, state, setRegion, clearReg
     row.querySelector(".region-info-btn")?.addEventListener("click", (e) => {
         e.stopPropagation();
 
-        openWrap?.(`
-            <h3 class="region-detail-title">${r.name}</h3>
-
-            <div class="region-detail-meta">
-                ${r.source === "user"
-                ? `[${r.ownerchar?.name || "대표 없음"}] · ${r.charnum || 0}명의 캐릭터`
-                : "기본 지역"
-            }
-            </div>
-
-            <div class="text-flow region-detail-desc">
-                ${r.detail}
-            </div>
-        `);
+        openRegionDetailModal(r, openWrap);
     });
 
     row.querySelector(".region-delete-btn")?.addEventListener("click", async (e) => {
@@ -116,6 +131,11 @@ function createRegionRow(r, { ui, openWrap, apiFetch, state, setRegion, clearReg
         if (state?.selectedRegion === r.id) {
             clearRegion?.();
             ui.nextBtn.disabled = true;
+        }
+
+        if (typeof ui.__userRegionCount === "number") {
+            ui.__userRegionCount = Math.max(0, ui.__userRegionCount - 1);
+            updateAddButton(ui, ui.__userRegionCount);
         }
 
         if (!ui.regions.querySelector(".region-item")) {
@@ -217,12 +237,8 @@ export async function renderOriginDetail({
     }
 
     const userRegionCount = Number(json?.userRegionCount) || 0;
-    const isRegionLimitReached = userRegionCount >= 10;
-
-    if (ui.addBtn) {
-        ui.addBtn.style.display = isRegionLimitReached ? "none" : "inline-flex";
-        ui.addBtn.disabled = isRegionLimitReached;
-    }
+    ui.__userRegionCount = userRegionCount;
+    updateAddButton(ui, userRegionCount);
 
     ui.nextBtn.style.display = "inline-flex";
     ui.nextBtn.disabled = true;

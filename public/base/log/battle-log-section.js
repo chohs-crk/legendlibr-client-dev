@@ -52,9 +52,9 @@ function applyBattleEndingEmphasis(html) {
 export function buildBattleLogSection(battle) {
     const logs = Array.isArray(battle?.logs) ? battle.logs : [];
 
-    let rawText = logs.map((item) => item?.text || "").join("
-");
-    if (!logs.length && isBattleRunning(battle)) {
+    let rawText = logs.map((item) => item?.text || "").join("\n");
+
+    if(!logs.length && isBattleRunning(battle)) {
         rawText = "전투 진행 중";
     }
 

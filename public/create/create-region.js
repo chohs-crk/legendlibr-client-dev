@@ -7,6 +7,16 @@ const NAME_MAX = 15;
 const DETAIL_MIN_BYTES = 10;
 const DETAIL_MAX_BYTES = 500;
 
+const CREATE_REGION_SUCCESS_STORAGE_KEY = "createRegionSuccessPayload";
+
+function saveCreateRegionSuccessPayload(payload) {
+    try {
+        sessionStorage.setItem(CREATE_REGION_SUCCESS_STORAGE_KEY, JSON.stringify(payload));
+    } catch (err) {
+        console.error("[create-region] failed to save success payload", err);
+    }
+}
+
 function getByteLength(value = "") {
     return new TextEncoder().encode(value).length;
 }
@@ -237,9 +247,26 @@ export function initCreateRegionPage() {
                 return;
             }
 
+            saveCreateRegionSuccessPayload({
+                originId: origin,
+                region: {
+                    id: json?.region?.id || json?.id || null,
+                    originId: json?.region?.originId || origin,
+                    name: json?.region?.name || name,
+                    detail: json?.region?.detail || detail,
+                    score: json?.region?.score ?? null,
+                    source: "user",
+                    ownerchar: null,
+                    charnum: 0,
+                },
+            });
+
             sessionStorage.removeItem("regionId");
             sessionStorage.removeItem("regionName");
             safeShowPage("create");
+            window.dispatchEvent(new CustomEvent("create:region-created", {
+                detail: { originId: origin },
+            }));
         } catch (err) {
             console.error(err);
             alert("서버 요청 중 오류가 발생했습니다.");
