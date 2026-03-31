@@ -2,7 +2,31 @@
 <main class="content">
 <div class="scroll-area">
 <h2>전투 기록</h2>
-<div id="battleLogContainer">(로드 중)</div>
+<div id="battleLogContainer">
+    <section class="battle-log-loading" aria-label="전투 기록 로딩 중">
+        <div class="battle-log-loading__vs">
+            <div class="battle-log-loading__card" aria-hidden="true">
+                <div class="battle-log-loading__avatar battle-log-loading__shimmer"></div>
+                <div class="battle-log-loading__line battle-log-loading__line--name battle-log-loading__shimmer"></div>
+                <div class="battle-log-loading__line battle-log-loading__line--elo battle-log-loading__shimmer"></div>
+            </div>
+            <div class="battle-log-loading__card" aria-hidden="true">
+                <div class="battle-log-loading__avatar battle-log-loading__shimmer"></div>
+                <div class="battle-log-loading__line battle-log-loading__line--name battle-log-loading__shimmer"></div>
+                <div class="battle-log-loading__line battle-log-loading__line--elo battle-log-loading__shimmer"></div>
+            </div>
+        </div>
+        <div class="battle-log-loading__image battle-log-loading__shimmer" aria-hidden="true"></div>
+        <div class="battle-log-loading__body" aria-hidden="true">
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-1 battle-log-loading__shimmer"></div>
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-2 battle-log-loading__shimmer"></div>
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-3 battle-log-loading__shimmer"></div>
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-4 battle-log-loading__shimmer"></div>
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-5 battle-log-loading__shimmer"></div>
+            <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-6 battle-log-loading__shimmer"></div>
+        </div>
+    </section>
+</div>
 </div>
 </main>
 </section>

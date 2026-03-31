@@ -10,7 +10,7 @@ import {
     disableAllNextButtons,
 } from "./create-ui/create.origin-ui.js";
 
-import { renderOriginDetail, openRegionDetailModal } from "./create-ui/create.region-ui.js";
+import { renderOriginDetail } from "./create-ui/create.region-ui.js";
 
 /* =========================================
    CREATE PAGE STATE
@@ -26,38 +26,24 @@ const STORAGE_KEYS = {
     regionName: "regionName",
 };
 
-const CREATE_REGION_SUCCESS_STORAGE_KEY = "createRegionSuccessPayload";
+const CREATE_REGION_RETURN_SELECTION_STORAGE_KEY = "createRegionReturnSelectionPayload";
 
 function getOriginItemById(originId) {
     return originListEl?.querySelector(`.origin-item[data-value="${originId}"]`) || null;
 }
 
-function consumeCreateRegionSuccessPayload() {
+function consumeCreateRegionReturnSelectionPayload() {
     try {
-        const raw = sessionStorage.getItem(CREATE_REGION_SUCCESS_STORAGE_KEY);
+        const raw = sessionStorage.getItem(CREATE_REGION_RETURN_SELECTION_STORAGE_KEY);
         if (!raw) return null;
 
-        sessionStorage.removeItem(CREATE_REGION_SUCCESS_STORAGE_KEY);
+        sessionStorage.removeItem(CREATE_REGION_RETURN_SELECTION_STORAGE_KEY);
         return JSON.parse(raw);
     } catch (err) {
-        console.error("[create] failed to consume region success payload", err);
-        sessionStorage.removeItem(CREATE_REGION_SUCCESS_STORAGE_KEY);
+        console.error("[create] failed to consume region return selection payload", err);
+        sessionStorage.removeItem(CREATE_REGION_RETURN_SELECTION_STORAGE_KEY);
         return null;
     }
-}
-
-function showCreateRegionSuccessModal(payload) {
-    const region = payload?.region;
-    if (!region) return;
-
-    openRegionDetailModal(
-        region,
-        openWrap,
-        `
-            <div class="region-create-success-title">생성 성공!</div>
-            <div class="region-create-success-subtitle">새 지역 정보가 추가되었습니다.</div>
-        `
-    );
 }
 
 async function selectOriginAndRender(originItemEl, { onAfterRender } = {}) {
@@ -101,16 +87,25 @@ async function selectOriginAndRender(originItemEl, { onAfterRender } = {}) {
     }
 }
 
-async function restoreCreatedRegionSuccess() {
-    const payload = consumeCreateRegionSuccessPayload();
+function findRegionRowById(container, regionId) {
+    if (!container || !regionId) return null;
+
+    return Array.from(container.querySelectorAll(".region-item")).find(
+        (item) => item.dataset.regionId === regionId
+    ) || null;
+}
+
+async function restoreCreateRegionReturnSelection() {
+    const payload = consumeCreateRegionReturnSelectionPayload();
     if (!payload?.originId) return;
 
     const originItemEl = getOriginItemById(payload.originId);
     if (!originItemEl) return;
 
     await selectOriginAndRender(originItemEl, {
-        onAfterRender: async () => {
-            showCreateRegionSuccessModal(payload);
+        onAfterRender: async ({ ui }) => {
+            const regionRow = findRegionRowById(ui?.regions, payload.regionId);
+            regionRow?.click();
         },
     });
 }
@@ -195,11 +190,12 @@ export function resetCreatePageState() {
 }
 
 window.resetCreatePageState = resetCreatePageState;
+window.initCreatePage = initCreatePage;
 
 /* =========================================
    INIT
 ========================================= */
-function initCreatePage() {
+export function initCreatePage() {
     if (!originListEl) {
         console.warn("[create] #originList not found. initCreatePage skipped.");
         return;
@@ -214,16 +210,11 @@ function initCreatePage() {
         },
     });
 
-    restoreCreatedRegionSuccess().catch((err) => {
-        console.error("[create] failed to restore region success", err);
+    restoreCreateRegionReturnSelection().catch((err) => {
+        console.error("[create] failed to restore region return selection", err);
     });
 }
 
-window.addEventListener("create:region-created", () => {
-    restoreCreatedRegionSuccess().catch((err) => {
-        console.error("[create] failed to handle region-created event", err);
-    });
-});
 
 initCreatePage();
 

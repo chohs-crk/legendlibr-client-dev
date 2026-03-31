@@ -8,6 +8,7 @@ export function openWrap(html) {
 
 export function closeWrap() {
     document.getElementById("wrapOverlay").style.display = "none";
+    document.getElementById("wrapBody").innerHTML = "";
     document.body.classList.remove("dialog-open");
 }
 

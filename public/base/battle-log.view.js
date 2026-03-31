@@ -28,6 +28,30 @@ import {
 let battleImagePollCtx = null;
 let pollCtx = null;
 
+function buildBattleLogLoadingMarkup() {
+    return `
+        <section class="battle-log-loading" aria-label="전투 기록 로딩 중">
+            <div class="battle-log-loading__vs">
+                ${Array.from({ length: 2 }).map(() => `
+                    <div class="battle-log-loading__card" aria-hidden="true">
+                        <div class="battle-log-loading__avatar battle-log-loading__shimmer"></div>
+                        <div class="battle-log-loading__line battle-log-loading__line--name battle-log-loading__shimmer"></div>
+                        <div class="battle-log-loading__line battle-log-loading__line--elo battle-log-loading__shimmer"></div>
+                    </div>
+                `).join("")}
+            </div>
+
+            <div class="battle-log-loading__image battle-log-loading__shimmer" aria-hidden="true"></div>
+
+            <div class="battle-log-loading__body" aria-hidden="true">
+                ${Array.from({ length: 6 }).map((_, idx) => `
+                    <div class="battle-log-loading__line battle-log-loading__line--story battle-log-loading__line--story-${idx + 1} battle-log-loading__shimmer"></div>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
 function syncUserMetaCache(userMeta) {
     if (!userMeta || typeof userMeta !== "object") return;
     sessionStorage.setItem("userMeta", JSON.stringify(userMeta));
@@ -73,7 +97,9 @@ function renderMessage(message) {
 }
 
 function renderLoading() {
-    renderMessage("전투 기록을 불러오는 중입니다.");
+    const container = document.getElementById("battleLogContainer");
+    if (!container) return;
+    container.innerHTML = buildBattleLogLoadingMarkup();
 }
 
 function renderError() {

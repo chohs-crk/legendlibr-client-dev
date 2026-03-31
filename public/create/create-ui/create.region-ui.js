@@ -24,6 +24,17 @@ export function openRegionDetailModal(region, openWrap, extraHtml = "") {
     `);
 }
 
+export function openCreatedRegionSuccessModal(region, openWrap) {
+    openRegionDetailModal(
+        region,
+        openWrap,
+        `
+            <div class="region-create-success-title">생성 성공!</div>
+            <div class="region-create-success-subtitle">새 지역 정보가 추가되었습니다.</div>
+        `
+    );
+}
+
 function updateAddButton(ui, userRegionCount = 0) {
     if (!ui?.addBtn) return;
 

@@ -2,7 +2,7 @@ import { parseStoryText } from "/base/common/story-parser.js";
 import { formatStoryWithDialogue } from "/base/common/story-format.js";
 
 function isBattleRunning(battle) {
-    return battle?.status !== "done" && battle?.status !== "error";
+    return battle?.status === "queued" || battle?.status === "processing" || battle?.status === "streaming";
 }
 
 function createInlineSpinner() {
@@ -54,7 +54,7 @@ export function buildBattleLogSection(battle) {
 
     let rawText = logs.map((item) => item?.text || "").join("\n");
 
-    if(!logs.length && isBattleRunning(battle)) {
+    if (!logs.length && isBattleRunning(battle)) {
         rawText = "전투 진행 중";
     }
 

@@ -245,8 +245,8 @@ export function mergeBattleImageStatusIntoBattle(battle, statusRes) {
             battle?.imageJobId ||
             null,
         status:
-            statusRes?.battleImage?.status ||
             statusRes?.status ||
+            statusRes?.battleImage?.status ||
             battle?.battleImage?.status ||
             "called",
         url:

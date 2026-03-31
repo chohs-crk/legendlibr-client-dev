@@ -1,20 +1,79 @@
 // /create/create-region.js
 import { apiFetch } from "/base/api.js";
+import { openWrap } from "/base/common/ui-wrap.js";
 import { ORIGINS_FRONT } from "./origins.front.js";
+import { openCreatedRegionSuccessModal } from "./create-ui/create.region-ui.js";
 
 const NAME_MIN = 1;
 const NAME_MAX = 15;
 const DETAIL_MIN_BYTES = 10;
 const DETAIL_MAX_BYTES = 500;
 
-const CREATE_REGION_SUCCESS_STORAGE_KEY = "createRegionSuccessPayload";
+const CREATE_REGION_RETURN_SELECTION_STORAGE_KEY = "createRegionReturnSelectionPayload";
 
-function saveCreateRegionSuccessPayload(payload) {
+function saveCreateRegionReturnSelectionPayload(payload) {
     try {
-        sessionStorage.setItem(CREATE_REGION_SUCCESS_STORAGE_KEY, JSON.stringify(payload));
+        sessionStorage.setItem(CREATE_REGION_RETURN_SELECTION_STORAGE_KEY, JSON.stringify(payload));
     } catch (err) {
-        console.error("[create-region] failed to save success payload", err);
+        console.error("[create-region] failed to save return selection payload", err);
     }
+}
+
+function isCreatedRegionSuccessModalOpen() {
+    return !!document.querySelector(".region-create-success-title");
+}
+
+function openSuccessModalThenNavigateToCreate({ originId, region }) {
+    if (!region) {
+        safeShowPage("create");
+        return;
+    }
+
+    let sawModal = false;
+    let moved = false;
+
+    const moveToCreate = () => {
+        if (moved) return;
+        moved = true;
+        observer.disconnect();
+
+        saveCreateRegionReturnSelectionPayload({
+            originId,
+            regionId: region.id || null,
+            regionName: region.name || "",
+        });
+
+        sessionStorage.removeItem("regionId");
+        sessionStorage.removeItem("regionName");
+        safeShowPage("create");
+    };
+
+    const checkModalState = () => {
+        const isOpen = isCreatedRegionSuccessModalOpen();
+        if (isOpen) {
+            sawModal = true;
+            return;
+        }
+
+        if (sawModal) {
+            moveToCreate();
+        }
+    };
+
+    const observer = new MutationObserver(checkModalState);
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    openCreatedRegionSuccessModal(region, openWrap);
+    checkModalState();
+
+    window.setTimeout(() => {
+        if (!sawModal) {
+            moveToCreate();
+        }
+    }, 800);
 }
 
 function getByteLength(value = "") {
@@ -247,7 +306,7 @@ export function initCreateRegionPage() {
                 return;
             }
 
-            saveCreateRegionSuccessPayload({
+            openSuccessModalThenNavigateToCreate({
                 originId: origin,
                 region: {
                     id: json?.region?.id || json?.id || null,
@@ -260,13 +319,6 @@ export function initCreateRegionPage() {
                     charnum: 0,
                 },
             });
-
-            sessionStorage.removeItem("regionId");
-            sessionStorage.removeItem("regionName");
-            safeShowPage("create");
-            window.dispatchEvent(new CustomEvent("create:region-created", {
-                detail: { originId: origin },
-            }));
         } catch (err) {
             console.error(err);
             alert("서버 요청 중 오류가 발생했습니다.");
