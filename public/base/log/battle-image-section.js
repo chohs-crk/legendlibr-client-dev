@@ -9,6 +9,33 @@ function escapeHtml(value) {
         .replaceAll("'", "&#39;");
 }
 
+function getOwnedCharacterIds() {
+    const raw = sessionStorage.getItem("homeCharacters");
+    if (!raw) return new Set();
+
+    try {
+        const list = JSON.parse(raw);
+        if (!Array.isArray(list)) return new Set();
+
+        return new Set(
+            list
+                .map((item) => item?.id)
+                .filter((id) => typeof id === "string" && id)
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+export function isBattleImageOwnerView(battle) {
+    if (!battle) return false;
+
+    const ownedIds = getOwnedCharacterIds();
+    if (!ownedIds.size) return false;
+
+    return ownedIds.has(battle.myId) || ownedIds.has(battle.enemyId);
+}
+
 export function getBattleImageState(battle) {
     const battleImage = battle?.battleImage || null;
     const hasCalled = battle?.image === "called" || battle?.imageCalled === true;
@@ -31,6 +58,8 @@ export function getBattleImageUiState(battle) {
 
 export function canRequestBattleImage(battle) {
     if (!battle || battle.status !== "done") return false;
+    if (!isBattleImageOwnerView(battle)) return false;
+
     const uiState = getBattleImageUiState(battle);
     return uiState === "idle" || uiState === "error";
 }
@@ -56,7 +85,7 @@ function getBattleImageCopy(battle) {
             eyebrow: "배틀 이미지",
             title: "전투 장면 생성",
             description: "배틀 로그를 바탕으로 전투 이미지를 생성합니다.",
-            buttonLabel: "배틀 이미지 생성",
+            buttonLabel: isBattleImageOwnerView(battle) ? "배틀 이미지 생성" : "",
         };
     }
 
@@ -84,7 +113,7 @@ function getBattleImageCopy(battle) {
             eyebrow: "배틀 이미지",
             title: "생성 실패",
             description: errorMessage,
-            buttonLabel: "다시 생성하기",
+            buttonLabel: isBattleImageOwnerView(battle) ? "다시 생성하기" : "",
         };
     }
 
@@ -96,6 +125,20 @@ function getBattleImageCopy(battle) {
         description: "",
         buttonLabel: "",
     };
+}
+
+function buildBattleImagePreviewSkeleton(uiState) {
+    const isStatic = uiState === "idle" || uiState === "pending";
+
+    return `
+        <div class="battle-image-slot__preview ${isStatic ? "battle-image-slot__preview--static" : ""}" aria-hidden="true">
+            <div class="battle-image-slot__preview-glow"></div>
+            <div class="battle-image-slot__preview-card battle-image-slot__preview-card--left"></div>
+            <div class="battle-image-slot__preview-slash"></div>
+            <div class="battle-image-slot__preview-card battle-image-slot__preview-card--right"></div>
+            <div class="battle-image-slot__preview-caption"></div>
+        </div>
+    `;
 }
 
 export function buildBattleImageSection(battle) {
@@ -119,15 +162,11 @@ export function buildBattleImageSection(battle) {
         <section class="battle-image-slot battle-image-slot--${copy.uiState}" data-battle-image-state="${copy.rawState}">
             <div class="battle-image-slot__inner">
                 <div class="battle-image-slot__skeleton" aria-hidden="true"></div>
+                ${buildBattleImagePreviewSkeleton(copy.uiState)}
                 <div class="battle-image-slot__content">
                     <div class="battle-image-slot__eyebrow">${escapeHtml(copy.eyebrow)}</div>
                     <h3 class="battle-image-slot__title">${escapeHtml(copy.title)}</h3>
                     <p class="battle-image-slot__desc">${escapeHtml(copy.description)}</p>
-                    ${copy.uiState === "pending" ? `
-                        <div class="battle-image-slot__loading" aria-hidden="true">
-                            <span class="battle-image-slot__spinner"></span>
-                        </div>
-                    ` : ""}
                     ${copy.buttonLabel ? `
                         <button
                             type="button"

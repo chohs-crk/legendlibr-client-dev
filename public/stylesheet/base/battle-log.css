@@ -216,6 +216,95 @@
     animation: battleImageShimmer 2s ease-in-out infinite;
 }
 
+.battle-image-slot__preview {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.battle-image-slot__preview-glow {
+    position: absolute;
+    inset: 16px;
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(152, 0, 255, 0.14), transparent 26%),
+        radial-gradient(circle at 70% 68%, rgba(255, 255, 255, 0.04), transparent 20%);
+}
+
+.battle-image-slot__preview-card,
+.battle-image-slot__preview-slash,
+.battle-image-slot__preview-caption {
+    position: absolute;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.battle-image-slot__preview-card::after,
+.battle-image-slot__preview-slash::after,
+.battle-image-slot__preview-caption::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 24%,
+        rgba(255, 255, 255, 0.05) 42%,
+        rgba(255, 255, 255, 0.11) 50%,
+        rgba(255, 255, 255, 0.05) 58%,
+        transparent 76%
+    );
+    transform: translateX(-120%);
+    animation: battleImageShimmer 2.2s ease-in-out infinite;
+}
+
+.battle-image-slot__preview-card {
+    top: 18%;
+    width: 24%;
+    height: 48%;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.battle-image-slot__preview-card--left {
+    left: 16%;
+    transform: rotate(-7deg);
+}
+
+.battle-image-slot__preview-card--right {
+    right: 16%;
+    transform: rotate(7deg);
+}
+
+.battle-image-slot__preview-slash {
+    top: 24%;
+    width: 10px;
+    height: 34%;
+    border-radius: 999px;
+    transform: rotate(22deg);
+    background: rgba(152, 0, 255, 0.18);
+}
+
+.battle-image-slot__preview-caption {
+    bottom: 14%;
+    width: 44%;
+    height: 16px;
+    border-radius: 999px;
+}
+
+.battle-image-slot__preview--static .battle-image-slot__preview-card::after,
+.battle-image-slot__preview--static .battle-image-slot__preview-slash::after,
+.battle-image-slot__preview--static .battle-image-slot__preview-caption::after,
+.battle-image-slot--idle .battle-image-slot__skeleton::after,
+.battle-image-slot--pending .battle-image-slot__skeleton::after {
+    animation: none;
+    transform: none;
+    opacity: 0;
+}
+
 .battle-image-slot__content {
     position: relative;
     z-index: 1;
@@ -278,21 +367,6 @@
     box-shadow: none;
 }
 
-.battle-image-slot__loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 4px;
-}
-
-.battle-image-slot__spinner {
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top-color: rgba(255, 255, 255, 0.9);
-    animation: battleInlineSpin 0.85s linear infinite;
-}
 
 .battle-image-slot--idle .battle-image-slot__title {
     color: #ffffff;
