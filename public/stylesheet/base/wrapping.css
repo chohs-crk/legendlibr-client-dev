@@ -28,7 +28,29 @@
 .ui-wrap-body {
     max-height: 60vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
 }
+
+    .ui-wrap-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .ui-wrap-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .ui-wrap-body::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 999px;
+    }
+
+        .ui-wrap-body::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-hover);
+        }
 
 .ui-wrap-close {
     position: absolute;

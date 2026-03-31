@@ -75,11 +75,17 @@
 .ai-overlay {
     position: fixed;
     inset: 0;
-    z-index: 9999; /* 👈 핵심 */
+    z-index: 9999;
     background: rgba(0, 0, 0, 0.6);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    overflow-y: auto;
+    padding:
+        calc(env(safe-area-inset-top, 0px) + 20px)
+        16px
+        calc(env(safe-area-inset-bottom, 0px) + 80px);
+    box-sizing: border-box;
 }
 
 .job-request-toast {
@@ -149,13 +155,21 @@
 
 .ai-modal textarea {
     width: 100%;
-    resize: none;
-    padding: 12px;
-    border-radius: 12px;
+    min-height: 108px;
+    resize: vertical;
+    padding: 12px 14px;
+    border-radius: 14px;
     background: #1b1928;
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    line-height: 1.5;
+    line-height: 1.55;
+    box-sizing: border-box;
+}
+
+.ai-modal textarea:focus {
+    outline: none;
+    border-color: rgba(177, 128, 255, 0.95);
+    box-shadow: 0 0 0 3px rgba(123, 79, 255, 0.18);
 }
 
 .page-title {
@@ -169,7 +183,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 12px 0;
+    margin: 12px 0 0;
 }
 
 .style-btn {
@@ -197,6 +211,7 @@
 
 .model-tags {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 12px;
 }
@@ -217,4 +232,141 @@
 .ai-modal {
     position: relative;
     z-index: 10000;
+    width: min(100%, 560px);
+    margin: 0 auto;
+    padding: 18px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(28, 18, 42, 0.98), rgba(18, 11, 29, 0.98));
+    border: 1px solid rgba(178, 132, 255, 0.18);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+}
+
+.ai-modal h3 {
+    margin: 0 0 14px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #f6efff;
+}
+
+.ai-prompt-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0 8px;
+}
+
+.ai-prompt-guide {
+    color: rgba(234, 225, 255, 0.72);
+    font-size: 12px;
+}
+
+.ai-char-count {
+    color: rgba(234, 225, 255, 0.78);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ai-char-count.is-invalid {
+    color: #ffb4c3;
+}
+
+.ai-char-count.is-valid {
+    color: #cdb8ff;
+}
+
+.gemini-only {
+    max-width: 120px;
+    white-space: nowrap;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        max-width 0.2s ease,
+        padding 0.2s ease,
+        margin 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.gemini-only.is-hidden {
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin: 0;
+    border-color: transparent;
+    overflow: hidden;
+}
+
+.ai-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.ai-action-btn {
+    min-width: 92px;
+    padding: 11px 16px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+}
+
+.ai-action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.ai-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.ai-cancel-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: #efe7ff;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ai-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ai-generate-btn {
+    background: linear-gradient(135deg, #6c5ce7, #9b7cff);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(108, 92, 231, 0.28);
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+    box-shadow: 0 12px 28px rgba(108, 92, 231, 0.38);
+}
+
+@media (max-width: 640px) {
+    .ai-overlay {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .ai-modal {
+        width: 100%;
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .ai-modal-actions {
+        gap: 8px;
+    }
+
+    .ai-action-btn {
+        flex: 1;
+    }
 }

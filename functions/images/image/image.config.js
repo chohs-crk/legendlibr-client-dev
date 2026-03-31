@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 /* =========================
    스타일/구도
@@ -21,7 +21,9 @@ const STYLE_PRESETS = {
 
             // 기존 스타일 요소 + 보강
             "soft elegant portrait",
+            "premium fantasy game portrait",
             "high key lighting",
+            "soft radiant glow",
             "smooth painterly rendering",
             "crisp edges",
             "clean fill colors",
@@ -29,10 +31,11 @@ const STYLE_PRESETS = {
             "no film grain",
             "no photographic detail",
             "anime key visual",
+            "premium character key art",
             "game illustration"
         ],
         sentence:
-            "2D illustration with clean line art and soft cel shading, glossy highlights on skin and fabric. Soft elegant portrait under high key lighting, ethereal atmosphere, smooth painterly rendering with delicate skin shading and a subtle glow, inspired by renaissance digital art."
+            "A polished 2D fantasy character portrait with clean line art, refined cel shading, and luminous glossy highlights. The overall image should strongly read as an elegant premium game illustration with a soft radiant atmosphere and graceful high-key lighting."
     },
 
     // 🔹 다크 판타지 (2D + 광택 + 어두운 분위기)
@@ -50,15 +53,18 @@ const STYLE_PRESETS = {
 
             // 분위기
             "dark fantasy",
+            "grim gothic fantasy",
             "moody dramatic lighting",
             "deep shadows",
             "high contrast",
+            "cold desaturated palette",
             "mysterious atmosphere",
+            "ominous magical aura",
             "subtle magical glow",
             "ornate fantasy costume"
         ],
         sentence:
-            "2D dark fantasy illustration with clean line art and glossy highlights, moody dramatic lighting and deep shadows. High contrast atmosphere with subtle magical glow and mysterious, ornate fantasy elements."
+            "A strongly dark-fantasy 2D illustration with clean line art, glossy highlights, deep shadows, and ominous dramatic lighting. The entire image should clearly feel gothic, mystical, and severe rather than neutral or bright."
     },
 
     // 🔹 파스텔 풍 (2D + 광택 + 부드러운 색감)
@@ -78,12 +84,14 @@ const STYLE_PRESETS = {
             "pastel color palette",
             "soft lighting",
             "dreamy atmosphere",
+            "airy whimsical mood",
             "gentle gradients",
             "light bloom effect",
+            "milky highlights",
             "delicate textures"
         ],
         sentence:
-            "2D illustration with glossy highlights and soft cel shading, rendered in a pastel color palette. Soft lighting, dreamy atmosphere, gentle gradients and light bloom create a delicate and airy mood."
+            "A distinctly pastel-toned 2D illustration with soft cel shading, milky glossy highlights, and airy lighting. The whole image should clearly feel dreamy, delicate, bright, and whimsical rather than realistic or heavy."
     },
 
     // 🔹 사이버펑크 (2D + 광택 + 네온)
@@ -102,13 +110,15 @@ const STYLE_PRESETS = {
             // 분위기
             "cyberpunk aesthetic",
             "neon lights",
+            "magenta cyan rim light",
             "futuristic city glow",
             "high contrast lighting",
             "electric color accents",
+            "night city atmosphere",
             "holographic details"
         ],
         sentence:
-            "2D cyberpunk illustration with sharp cel shading and glossy reflections. Neon lighting, futuristic city glow and electric color accents create a high-contrast, holographic atmosphere."
+            "A strongly cyberpunk 2D illustration with sharp cel shading, glossy reflections, neon rim light, and electric futuristic accents. The overall image should clearly feel high-tech, nocturnal, vivid, and holographic."
     },
 
     // 🔹 일본 애니 (2D + 광택 + 선명한 색)
@@ -130,12 +140,13 @@ const STYLE_PRESETS = {
             "smooth cel shading",
             "glossy highlights",
             "vibrant colors",
-            "expressive eyes",
+            "large expressive anime eyes",
             "bright lighting",
-            "polished anime rendering"
+            "polished anime rendering",
+            "anime key visual finish"
         ],
         sentence:
-            "Polished 2D anime illustration with crisp line art and smooth cel shading, glossy highlights and vibrant colors. Bright lighting enhances expressive eyes and refined anime rendering."
+            "A clearly Japanese-anime-inspired 2D illustration with crisp line art, smooth cel shading, expressive eyes, and vibrant glossy color. The overall rendering should strongly read as polished anime key visual art rather than generic illustration."
     }
 };
 

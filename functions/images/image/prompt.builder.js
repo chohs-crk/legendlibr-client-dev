@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const { STYLE_PRESETS, normalizeStyleKey, getModelPromptPolicy } = require("./image.config");
 
@@ -225,6 +225,12 @@ Main subject must be visual focus.
 If originBackground is provided, prefer it as the primary background direction.
 Keep the background secondary to the subject (no crowd, no text, no logos).
 Do NOT force a human if request is not about a person.
+
+[Style Key Handling]
+- If styleKey is provided, treat it as a HIGH-PRIORITY style preset explicitly chosen by the user.
+- The style section MUST strongly reflect styleKey in rendering approach, palette, lighting mood, and finish.
+- Do not water down styleKey because of promptRefined or fullStory.
+- If userPrompt is vague, styleKey should dominate the style direction.
 ${outputRules}
 
 [Sections]
@@ -375,6 +381,29 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
         "no realistic lighting"
     ];
 
+    const STYLE_PRESET_FORCE = {
+        default: {
+            tags: ["premium character key art", "elegant fantasy portrait", "soft luminous finish"],
+            sentence: "The selected default style should clearly dominate the overall look as a polished, elegant fantasy game portrait."
+        },
+        darkfantasy: {
+            tags: ["grim gothic mood", "ominous magical atmosphere", "shadow-heavy fantasy aesthetic"],
+            sentence: "The selected style must read unmistakably as dark fantasy, with ominous mood, deep shadow, and gothic intensity."
+        },
+        pastel: {
+            tags: ["airy pastel mood", "bright delicate palette", "soft dreamy finish"],
+            sentence: "The selected style must read unmistakably as pastel, with an airy, delicate, dreamy tone across the whole image."
+        },
+        cyberpunk: {
+            tags: ["neon cyberpunk mood", "high-tech night glow", "electric futuristic finish"],
+            sentence: "The selected style must read unmistakably as cyberpunk, with neon glow, futuristic nightlife energy, and vivid electronic contrast."
+        },
+        anime: {
+            tags: ["anime key visual look", "expressive anime rendering", "vibrant cel-finished illustration"],
+            sentence: "The selected style must read unmistakably as polished Japanese-anime-inspired key visual art."
+        }
+    };
+
     const isTogether = modelInfo?.provider === "together";
     const isFlux =
         isTogether && typeof modelInfo?.model === "string" && modelInfo.model.toLowerCase().includes("flux");
@@ -422,15 +451,21 @@ function buildFinalPrompt({ promptResult, format, jobStyleKey, userPrompt, model
     const normalizedStyleKey = normalizeStyleKey(jobStyleKey);
     const stylePreset = normalizedStyleKey ? STYLE_PRESETS[normalizedStyleKey] : null;
 
+    const stylePresetForce = normalizedStyleKey ? STYLE_PRESET_FORCE[normalizedStyleKey] || null : null;
+
     let appliedStyle = stylePreset
         ? {
-            tags: [...stylePreset.tags, ...aiStyle.tags.filter((t) => !stylePreset.tags.includes(t))],
-            sentence: stylePreset.sentence
+            tags: [
+                ...(stylePresetForce?.tags || []),
+                ...stylePreset.tags,
+                ...aiStyle.tags.filter((t) => !stylePreset.tags.includes(t))
+            ],
+            sentence: [stylePreset.sentence, stylePresetForce?.sentence].filter(Boolean).join(" ")
         }
         : aiStyle;
 
     appliedStyle.tags = enrichTags(appliedStyle.tags, STYLE_ANCHORS_2D, limits.style);
-    appliedStyle.sentence = capSentenceCount(appliedStyle.sentence, 1);
+    appliedStyle.sentence = capSentenceCount(appliedStyle.sentence, stylePresetForce ? 2 : 1);
 
     // 최종 프롬프트 생성
     let tagsPrompt = "";

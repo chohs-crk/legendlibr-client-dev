@@ -90,11 +90,18 @@ function getBattleImageCopy(battle) {
     }
 
     if (uiState === "pending") {
-        const title = rawState === "queued" ? "생성 대기 중" : "생성 중";
+        const title =
+            rawState === "queued"
+                ? "생성 대기 중"
+                : rawState === "called"
+                    ? "로드 중"
+                    : "생성 중";
         const description =
             rawState === "queued"
                 ? "생성 작업을 준비하고 있습니다."
-                : "전투 이미지를 만들고 있습니다.";
+                : rawState === "called"
+                    ? "생성된 배틀 이미지를 불러오고 있습니다."
+                    : "전투 이미지를 만들고 있습니다.";
 
         return {
             rawState,

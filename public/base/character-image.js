@@ -23,6 +23,7 @@ export async function initCharacterImagePage() {
 
     const aiOverlay = document.getElementById("aiOverlay");
     const aiPromptInput = document.getElementById("aiPromptInput");
+    const aiPromptCount = document.getElementById("aiPromptCount");
     const btnAICancel = document.getElementById("btnAICancel");
     const btnAIGenerate = document.getElementById("btnAIGenerate");
 
@@ -36,6 +37,34 @@ export async function initCharacterImagePage() {
     function updateGenerateButtonPrice() {
         const price = MODEL_PRICE_MAP[selectedModel] || 0;
         btnAIGenerate.textContent = `생성 (${price}원)`;
+    }
+
+    function updatePromptState() {
+        const rawValue = aiPromptInput.value || "";
+        const rawLength = rawValue.length;
+        const trimmedLength = rawValue.trim().length;
+        const isValid = trimmedLength >= 20 && rawLength <= 1000;
+
+        if (aiPromptCount) {
+            aiPromptCount.textContent = `${rawLength} / 1000`;
+            aiPromptCount.classList.toggle("is-valid", isValid);
+            aiPromptCount.classList.toggle("is-invalid", !isValid && rawLength > 0);
+        }
+
+        btnAIGenerate.disabled = !isValid;
+    }
+
+    function openAIOverlay() {
+        aiOverlay.style.display = "flex";
+        updatePromptState();
+
+        requestAnimationFrame(() => {
+            aiPromptInput.focus({ preventScroll: true });
+        });
+    }
+
+    function closeAIOverlay() {
+        aiOverlay.style.display = "none";
     }
 
     function setApplyDisabled(disabled) {
@@ -212,11 +241,8 @@ export async function initCharacterImagePage() {
         setActiveModelButton(selectedModel);
         updateGenerateButtonPrice();
         updateStyleVisibilityByModel();
-
         setActiveStyleButton(selectedStyle);
-
-        btnAIGenerate.disabled = true;
-        aiOverlay.style.display = "flex";
+        openAIOverlay();
     };
 
     // 모델 버튼
@@ -244,22 +270,25 @@ export async function initCharacterImagePage() {
 
         if (selectedModel === "gemini") {
             geminiOnlyBtns.forEach((btn) => {
-                btn.style.display = "inline-block";
+                btn.classList.remove("is-hidden");
             });
-        } else {
-            geminiOnlyBtns.forEach((btn) => {
-                btn.style.display = "none";
-            });
+            return;
+        }
 
-            if (!selectedStyle) {
-                selectedStyle = "default";
-                setActiveStyleButton("default");
-            }
+        geminiOnlyBtns.forEach((btn) => {
+            btn.classList.add("is-hidden");
+        });
+
+        if (!selectedStyle) {
+            selectedStyle = "default";
+            setActiveStyleButton("default");
         }
     }
 
     setActiveModelButton(selectedModel);
     updateGenerateButtonPrice();
+    updateStyleVisibilityByModel();
+    updatePromptState();
 
     const res = await apiFetch(`/base/characters?id=${encodeURIComponent(charId)}`);
     if (!res.ok) {
@@ -303,12 +332,17 @@ export async function initCharacterImagePage() {
     syncApplyButtonState();
 
     btnAICancel.onclick = () => {
-        aiOverlay.style.display = "none";
+        closeAIOverlay();
+    };
+
+    aiOverlay.onclick = (event) => {
+        if (event.target === aiOverlay) {
+            closeAIOverlay();
+        }
     };
 
     aiPromptInput.oninput = () => {
-        const len = aiPromptInput.value.trim().length;
-        btnAIGenerate.disabled = !(len >= 20 && len <= 1000);
+        updatePromptState();
     };
 
     async function pollJob(jobId, { intervalMs = 2500, timeoutMs = 5 * 60 * 1000 } = {}) {
@@ -344,7 +378,7 @@ export async function initCharacterImagePage() {
     btnAIGenerate.onclick = async () => {
         if (isSubmittingGenerate) return;
         isSubmittingGenerate = true;
-        aiOverlay.style.display = "none";
+        closeAIOverlay();
 
         try {
             const res = await apiFetch("/base/characters-ai-image", {
