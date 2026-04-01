@@ -40,7 +40,7 @@ export async function initCharacterImagePage() {
     }
 
     function updatePromptState() {
-        const rawValue = aiPromptInput.value || "";
+        const rawValue = aiPromptInput?.value || "";
         const rawLength = rawValue.length;
         const trimmedLength = rawValue.trim().length;
         const isValid = trimmedLength >= 20 && rawLength <= 1000;
@@ -59,7 +59,7 @@ export async function initCharacterImagePage() {
         updatePromptState();
 
         requestAnimationFrame(() => {
-            aiPromptInput.focus({ preventScroll: true });
+            aiPromptInput?.focus({ preventScroll: true });
         });
     }
 

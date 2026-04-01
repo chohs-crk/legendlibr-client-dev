@@ -1,4 +1,4 @@
-﻿<section class="page" id="page-character-image">
+<section class="page" id="page-character-image">
     <main class="content">
         <div class="scroll-area">
             <h2 class="page-title">이미지 변경</h2>
@@ -24,40 +24,36 @@
     </main>
     <!-- AI 생성 오버레이 -->
     <div class="ai-overlay" id="aiOverlay" style="display:none;">
-        <div class="ai-modal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
-            <h3 id="aiModalTitle">AI 이미지 생성</h3>
+        <div class="ai-modal">
+            <h3>AI 이미지 생성</h3>
             <div class="model-tags">
-                <button class="model-btn active" data-model="together_sdxl" type="button">
+                <button class="model-btn active" data-model="together_sdxl">
                     SDXL (10원)
                 </button>
 
-                <button class="model-btn" data-model="together_flux2" type="button">
+                <button class="model-btn" data-model="together_flux2">
                     Flux 2 Dev (25원)
                 </button>
 
-                <button class="model-btn" data-model="gemini" type="button">
+                <button class="model-btn" data-model="gemini">
                     Gemini (50원)
                 </button>
             </div>
-            <div class="ai-prompt-meta">
-                <span class="ai-prompt-guide">20자 이상 입력</span>
-                <span class="ai-char-count" id="aiPromptCount">0 / 1000</span>
-            </div>
-            <textarea id="aiPromptInput" rows="4" maxlength="1000" placeholder="캐릭터 이미지에 반영하고 싶은 분위기나 인상을 적어주세요"></textarea>
-            <div class="style-tags" id="styleTags">
-                <!-- Gemini 전용 -->
-                <button class="style-btn gemini-only is-hidden" data-style="" type="button">설정 안함</button>
+<textarea id="aiPromptInput" placeholder="캐릭터 이미지에 반영하고 싶은 분위기나 인상을 적어주세요"></textarea>
+<div class="style-tags" id="styleTags">
+    <!-- Gemini 전용 -->
+    <button class="style-btn gemini-only" data-style="">설정 안함</button>
 
-                <!-- 공통 스타일 -->
-                <button class="style-btn" data-style="default" type="button">기본</button>
-                <button class="style-btn" data-style="darkfantasy" type="button">다크 판타지</button>
-                <button class="style-btn" data-style="pastel" type="button">파스텔 풍</button>
-                <button class="style-btn" data-style="cyberpunk" type="button">사이버펑크</button>
-                <button class="style-btn" data-style="anime" type="button">일본 애니</button>
-            </div>
+    <!-- 공통 스타일 -->
+    <button class="style-btn" data-style="default">기본</button>
+    <button class="style-btn" data-style="darkfantasy">다크 판타지</button>
+    <button class="style-btn" data-style="pastel">파스텔 풍</button>
+    <button class="style-btn" data-style="cyberpunk">사이버펑크</button>
+    <button class="style-btn" data-style="anime">일본 애니</button>
+</div>
             <div class="ai-modal-actions">
-                <button class="ai-action-btn ai-cancel-btn" id="btnAICancel" type="button">취소</button>
-                <button class="ai-action-btn ai-generate-btn" disabled="" id="btnAIGenerate" type="button">생성</button>
+                <button id="btnAICancel">취소</button>
+                <button disabled="" id="btnAIGenerate">생성</button>
             </div>
         </div>
     </div>
