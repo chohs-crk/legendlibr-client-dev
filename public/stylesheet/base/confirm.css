@@ -35,10 +35,9 @@
     display: inline-block;
     padding: 10px 14px;
     border-radius: 10px;
-    /* 변경 */
-    border: 1px solid rgba(152, 0, 255, 0.4);
-    background: rgba(152, 0, 255, 0.05);
-    box-shadow: 0 0 6px rgba(152, 0, 255, 0.15), 0 0 12px rgba(152, 0, 255, 0.1);
+    border: none;
+    background: transparent; /* 또는 유지해도 됨 */
+    box-shadow: none;
 }
 
 

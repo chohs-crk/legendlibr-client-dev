@@ -1,4 +1,5 @@
 import { openWrap } from "/base/common/ui-wrap.js";
+import { apiFetch } from "/base/api.js";
 import {
     apiFetchArcanaCandidates,
     apiFetchArcanaCards,
@@ -190,7 +191,7 @@ function buildReplacePopupHtml(targetCard = {}, equippedCards = []) {
 }
 
 async function apiUpdateArcanaEquip({ charId, cardId, action, replaceCardId = "" }) {
-    return fetch("/api/character/arcana-equip", {
+    return apiFetch("/base/arcana-equip", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

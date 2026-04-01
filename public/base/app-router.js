@@ -18,6 +18,7 @@ export { parseInitialRoute } from "./router/route-config.js";
 
 const PAGE_TRANSITION_MS = 300;
 let isPageTransitioning = false;
+let pendingAppBack = false;
 
 function getAuthState() {
     const user = window.__authUser || null;
@@ -319,10 +320,21 @@ export async function showPage(name, options = {}) {
     } finally {
         window.__stopGlobalLoading?.();
         isPageTransitioning = false;
+
+        if (pendingAppBack) {
+            pendingAppBack = false;
+            queueMicrotask(() => {
+                window.__appBack?.();
+            });
+        }
     }
 }
 
 window.showPage = showPage;
+
+window.__isPageTransitioning = function () {
+    return isPageTransitioning;
+};
 
 /* =======================================
    BROWSER POPSTATE
@@ -348,6 +360,13 @@ window.addEventListener("popstate", () => {
    APP BACK API
 ======================================= */
 window.__appBack = function () {
+    if (isPageTransitioning) {
+        pendingAppBack = true;
+        return;
+    }
+
+    pendingAppBack = false;
+
     const stack = loadStack();
     if (stack.length <= 1) return;
 
