@@ -1,4 +1,4 @@
-﻿import { resolveCharImage } from "/base/common/image-util.js";
+import { resolveCharImage } from "/base/common/image-util.js";
 import { apiFetch } from "/base/api.js";
 
 const MODEL_PRICE_MAP = {
@@ -26,6 +26,7 @@ export async function initCharacterImagePage() {
     const aiPromptCount = document.getElementById("aiPromptCount");
     const btnAICancel = document.getElementById("btnAICancel");
     const btnAIGenerate = document.getElementById("btnAIGenerate");
+    const styleButtons = Array.from(document.querySelectorAll(".style-btn"));
 
     let selectedImage = null;
     let aiImages = [];
@@ -40,7 +41,7 @@ export async function initCharacterImagePage() {
     }
 
     function updatePromptState() {
-        const rawValue = aiPromptInput?.value || "";
+        const rawValue = aiPromptInput.value || "";
         const rawLength = rawValue.length;
         const trimmedLength = rawValue.trim().length;
         const isValid = trimmedLength >= 20 && rawLength <= 1000;
@@ -48,9 +49,11 @@ export async function initCharacterImagePage() {
         if (aiPromptCount) {
             aiPromptCount.textContent = `${rawLength} / 1000`;
             aiPromptCount.classList.toggle("is-valid", isValid);
-            aiPromptCount.classList.toggle("is-invalid", !isValid && rawLength > 0);
+            aiPromptCount.classList.toggle("is-invalid", !isValid);
         }
 
+        aiPromptInput.classList.toggle("is-valid", isValid);
+        aiPromptInput.classList.toggle("is-invalid", !isValid);
         btnAIGenerate.disabled = !isValid;
     }
 
@@ -59,7 +62,7 @@ export async function initCharacterImagePage() {
         updatePromptState();
 
         requestAnimationFrame(() => {
-            aiPromptInput?.focus({ preventScroll: true });
+            aiPromptInput.focus({ preventScroll: true });
         });
     }
 
@@ -209,7 +212,7 @@ export async function initCharacterImagePage() {
 
     // 스타일 버튼
     function setActiveStyleButton(styleKeyOrNull) {
-        document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
+        styleButtons.forEach((b) => b.classList.remove("active"));
 
         const selector = styleKeyOrNull
             ? `.style-btn[data-style="${styleKeyOrNull}"]`
@@ -219,14 +222,10 @@ export async function initCharacterImagePage() {
         if (btn) btn.classList.add("active");
     }
 
-    document.querySelectorAll(".style-btn").forEach((btn) => {
+    styleButtons.forEach((btn) => {
         btn.onclick = () => {
-            document.querySelectorAll(".style-btn").forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-
+            setActiveStyleButton(btn.dataset.style || null);
             selectedStyle = btn.dataset.style || null;
-
-            if (btn.dataset.model) selectedModel = btn.dataset.model;
             updateGenerateButtonPrice();
         };
     });
@@ -235,13 +234,14 @@ export async function initCharacterImagePage() {
     aiSlot.onclick = () => {
         aiPromptInput.value = "";
 
+        aiPromptInput.value = "";
         selectedModel = DEFAULT_AI_MODEL;
-        selectedStyle = selectedModel === "gemini" ? null : "default";
+        selectedStyle = "default";
 
         setActiveModelButton(selectedModel);
         updateGenerateButtonPrice();
         updateStyleVisibilityByModel();
-        setActiveStyleButton(selectedStyle);
+        updatePromptState();
         openAIOverlay();
     };
 
@@ -259,8 +259,14 @@ export async function initCharacterImagePage() {
             btn.classList.add("active");
 
             selectedModel = btn.dataset.model || DEFAULT_AI_MODEL;
-            updateGenerateButtonPrice();
 
+            if (selectedModel === "gemini") {
+                selectedStyle = null;
+            } else if (!selectedStyle) {
+                selectedStyle = "default";
+            }
+
+            updateGenerateButtonPrice();
             updateStyleVisibilityByModel();
         };
     });
@@ -272,6 +278,10 @@ export async function initCharacterImagePage() {
             geminiOnlyBtns.forEach((btn) => {
                 btn.classList.remove("is-hidden");
             });
+
+            if (selectedStyle === null) {
+                setActiveStyleButton(null);
+            }
             return;
         }
 
@@ -281,8 +291,9 @@ export async function initCharacterImagePage() {
 
         if (!selectedStyle) {
             selectedStyle = "default";
-            setActiveStyleButton("default");
         }
+
+        setActiveStyleButton(selectedStyle);
     }
 
     setActiveModelButton(selectedModel);

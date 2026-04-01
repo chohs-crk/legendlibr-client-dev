@@ -4,6 +4,8 @@
  * - 지역 선택/정보/삭제 + 다음/지역추가 버튼 로직
  */
 
+import { openConfirm } from "/base/common/ui-confirm.js";
+
 export function openRegionDetailModal(region, openWrap, extraHtml = "") {
     if (!region || typeof openWrap !== "function") return;
 
@@ -112,46 +114,52 @@ function createRegionRow(r, { ui, openWrap, apiFetch, state, setRegion, clearReg
         openRegionDetailModal(r, openWrap);
     });
 
-    row.querySelector(".region-delete-btn")?.addEventListener("click", async (e) => {
+    row.querySelector(".region-delete-btn")?.addEventListener("click", (e) => {
         e.stopPropagation();
 
-        const ok = confirm(`"${r.name}" 지역을 삭제하시겠습니까?`);
-        if (!ok) return;
+        if (typeof openConfirm !== "function") return;
 
-        let delJson;
-        try {
-            const res = await apiFetch("/base/region-delete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ regionId: r.id }),
-            });
-            delJson = await res.json();
-        } catch (err) {
-            console.error(err);
-            alert("삭제 중 오류가 발생했습니다.");
-            return;
-        }
+        openConfirm(`"${r.name}" 지역을 삭제하시겠습니까?`, {
+            onConfirm: async () => {
+                let delJson;
+                try {
+                    const res = await apiFetch("/base/region-delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ regionId: r.id }),
+                    });
+                    delJson = await res.json();
+                } catch (err) {
+                    console.error(err);
+                    openConfirm("삭제 중 오류가 발생했습니다.");
+                    return;
+                }
 
-        if (!delJson?.ok) {
-            alert(delJson?.error || "삭제 불가");
-            return;
-        }
+                if (!delJson?.ok) {
+                    openConfirm(delJson?.error || "삭제 불가");
+                    return;
+                }
 
-        row.remove();
+                row.remove();
 
-        if (state?.selectedRegion === r.id) {
-            clearRegion?.();
-            ui.nextBtn.disabled = true;
-        }
+                if (state?.selectedRegion === r.id) {
+                    clearRegion?.();
+                    ui.nextBtn.disabled = true;
+                }
 
-        if (typeof ui.__userRegionCount === "number") {
-            ui.__userRegionCount = Math.max(0, ui.__userRegionCount - 1);
-            updateAddButton(ui, ui.__userRegionCount);
-        }
+                if (typeof ui.__userRegionCount === "number") {
+                    ui.__userRegionCount = Math.max(0, ui.__userRegionCount - 1);
+                    updateAddButton(ui, ui.__userRegionCount);
+                }
 
-        if (!ui.regions.querySelector(".region-item")) {
-            renderUnknownRegion(ui.regions);
-        }
+                if (!ui.regions.querySelector(".region-item")) {
+                    renderUnknownRegion(ui.regions);
+                }
+
+                openConfirm("삭제되었습니다.");
+            },
+            onCancel: () => {}
+        });
     });
 
     return row;

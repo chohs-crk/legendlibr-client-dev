@@ -110,7 +110,10 @@
     padding: 16px;
 }
 
-button.arcana-card {
+button.arcana-card,
+button.arcana-card-subbtn,
+button.arcana-candidate-btn,
+button.arcana-replace-btn {
     appearance: none;
     cursor: pointer;
 }
@@ -124,7 +127,8 @@ button.arcana-card {
 }
 
 .arcana-card-name,
-.arcana-candidate-name {
+.arcana-candidate-name,
+.arcana-replace-name {
     color: #fff;
     font-size: 17px;
     font-weight: 800;
@@ -139,7 +143,8 @@ button.arcana-card {
 }
 
 .arcana-card-line,
-.arcana-created-line {
+.arcana-created-line,
+.arcana-replace-line {
     margin-top: 12px;
     color: #f9f3ff;
     font-size: 15px;
@@ -178,14 +183,16 @@ button.arcana-card {
     font-weight: 800;
 }
 
-.arcana-candidate-list {
+.arcana-candidate-list,
+.arcana-replace-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-top: 4px;
 }
 
-.arcana-candidate-btn {
+.arcana-candidate-btn,
+.arcana-replace-btn {
     width: 100%;
     padding: 14px;
     text-align: left;
@@ -194,7 +201,8 @@ button.arcana-card {
     color: #fff;
 }
 
-.arcana-candidate-preview {
+.arcana-candidate-preview,
+.arcana-replace-meta {
     margin-top: 10px;
     color: rgba(255, 255, 255, 0.82);
     font-size: 13px;
@@ -202,7 +210,7 @@ button.arcana-card {
 }
 
 .arcana-card-face {
-    min-height: 220px;
+    min-height: 250px;
     padding: 0;
     overflow: hidden;
     position: relative;
@@ -226,6 +234,76 @@ button.arcana-card {
     align-items: flex-start;
 }
 
+.arcana-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.arcana-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.arcana-badge.is-equipped {
+    border-color: rgba(162, 109, 255, 0.55);
+    background: rgba(98, 55, 150, 0.34);
+    color: #fff;
+}
+
+.arcana-badge.is-unequipped {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.arcana-badge.is-expired {
+    border-color: rgba(255, 164, 120, 0.4);
+    background: rgba(97, 40, 28, 0.4);
+    color: #ffd7ca;
+}
+
+.arcana-badge.is-usable {
+    border-color: rgba(152, 0, 255, 0.28);
+    background: rgba(62, 35, 90, 0.36);
+}
+
+.arcana-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.arcana-card-subbtn {
+    min-height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.arcana-card-subbtn.is-equipped {
+    border-color: rgba(162, 109, 255, 0.55);
+    background: rgba(96, 57, 142, 0.52);
+}
+
+.arcana-card-subbtn.is-disabled,
+.arcana-card-subbtn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
 .arcana-card-winner {
     border: 1px solid rgba(152, 0, 255, 0.34);
     background:
@@ -240,13 +318,15 @@ button.arcana-card {
         linear-gradient(180deg, rgba(47, 21, 28, 0.98), rgba(24, 11, 18, 0.96));
 }
 
-.arcana-candidate-btn.arcana-card-winner {
+.arcana-candidate-btn.arcana-card-winner,
+.arcana-replace-btn.arcana-card-winner {
     background:
         radial-gradient(circle at top, rgba(152, 0, 255, 0.12), transparent 44%),
         linear-gradient(180deg, rgba(28, 18, 47, 0.98), rgba(17, 11, 31, 0.98));
 }
 
-.arcana-candidate-btn.arcana-card-loser {
+.arcana-candidate-btn.arcana-card-loser,
+.arcana-replace-btn.arcana-card-loser {
     background:
         radial-gradient(circle at top, rgba(255, 153, 112, 0.1), transparent 44%),
         linear-gradient(180deg, rgba(48, 21, 31, 0.98), rgba(27, 12, 19, 0.98));
@@ -276,8 +356,11 @@ button.arcana-card {
     .arcana-create-btn {
         width: 100%;
     }
-}
 
+    .arcana-card-actions {
+        grid-template-columns: 1fr;
+    }
+}
 
 .arcana-create-stack {
     display: flex;
