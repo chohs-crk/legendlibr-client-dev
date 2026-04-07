@@ -13,6 +13,49 @@ import { renderStoryPreview, renderSkills } from "./character-view.story.js";
 import { initBattleModule } from "./character-view.battle.js";
 
 const REGION_META_TTL = 1 * 60 * 1000; // 1분
+const ARCANA_MAX_EQUIPPED = 3;
+
+
+function getArcanaMaxEquippedSlots(data = {}) {
+    const raw = Number(data.arcanaMaxEquippedSlots);
+    if (Number.isFinite(raw) && raw > 0) {
+        return Math.floor(raw);
+    }
+    return ARCANA_MAX_EQUIPPED;
+}
+
+function getArcanaEquippedCount(data = {}) {
+    const raw = Number(data.arcanaEquippedCount);
+    if (Number.isFinite(raw) && raw >= 0) {
+        return Math.max(0, Math.floor(raw));
+    }
+    return 0;
+}
+
+function buildArcanaSlotIconHtml(isActive = false) {
+    return `
+        <span class="arcana-slot-icon ${isActive ? "is-active" : ""}" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 1.75C13.19 6.36 16.64 9.81 21.25 11C16.64 12.19 13.19 15.64 12 20.25C10.81 15.64 7.36 12.19 2.75 11C7.36 9.81 10.81 6.36 12 1.75Z"></path>
+            </svg>
+        </span>
+    `;
+}
+
+function buildArcanaIndicatorsHtml(data = {}) {
+    const maxSlots = getArcanaMaxEquippedSlots(data);
+    const equippedCount = Math.min(getArcanaEquippedCount(data), maxSlots);
+
+    return `
+        <div
+            class="arcana-equipped-indicators"
+            role="img"
+            aria-label="장착 아르카나 ${equippedCount}/${maxSlots}"
+        >
+            ${Array.from({ length: maxSlots }, (_, index) => buildArcanaSlotIconHtml(index < equippedCount)).join("")}
+        </div>
+    `;
+}
 
 function applyEloToCharacterCache(charId, delta) {
     if (!charId || !Number.isFinite(delta)) return;
@@ -169,6 +212,7 @@ export function initCharacterViewUI() {
 
         const battleScore = data.battleScore ?? 0;
         const battleCount = data.battleCount ?? 0;
+        const arcanaIndicatorsHtml = buildArcanaIndicatorsHtml(data);
 
         if (introBox) {
             introBox.innerHTML = `
@@ -203,12 +247,15 @@ export function initCharacterViewUI() {
                     </div>
                 </div>
 
-                <div class="info-cell arcana-cell ${data.isMine ? "" : "placeholder"}">
+                <div class="info-cell arcana-cell ${data.isMine ? "is-mine" : "is-readonly"}">
                     ${data.isMine ? `
                         <button class="arcana-entry-btn" id="openArcanaBtn" type="button">
                             아르카나
                         </button>
-                    ` : ""}
+                    ` : `
+                        <div class="arcana-readonly-label">아르카나</div>
+                    `}
+                    ${arcanaIndicatorsHtml}
                 </div>
             </div>
 
@@ -425,9 +472,12 @@ export function initCharacterViewUI() {
         const cachedData = cachedHome.find(c => c.id === id);
         const currentRenderedId = window.__currentCharId;
 
-        if (cachedData && currentRenderedId === id) {
+        if (cachedData) {
             applyCharacterData(cachedData);
-            return;
+            window.__currentCharId = cachedData.id;
+            if (currentRenderedId === id) {
+                return;
+            }
         }
 
         try {

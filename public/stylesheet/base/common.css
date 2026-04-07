@@ -1,4 +1,4 @@
-﻿/* ===============================
+/* ===============================
    THEME VARIABLES (PURE)
 =============================== */
 :root {
@@ -13,6 +13,27 @@
     --shadow: 0 3px 12px rgba(0,0,0,0.35);
     --page-transition-ms: 300ms;
     --page-transition-ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* skeleton palette */
+    --skeleton-surface-1: #1d1f24;
+    --skeleton-surface-2: #15171b;
+    --skeleton-fill-1: #2b2e35;
+    --skeleton-fill-2: #3a3e46;
+    --skeleton-fill-3: #25282f;
+    --skeleton-border: rgba(255, 255, 255, 0.08);
+    --skeleton-border-strong: rgba(255, 255, 255, 0.12);
+    --skeleton-card-bg: linear-gradient(180deg, var(--skeleton-surface-1) 0%, var(--skeleton-surface-2) 100%);
+    --skeleton-block-bg: linear-gradient(90deg, var(--skeleton-fill-1) 25%, var(--skeleton-fill-2) 50%, var(--skeleton-fill-1) 75%);
+    --skeleton-soft-bg: rgba(255, 255, 255, 0.08);
+    --skeleton-soft-bg-strong: rgba(255, 255, 255, 0.12);
+    --skeleton-shimmer-bg: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.04) 44%,
+        rgba(255, 255, 255, 0.10) 50%,
+        rgba(255, 255, 255, 0.04) 56%,
+        rgba(255, 255, 255, 0) 100%
+    );
 }
 
 html {

@@ -122,8 +122,44 @@ button.arcana-replace-btn {
 .arcana-candidate-top {
     display: flex;
     align-items: flex-start;
-    justify-content: flex-start;
+    justify-content: space-between;
     gap: 12px;
+}
+
+
+.arcana-card-state-icon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(221, 208, 255, 0.24);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+}
+
+.arcana-card-state-icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.arcana-card-state-icon path {
+    fill: currentColor;
+    stroke: rgba(237, 234, 255, 0.7);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+}
+
+.arcana-card-state-icon.is-active {
+    color: #f4deff;
+    filter:
+        drop-shadow(0 0 8px rgba(173, 114, 255, 0.6))
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.arcana-card-state-icon.is-active path {
+    stroke: rgba(255, 255, 255, 0.92);
 }
 
 .arcana-card-name,
@@ -333,14 +369,16 @@ button.arcana-replace-btn {
 }
 
 .arcana-card.skeleton {
-    border: 1px solid rgba(152, 0, 255, 0.2);
-    background:
-        linear-gradient(180deg, rgba(26, 16, 44, 0.95), rgba(14, 9, 28, 0.92));
+    border: 1px solid var(--skeleton-border);
+    background: var(--skeleton-card-bg);
 }
 
 .arcana-skeleton-block {
     height: 92px;
     border-radius: 14px;
+    background: var(--skeleton-block-bg);
+    background-size: 200% 100%;
+    animation: skeletonMove 1.2s infinite linear;
 }
 
 .skeleton-line.medium {

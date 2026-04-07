@@ -6,6 +6,7 @@ import {
     apiCreateArcanaCard,
     apiFetchCharacterById
 } from "./character-view.api.js";
+import { upsertMyCharacterCache } from "../home-cache.js";
 
 const ARCANA_MAX_EQUIPPED = 3;
 const ARCANA_DAY_MS = 24 * 60 * 60 * 1000;
@@ -96,9 +97,27 @@ function getEquipButtonLabel(card = {}, equippedCount = 0) {
     return "장착";
 }
 
+
+function buildEquipStateIconHtml(card = {}) {
+    const active = !!card.equipped;
+    const label = active ? "장착 중" : "미장착";
+
+    return `
+        <span
+            class="arcana-card-state-icon ${active ? "is-active" : "is-inactive"}"
+            role="img"
+            aria-label="${label}"
+            title="${label}"
+        >
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 1.75C13.19 6.36 16.64 9.81 21.25 11C16.64 12.19 13.19 15.64 12 20.25C10.81 15.64 7.36 12.19 2.75 11C7.36 9.81 10.81 6.36 12 1.75Z"></path>
+            </svg>
+        </span>
+    `;
+}
+
 function buildCardMetaHtml(card = {}) {
     const badges = [];
-    badges.push(`<span class="arcana-badge ${card.equipped ? "is-equipped" : "is-unequipped"}">${card.equipped ? "장착 중" : "미장착"}</span>`);
     badges.push(`<span class="arcana-badge ${card.expired ? "is-expired" : "is-usable"}">${escapeHtml(formatExpireLabel(card))}</span>`);
     return badges.join("");
 }
@@ -120,6 +139,7 @@ function renderArcanaCards(listEl, cards = []) {
                     <div class="arcana-card-frame">
                         <div class="arcana-card-top arcana-card-top-face">
                             <div class="arcana-card-name">${escapeHtml(card.tarotName || "이름 없는 카드")}</div>
+                            ${buildEquipStateIconHtml(card)}
                         </div>
                         <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
                         <div class="arcana-card-meta">${buildCardMetaHtml(card)}</div>
@@ -205,6 +225,18 @@ async function apiUpdateArcanaEquip({ charId, cardId, action, replaceCardId = ""
     });
 }
 
+
+function syncMyCharacterArcanaCount(character = {}, equippedCount = 0, maxEquippedSlots = ARCANA_MAX_EQUIPPED) {
+    if (!character?.isMine || !character?.id) return;
+
+    upsertMyCharacterCache({
+        ...character,
+        isMine: true,
+        arcanaEquippedCount: Math.max(0, Number(equippedCount) || 0),
+        arcanaMaxEquippedSlots: Math.max(1, Number(maxEquippedSlots) || ARCANA_MAX_EQUIPPED)
+    });
+}
+
 export async function initCharacterArcanaPage() {
     const charId = getCurrentCharId();
     const titleEl = document.getElementById("arcanaTitle");
@@ -217,6 +249,7 @@ export async function initCharacterArcanaPage() {
     let currentIsMine = false;
     let availabilityTimer = null;
     let latestCards = [];
+    let latestCharacterHead = null;
 
     function stopAvailabilityTimer() {
         if (!availabilityTimer) return;
@@ -282,7 +315,15 @@ export async function initCharacterArcanaPage() {
             const res = await apiFetchCharacterById(charId);
             if (!res.ok) return;
             const data = await res.json();
+            latestCharacterHead = data;
             currentIsMine = !!data.isMine;
+            if (data.isMine) {
+                syncMyCharacterArcanaCount(
+                    data,
+                    Number(data.arcanaEquippedCount) || 0,
+                    Number(data.arcanaMaxEquippedSlots) || ARCANA_MAX_EQUIPPED
+                );
+            }
             if (titleEl) {
                 titleEl.textContent = `${data.displayRawName || "캐릭터"}의 아르카나`;
             }
@@ -321,11 +362,19 @@ export async function initCharacterArcanaPage() {
             const cards = Array.isArray(json.cards) ? json.cards : [];
             latestCards = cards;
 
-            const equippedCount = cards.filter((card) => card.equipped).length;
+            const equippedCount = Number(json.equippedCount);
+            const safeEquippedCount = Number.isFinite(equippedCount)
+                ? Math.max(0, Math.floor(equippedCount))
+                : cards.filter((card) => card.equipped).length;
+            const maxEquippedSlots = Number(json.maxEquippedSlots) || ARCANA_MAX_EQUIPPED;
             const expiredEquippedCount = cards.filter((card) => card.equipped && card.expired).length;
 
+            if (latestCharacterHead?.isMine) {
+                syncMyCharacterArcanaCount(latestCharacterHead, safeEquippedCount, maxEquippedSlots);
+            }
+
             if (countEl) {
-                countEl.textContent = `${cards.length}장 · ${equippedCount}/${ARCANA_MAX_EQUIPPED} 장착${expiredEquippedCount ? ` · 사용 불가 ${expiredEquippedCount}` : ""}`;
+                countEl.textContent = `${cards.length}장 · ${safeEquippedCount}/${maxEquippedSlots} 장착${expiredEquippedCount ? ` · 사용 불가 ${expiredEquippedCount}` : ""}`;
             }
 
             renderArcanaCards(listEl, cards);

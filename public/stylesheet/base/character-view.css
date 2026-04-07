@@ -1,4 +1,4 @@
-﻿/* ===============================
+/* ===============================
    INFO / INTRO
 =============================== */
 .info-box {
@@ -596,7 +596,7 @@
 
 .skeleton-line {
     height: 14px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     border-radius: 6px;
     animation: skeletonMove 1.2s infinite linear;
@@ -611,7 +611,7 @@
     height: 16px;
     margin-bottom: 10px;
     border-radius: 6px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: skeletonMove 1.2s infinite linear;
 }
@@ -636,9 +636,17 @@
     position: relative;
     border-radius: 16px;
     overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.battle-empty-card {
     background: rgba(0,0,0,0.55);
     border: 2px solid rgba(143,75,255,0.55);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.battle-skeleton-item {
+    background: var(--skeleton-card-bg);
+    border: 1px solid var(--skeleton-border-strong);
 }
 
 .battle-empty-card {
@@ -666,7 +674,7 @@
 .battle-skeleton-thumb {
     width: 100%;
     aspect-ratio: 16 / 7;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: skeletonMove 1.2s infinite linear;
 }
@@ -689,7 +697,7 @@
 .battle-skeleton-date,
 .battle-skeleton-line {
     border-radius: 6px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: skeletonMove 1.2s infinite linear;
 }
@@ -734,3 +742,76 @@
     .battle-skeleton-line.w-55 {
         width: 55%;
     }
+
+
+/* ===============================
+   ARCANA EQUIPPED INDICATORS
+=============================== */
+.arcana-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 84px;
+}
+
+.arcana-cell.is-mine .arcana-entry-btn {
+    width: 100%;
+}
+
+.arcana-readonly-label {
+    color: #9A96B8;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.arcana-equipped-indicators {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 20px;
+}
+
+.arcana-slot-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(221, 208, 255, 0.24);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+    transition: transform 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+
+.arcana-slot-icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.arcana-slot-icon path {
+    fill: currentColor;
+    stroke: rgba(237, 234, 255, 0.7);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+}
+
+.arcana-slot-icon.is-active {
+    color: #f4deff;
+    filter:
+        drop-shadow(0 0 6px rgba(173, 114, 255, 0.58))
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+    transform: translateY(-1px);
+}
+
+.arcana-slot-icon.is-active path {
+    stroke: rgba(255, 255, 255, 0.92);
+}
+
+.arcana-cell.is-readonly {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}

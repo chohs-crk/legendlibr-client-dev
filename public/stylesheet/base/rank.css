@@ -1,4 +1,4 @@
-﻿/* ===============================
+/* ===============================
    RANKING LIST
 =============================== */
 
@@ -138,13 +138,13 @@
 .rank-skeleton-shimmer {
     position: absolute;
     inset: 0;
-    background: linear-gradient( 90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 44%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.05) 56%, rgba(255, 255, 255, 0) 100% );
+    background: var(--skeleton-shimmer-bg);
     transform: translateX(-100%);
     animation: rankSkeletonMove 1.25s linear infinite;
 }
 
 .rank-card.top-rank.rank-skeleton {
-    background: linear-gradient(180deg, #1a1a22 0%, #14141b 100%);
+    background: var(--skeleton-card-bg);
 }
 
 .rank-top-skeleton-overlay {
@@ -160,7 +160,7 @@
     width: 18px;
     height: 22px;
     border-radius: 8px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
@@ -175,7 +175,7 @@
     width: 46%;
     height: 18px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
@@ -184,20 +184,20 @@
     width: 24%;
     height: 14px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2a2412 25%, #473d1b 50%, #2a2412 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
 
 .rank-row.normal-rank.rank-skeleton {
-    background: linear-gradient(180deg, #1a1a22 0%, #14141b 100%);
+    background: var(--skeleton-card-bg);
 }
 
 .rank-row-normal-skeleton-num {
     width: 16px;
     height: 16px;
     border-radius: 6px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
@@ -207,7 +207,7 @@
     width: 72%;
     height: 15px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
@@ -217,7 +217,7 @@
     width: 46px;
     height: 14px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2a2412 25%, #473d1b 50%, #2a2412 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: rankSkeletonPulse 1.2s linear infinite;
 }
@@ -327,6 +327,6 @@
     height: 53px;
     aspect-ratio: 3 / 2;
     border-radius: 10px;
-    background: linear-gradient(180deg, #222231 0%, #191925 100%);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--skeleton-card-bg);
+    border: 1px solid var(--skeleton-border);
 }

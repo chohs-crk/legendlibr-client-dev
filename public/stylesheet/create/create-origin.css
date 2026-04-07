@@ -374,7 +374,7 @@ body.dialog-open .app .scroll-area {
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient( 90deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.08) 18%, rgba(255, 255, 255, 0.18) 32%, rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0.02) 100% );
+        background: var(--skeleton-shimmer-bg);
         transform: translateX(-100%);
         animation: originSkeletonShimmer 1.15s ease-in-out infinite;
     }
@@ -382,7 +382,7 @@ body.dialog-open .app .scroll-area {
 .origin-skeleton-line {
     height: 14px;
     border-radius: 999px;
-    background: rgba(243, 226, 254, 0.12);
+    background: var(--skeleton-soft-bg-strong);
 }
 
     .origin-skeleton-line.single {
@@ -392,16 +392,16 @@ body.dialog-open .app .scroll-area {
 .region-skeleton-item {
     height: 56px;
     border-radius: 12px;
-    background: rgba(243, 226, 254, 0.1);
-    border: 1px solid rgba(190, 170, 255, 0.1);
+    background: var(--skeleton-soft-bg);
+    border: 1px solid var(--skeleton-border);
     margin-bottom: 0;
 }
 
 .origin-actions .btn.is-skeleton {
     position: relative;
     color: transparent !important;
-    border-color: rgba(190, 170, 255, 0.1);
-    background: rgba(243, 226, 254, 0.1) !important;
+    border-color: var(--skeleton-border);
+    background: var(--skeleton-soft-bg) !important;
     box-shadow: none !important;
     overflow: hidden;
     pointer-events: none;
@@ -411,7 +411,7 @@ body.dialog-open .app .scroll-area {
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(243, 226, 254, 0.08);
+        background: rgba(255, 255, 255, 0.05);
     }
 
 @keyframes originSkeletonShimmer {

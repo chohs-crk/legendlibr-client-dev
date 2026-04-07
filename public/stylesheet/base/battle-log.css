@@ -51,7 +51,7 @@
     padding: 20px;
     border-radius: 16px;
     border: 1px solid #523369;
-    background: linear-gradient(145deg, #1a1024, #140c1d);
+    background: var(--skeleton-card-bg);
     text-align: center;
     cursor: pointer;
     transition: 0.2s ease;
@@ -195,9 +195,9 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(circle at 20% 20%, rgba(152, 0, 255, 0.18), transparent 34%),
-        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05), transparent 26%),
-        linear-gradient(145deg, rgba(43, 18, 64, 0.92), rgba(17, 11, 25, 0.98));
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 34%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.04), transparent 26%),
+        linear-gradient(145deg, var(--skeleton-surface-1), var(--skeleton-surface-2));
 }
 
 .battle-image-slot__skeleton::after {
@@ -207,9 +207,9 @@
     background: linear-gradient(
         105deg,
         transparent 24%,
-        rgba(255, 255, 255, 0.07) 42%,
-        rgba(255, 255, 255, 0.14) 50%,
-        rgba(255, 255, 255, 0.07) 58%,
+        rgba(255, 255, 255, 0.04) 42%,
+        rgba(255, 255, 255, 0.10) 50%,
+        rgba(255, 255, 255, 0.04) 58%,
         transparent 76%
     );
     transform: translateX(-120%);
@@ -230,7 +230,7 @@
     inset: 16px;
     border-radius: 18px;
     background:
-        radial-gradient(circle at 30% 30%, rgba(152, 0, 255, 0.14), transparent 26%),
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.05), transparent 26%),
         radial-gradient(circle at 70% 68%, rgba(255, 255, 255, 0.04), transparent 20%);
 }
 
@@ -285,7 +285,7 @@
     height: 34%;
     border-radius: 999px;
     transform: rotate(22deg);
-    background: rgba(152, 0, 255, 0.18);
+    background: rgba(255, 255, 255, 0.10);
 }
 
 .battle-image-slot__preview-caption {
@@ -450,8 +450,8 @@
     width: 150px;
     padding: 20px;
     border-radius: 16px;
-    border: 1px solid rgba(82, 51, 105, 0.6);
-    background: linear-gradient(145deg, #1a1024, #140c1d);
+    border: 1px solid var(--skeleton-border-strong);
+    background: var(--skeleton-card-bg);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -469,7 +469,7 @@
     aspect-ratio: 16 / 10;
     margin: 0 auto;
     border-radius: 18px;
-    border: 1px solid rgba(152, 0, 255, 0.2);
+    border: 1px solid var(--skeleton-border);
 }
 
 .battle-log-loading__body {
@@ -508,7 +508,7 @@
 .battle-log-loading__shimmer {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(145deg, rgba(53, 29, 72, 0.94), rgba(20, 12, 31, 0.98));
+    background: var(--skeleton-block-bg);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
@@ -519,9 +519,9 @@
     background: linear-gradient(
         105deg,
         transparent 24%,
-        rgba(255, 255, 255, 0.06) 42%,
-        rgba(255, 255, 255, 0.13) 50%,
-        rgba(255, 255, 255, 0.06) 58%,
+        rgba(255, 255, 255, 0.04) 42%,
+        rgba(255, 255, 255, 0.10) 50%,
+        rgba(255, 255, 255, 0.04) 58%,
         transparent 76%
     );
     transform: translateX(-120%);

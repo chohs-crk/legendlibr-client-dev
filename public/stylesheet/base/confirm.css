@@ -81,14 +81,21 @@
         .ui-confirm-actions button:last-child {
             grid-column: 4;
         }
-.app.confirm-open #chrome-root,
 .app.confirm-open #pages-root {
     filter: blur(4px) saturate(0.92);
     opacity: 0.92;
     transition: filter 0.18s ease, opacity 0.18s ease;
 }
 
-#chrome-root,
+.app.confirm-open #chrome-root {
+    opacity: 0.92;
+    transition: opacity 0.18s ease;
+}
+
 #pages-root {
     transition: filter 0.18s ease, opacity 0.18s ease;
+}
+
+#chrome-root {
+    transition: opacity 0.18s ease;
 }

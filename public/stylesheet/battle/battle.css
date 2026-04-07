@@ -256,7 +256,7 @@
     height: 56px;
     border-radius: 14px;
     flex: 0 0 auto;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: battleSkeletonMove 1.2s infinite linear;
 }
@@ -264,7 +264,7 @@
 #battlePrepRoot .battle-skeleton-line {
     height: 12px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
     animation: battleSkeletonMove 1.2s infinite linear;
 }
@@ -288,9 +288,9 @@
     min-width: 64px;
     min-height: 28px;
     cursor: default;
-    background: linear-gradient(90deg, #1c1a2a 25%, #2a263d 50%, #1c1a2a 75%);
+    background: var(--skeleton-block-bg);
     background-size: 200% 100%;
-    border-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--skeleton-border);
     animation: battleSkeletonMove 1.2s infinite linear;
 }
 
