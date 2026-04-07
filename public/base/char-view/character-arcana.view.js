@@ -1,4 +1,5 @@
 import { openWrap } from "/base/common/ui-wrap.js";
+import { bindTimedInfoTip } from "/base/common/timed-info-tip.js";
 import { apiFetch } from "/base/api.js";
 import {
     apiFetchArcanaCandidates,
@@ -10,6 +11,8 @@ import { upsertMyCharacterCache } from "../home-cache.js";
 
 const ARCANA_MAX_EQUIPPED = 3;
 const ARCANA_DAY_MS = 24 * 60 * 60 * 1000;
+const ARCANA_INFO_MESSAGE = "최대 3장 장착, 생성된 지 30일이 지나면 사용 불가";
+const ARCANA_STAR_PATH = "M12 1.75C13.19 6.36 16.64 9.81 21.25 11C16.64 12.19 13.19 15.64 12 20.25C10.81 15.64 7.36 12.19 2.75 11C7.36 9.81 10.81 6.36 12 1.75Z";
 
 function getCurrentCharId() {
     return (
@@ -31,7 +34,7 @@ function escapeHtml(value = "") {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
 
@@ -52,6 +55,10 @@ function renderArcanaSkeleton(listEl, count = 6) {
             ${Array.from({ length: count }).map(() => `
                 <div class="arcana-card arcana-card-face skeleton" aria-hidden="true">
                     <div class="arcana-card-frame">
+                        <div class="arcana-skeleton-top">
+                            <div class="skeleton-pill"></div>
+                            <div class="skeleton-star"></div>
+                        </div>
                         <div class="skeleton-line short"></div>
                         <div class="skeleton-block arcana-skeleton-block"></div>
                         <div class="skeleton-line"></div>
@@ -83,43 +90,50 @@ function formatExpireLabel(card = {}) {
     return `D-${remainDays}`;
 }
 
-function getAvailabilityMessage(reason = "") {
-    if (reason === "ALREADY_CREATED") return "오늘은 생성 불가";
-    if (reason === "INSUFFICIENT_BATTLE_POOL") return "후보가 3개 미만이라 생성 불가";
-    if (reason === "ALREADY_USED_OR_INSUFFICIENT") return "남은 후보가 3개 미만이라 생성 불가";
-    return "오늘은 생성 불가";
-}
-
-function getEquipButtonLabel(card = {}, equippedCount = 0) {
-    if (card.equipped) return "빼기";
+function getEquipButtonLabel(card = {}) {
+    if (card.equipped) return "해제";
     if (card.expired) return "사용 불가";
-    if (equippedCount >= ARCANA_MAX_EQUIPPED) return "교체";
     return "장착";
 }
 
-
-function buildEquipStateIconHtml(card = {}) {
-    const active = !!card.equipped;
-    const label = active ? "장착 중" : "미장착";
+function buildSparkIconHtml({ active = false, className = "" } = {}) {
+    const classes = [
+        "arcana-card-state-icon",
+        active ? "is-active" : "is-inactive",
+        className
+    ].filter(Boolean).join(" ");
 
     return `
-        <span
-            class="arcana-card-state-icon ${active ? "is-active" : "is-inactive"}"
-            role="img"
-            aria-label="${label}"
-            title="${label}"
-        >
+        <span class="${classes}" role="img" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-                <path d="M12 1.75C13.19 6.36 16.64 9.81 21.25 11C16.64 12.19 13.19 15.64 12 20.25C10.81 15.64 7.36 12.19 2.75 11C7.36 9.81 10.81 6.36 12 1.75Z"></path>
+                <path d="${ARCANA_STAR_PATH}"></path>
             </svg>
         </span>
     `;
 }
 
+function buildEquippedStarsHtml(equippedCount = 0, maxEquippedSlots = ARCANA_MAX_EQUIPPED) {
+    const safeCount = Math.max(0, Math.min(Number(equippedCount) || 0, maxEquippedSlots));
+    return `
+        <div class="arcana-equipped-row-stars" aria-label="장착 ${safeCount}/${maxEquippedSlots}">
+            ${Array.from({ length: maxEquippedSlots }).map((_, index) => `
+                <span class="arcana-equipped-star ${index < safeCount ? "is-active" : "is-inactive"}" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path d="${ARCANA_STAR_PATH}"></path>
+                    </svg>
+                </span>
+            `).join("")}
+        </div>
+    `;
+}
+
 function buildCardMetaHtml(card = {}) {
-    const badges = [];
-    badges.push(`<span class="arcana-badge ${card.expired ? "is-expired" : "is-usable"}">${escapeHtml(formatExpireLabel(card))}</span>`);
-    return badges.join("");
+    return `
+        <div class="arcana-card-topline">
+            <div class="arcana-badge ${card.expired ? "is-expired" : "is-usable"}">${escapeHtml(formatExpireLabel(card))}</div>
+            ${buildSparkIconHtml({ active: !!card.equipped })}
+        </div>
+    `;
 }
 
 function renderArcanaCards(listEl, cards = []) {
@@ -130,36 +144,36 @@ function renderArcanaCards(listEl, cards = []) {
         return;
     }
 
-    const equippedCount = cards.filter((card) => card.equipped).length;
-
     listEl.innerHTML = `
         <div class="arcana-list arcana-list-grid">
-            ${cards.map((card) => `
-                <div class="arcana-card arcana-card-face arcana-card-${card.resultType === "loser" ? "loser" : "winner"}">
-                    <div class="arcana-card-frame">
-                        <div class="arcana-card-top arcana-card-top-face">
+            ${cards.map((card) => {
+                const battleId = escapeHtml(card.battleId || "");
+                const canNavigate = !!card.battleId;
+
+                return `
+                    <div
+                        class="arcana-card arcana-card-face arcana-card-${card.resultType === "loser" ? "loser" : "winner"} ${canNavigate ? "is-battle-link" : ""}"
+                        ${canNavigate ? `data-battle-id="${battleId}" tabindex="0" role="button" aria-label="${escapeHtml((card.tarotName || "이름 없는 카드"))} 전투로 이동"` : ""}
+                    >
+                        <div class="arcana-card-frame">
+                            ${buildCardMetaHtml(card)}
                             <div class="arcana-card-name">${escapeHtml(card.tarotName || "이름 없는 카드")}</div>
-                            ${buildEquipStateIconHtml(card)}
-                        </div>
-                        <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
-                        <div class="arcana-card-meta">${buildCardMetaHtml(card)}</div>
-                        <div class="arcana-card-actions">
-                            <button class="arcana-card-subbtn arcana-card-preview-btn" type="button" data-battle-id="${escapeHtml(card.battleId || "")}" ${card.battleId ? "" : "disabled"}>
-                                전투 보기
-                            </button>
-                            <button
-                                class="arcana-card-subbtn arcana-card-equip-btn ${card.equipped ? "is-equipped" : ""} ${card.expired && !card.equipped ? "is-disabled" : ""}"
-                                type="button"
-                                data-card-id="${escapeHtml(card.id || "")}" 
-                                data-card-name="${escapeHtml(card.tarotName || "")}" 
-                                ${card.expired && !card.equipped ? "disabled" : ""}
-                            >
-                                ${escapeHtml(getEquipButtonLabel(card, equippedCount))}
-                            </button>
+                            <div class="arcana-card-line">${escapeHtml(card.line || "해석 없음")}</div>
+                            <div class="arcana-card-actions">
+                                <button
+                                    class="arcana-card-subbtn arcana-card-equip-btn ${card.equipped ? "is-equipped" : ""} ${card.expired && !card.equipped ? "is-disabled" : ""}"
+                                    type="button"
+                                    data-card-id="${escapeHtml(card.id || "")}" 
+                                    data-card-name="${escapeHtml(card.tarotName || "")}" 
+                                    ${card.expired && !card.equipped ? "disabled" : ""}
+                                >
+                                    ${escapeHtml(getEquipButtonLabel(card))}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join("")}
+                `;
+            }).join("")}
         </div>
     `;
 }
@@ -177,14 +191,13 @@ function buildCandidatePopupHtml(candidates = []) {
     return `
         <div class="arcana-popup">
             <h3>오늘의 아르카나 후보</h3>
-            <div class="arcana-popup-sub">세 가지 계시 중 하나를 선택해 카드로 새기세요.</div>
+            <div class="arcana-popup-sub">세 장 중 하나를 골라 카드로 새기세요.</div>
             <div class="arcana-candidate-list">
                 ${candidates.map((candidate) => `
                     <button class="arcana-candidate-btn arcana-card-${candidate.resultType === "loser" ? "loser" : "winner"}" type="button" data-pool-id="${escapeHtml(candidate.poolId)}">
                         <div class="arcana-candidate-top">
                             <div class="arcana-candidate-name">${escapeHtml(candidate.tarotName || "이름 없는 계시")}</div>
                         </div>
-                        <div class="arcana-candidate-preview">${escapeHtml(candidate.previewText || "전투의 여운이 아직 뜨겁게 남아 있습니다.")}</div>
                     </button>
                 `).join("")}
             </div>
@@ -225,7 +238,6 @@ async function apiUpdateArcanaEquip({ charId, cardId, action, replaceCardId = ""
     });
 }
 
-
 function syncMyCharacterArcanaCount(character = {}, equippedCount = 0, maxEquippedSlots = ARCANA_MAX_EQUIPPED) {
     if (!character?.isMine || !character?.id) return;
 
@@ -237,11 +249,69 @@ function syncMyCharacterArcanaCount(character = {}, equippedCount = 0, maxEquipp
     });
 }
 
+function ensureSummaryInfoUi({ countEl, isMine }) {
+    const summaryBox = countEl?.closest(".arcana-summary-box");
+    if (!summaryBox) return { infoButton: null, equippedRow: null };
+
+    summaryBox.classList.add("is-enhanced");
+
+    let labelEl = summaryBox.querySelector(".arcana-summary-label");
+    if (!labelEl) {
+        labelEl = document.createElement("div");
+        labelEl.className = "arcana-summary-label";
+        labelEl.textContent = "보유 카드";
+        summaryBox.prepend(labelEl);
+    }
+    labelEl.textContent = "보유 카드";
+
+    let labelRow = summaryBox.querySelector(".arcana-summary-label-row");
+    if (!labelRow) {
+        labelRow = document.createElement("div");
+        labelRow.className = "arcana-summary-label-row";
+        summaryBox.insertBefore(labelRow, labelEl);
+        labelRow.appendChild(labelEl);
+    } else if (!labelRow.contains(labelEl)) {
+        labelRow.prepend(labelEl);
+    }
+
+    let infoButton = summaryBox.querySelector(".arcana-info-btn");
+    if (!infoButton) {
+        infoButton = document.createElement("button");
+        infoButton.type = "button";
+        infoButton.className = "arcana-info-btn";
+        infoButton.setAttribute("aria-label", ARCANA_INFO_MESSAGE);
+        infoButton.textContent = "i";
+        labelRow.appendChild(infoButton);
+    }
+
+    let equippedRow = summaryBox.querySelector(".arcana-equipped-row");
+    if (!equippedRow) {
+        equippedRow = document.createElement("div");
+        equippedRow.className = "arcana-equipped-row";
+        summaryBox.appendChild(equippedRow);
+    }
+
+    infoButton.hidden = !isMine;
+    return { infoButton, equippedRow };
+}
+
+function updateSummaryUi({ countEl, equippedCount, maxEquippedSlots, cardsLength, isMine }) {
+    if (countEl) {
+        countEl.textContent = `${cardsLength}장`;
+    }
+
+    const { equippedRow } = ensureSummaryInfoUi({ countEl, isMine });
+    if (equippedRow) {
+        equippedRow.innerHTML = isMine ? buildEquippedStarsHtml(equippedCount, maxEquippedSlots) : "";
+        equippedRow.classList.toggle("is-hidden", !isMine);
+    }
+}
+
 export async function initCharacterArcanaPage() {
     const charId = getCurrentCharId();
     const titleEl = document.getElementById("arcanaTitle");
     const descEl = document.getElementById("arcanaDesc");
-    const countEl = document.getElementById("arcanaCount");
+    let countEl = document.getElementById("arcanaCount");
     const createBtn = document.getElementById("arcanaCreateBtn");
     const createStatusEl = document.getElementById("arcanaCreateStatus");
     const listEl = document.getElementById("arcanaList");
@@ -250,11 +320,25 @@ export async function initCharacterArcanaPage() {
     let availabilityTimer = null;
     let latestCards = [];
     let latestCharacterHead = null;
+    let unbindInfoTip = null;
 
     function stopAvailabilityTimer() {
         if (!availabilityTimer) return;
         clearInterval(availabilityTimer);
         availabilityTimer = null;
+    }
+
+    function bindInfoButton() {
+        const { infoButton } = ensureSummaryInfoUi({ countEl, isMine: currentIsMine });
+        if (unbindInfoTip) {
+            unbindInfoTip();
+            unbindInfoTip = null;
+        }
+        if (infoButton && currentIsMine) {
+            unbindInfoTip = bindTimedInfoTip(infoButton, ARCANA_INFO_MESSAGE, {
+                duration: 2000
+            });
+        }
     }
 
     function applyCreateAvailability(availability = null) {
@@ -265,43 +349,55 @@ export async function initCharacterArcanaPage() {
 
         if (createBtn) {
             createBtn.disabled = !currentIsMine || unavailable;
-            createBtn.textContent = unavailable ? "불가" : "생성";
+            createBtn.textContent = "생성";
             createBtn.classList.toggle("is-unavailable", !!unavailable);
         }
 
         if (!createStatusEl) return;
-        if (!currentIsMine) {
-            createStatusEl.textContent = "";
-            return;
-        }
-        if (!unavailable) {
+        if (!currentIsMine || !unavailable || nextResetAtMs <= 0) {
             createStatusEl.textContent = "";
             return;
         }
 
         const render = () => {
             const remainMs = Math.max(0, nextResetAtMs - Date.now());
-            createStatusEl.textContent = `${getAvailabilityMessage(availability?.reason)} · ${formatRemainingMs(remainMs)}`;
+            createStatusEl.textContent = formatRemainingMs(remainMs);
         };
 
         render();
         availabilityTimer = window.setInterval(render, 1000);
     }
 
+    function navigateToBattle(battleId = "") {
+        if (!battleId) return;
+        showPage("battle-log", {
+            type: "push",
+            battleId
+        });
+    }
+
     function bindCardEvents() {
-        listEl?.querySelectorAll(".arcana-card-preview-btn[data-battle-id]").forEach((el) => {
-            const battleId = el.getAttribute("data-battle-id") || "";
+        listEl?.querySelectorAll(".arcana-card[data-battle-id]").forEach((cardEl) => {
+            const battleId = cardEl.getAttribute("data-battle-id") || "";
             if (!battleId) return;
-            el.addEventListener("click", () => {
-                showPage("battle-log", {
-                    type: "push",
-                    battleId
-                });
+
+            cardEl.addEventListener("click", (event) => {
+                if (event.target.closest(".arcana-card-equip-btn")) return;
+                navigateToBattle(battleId);
+            });
+
+            cardEl.addEventListener("keydown", (event) => {
+                if (event.target.closest(".arcana-card-equip-btn")) return;
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                navigateToBattle(battleId);
             });
         });
 
         listEl?.querySelectorAll(".arcana-card-equip-btn[data-card-id]").forEach((el) => {
-            el.addEventListener("click", async () => {
+            el.addEventListener("click", async (event) => {
+                event.stopPropagation();
+
                 const cardId = el.getAttribute("data-card-id") || "";
                 const card = latestCards.find((item) => item.id === cardId);
                 if (!card) return;
@@ -329,12 +425,22 @@ export async function initCharacterArcanaPage() {
             }
             if (descEl) {
                 descEl.textContent = data.isMine
-                    ? "최대 3장 장착 · 생성된 지 30일이 지나면 사용 불가"
+                    ? ""
                     : "이 아르카나는 현재 소유자만 확인할 수 있습니다.";
+                descEl.classList.toggle("is-empty", data.isMine);
             }
             if (createBtn) {
                 createBtn.disabled = !data.isMine;
             }
+
+            bindInfoButton();
+            updateSummaryUi({
+                countEl,
+                equippedCount: Number(data.arcanaEquippedCount) || 0,
+                maxEquippedSlots: Number(data.arcanaMaxEquippedSlots) || ARCANA_MAX_EQUIPPED,
+                cardsLength: latestCards.length,
+                isMine: currentIsMine
+            });
         } catch (err) {
             console.error(err);
         }
@@ -353,8 +459,14 @@ export async function initCharacterArcanaPage() {
                 } else {
                     renderArcanaEmptyState(listEl, "아르카나 목록을 불러오지 못했습니다.");
                 }
-                if (countEl) countEl.textContent = "0장";
                 latestCards = [];
+                updateSummaryUi({
+                    countEl,
+                    equippedCount: 0,
+                    maxEquippedSlots: ARCANA_MAX_EQUIPPED,
+                    cardsLength: 0,
+                    isMine: currentIsMine
+                });
                 return;
             }
 
@@ -367,22 +479,31 @@ export async function initCharacterArcanaPage() {
                 ? Math.max(0, Math.floor(equippedCount))
                 : cards.filter((card) => card.equipped).length;
             const maxEquippedSlots = Number(json.maxEquippedSlots) || ARCANA_MAX_EQUIPPED;
-            const expiredEquippedCount = cards.filter((card) => card.equipped && card.expired).length;
 
             if (latestCharacterHead?.isMine) {
                 syncMyCharacterArcanaCount(latestCharacterHead, safeEquippedCount, maxEquippedSlots);
             }
 
-            if (countEl) {
-                countEl.textContent = `${cards.length}장 · ${safeEquippedCount}/${maxEquippedSlots} 장착${expiredEquippedCount ? ` · 사용 불가 ${expiredEquippedCount}` : ""}`;
-            }
+            updateSummaryUi({
+                countEl,
+                equippedCount: safeEquippedCount,
+                maxEquippedSlots,
+                cardsLength: cards.length,
+                isMine: currentIsMine
+            });
 
             renderArcanaCards(listEl, cards);
             bindCardEvents();
         } catch (err) {
             console.error(err);
             latestCards = [];
-            if (countEl) countEl.textContent = "0장";
+            updateSummaryUi({
+                countEl,
+                equippedCount: 0,
+                maxEquippedSlots: ARCANA_MAX_EQUIPPED,
+                cardsLength: 0,
+                isMine: currentIsMine
+            });
             renderArcanaEmptyState(listEl, "아르카나 목록을 불러오지 못했습니다.");
         }
     }
@@ -557,13 +678,24 @@ export async function initCharacterArcanaPage() {
 
     sessionStorage.setItem("viewCharId", charId);
 
+    ensureSummaryInfoUi({ countEl, isMine: false });
+
     if (titleEl) titleEl.textContent = "아르카나";
-    if (descEl) descEl.textContent = "전투의 여운을 카드로 새기는 중입니다.";
+    if (descEl) {
+        descEl.textContent = "전투의 여운을 카드로 새기는 중입니다.";
+        descEl.classList.remove("is-empty");
+    }
     if (countEl) countEl.textContent = "...";
     renderArcanaSkeleton(listEl, 6);
 
     createBtn?.addEventListener("click", openCreatePopup);
-    window.addEventListener("pagehide", stopAvailabilityTimer, { once: true });
+    window.addEventListener("pagehide", () => {
+        stopAvailabilityTimer();
+        if (unbindInfoTip) {
+            unbindInfoTip();
+            unbindInfoTip = null;
+        }
+    }, { once: true });
 
     await refreshCharacterHead();
     await refreshCards();

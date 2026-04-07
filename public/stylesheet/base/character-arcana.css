@@ -56,6 +56,10 @@
     line-height: 1.55;
 }
 
+.arcana-desc.is-empty {
+    display: none;
+}
+
 .arcana-create-btn {
     flex: 0 0 auto;
     min-width: 84px;
@@ -73,22 +77,103 @@
 }
 
 .arcana-summary-box {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    gap: 10px 12px;
     padding: 14px 16px;
 }
 
+.arcana-summary-box.is-enhanced {
+    align-items: start;
+}
+
+.arcana-summary-label-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
 .arcana-summary-label {
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 13px;
+    font-weight: 700;
+    min-width: 0;
 }
 
 .arcana-summary-value {
     color: #ffffff;
     font-size: 18px;
     font-weight: 800;
+    justify-self: end;
+}
+
+.arcana-info-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(183, 142, 255, 0.46);
+    background: rgba(96, 62, 138, 0.34);
+    color: #f6edff;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 22px;
+}
+
+.arcana-equipped-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    min-height: 22px;
+}
+
+.arcana-equipped-row.is-hidden {
+    display: none;
+}
+
+.arcana-equipped-row-stars {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.arcana-equipped-star {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(221, 208, 255, 0.24);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+}
+
+.arcana-equipped-star svg {
+    width: 100%;
+    height: 100%;
+}
+
+.arcana-equipped-star path {
+    fill: currentColor;
+    stroke: rgba(237, 234, 255, 0.7);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+}
+
+.arcana-equipped-star.is-active {
+    color: #f4deff;
+    filter:
+        drop-shadow(0 0 8px rgba(173, 114, 255, 0.6))
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.arcana-equipped-star.is-active path {
+    stroke: rgba(255, 255, 255, 0.92);
 }
 
 .arcana-list {
@@ -99,7 +184,7 @@
 
 .arcana-list-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
     gap: 14px;
 }
 
@@ -125,7 +210,6 @@ button.arcana-replace-btn {
     justify-content: space-between;
     gap: 12px;
 }
-
 
 .arcana-card-state-icon {
     width: 22px;
@@ -181,7 +265,7 @@ button.arcana-replace-btn {
 .arcana-card-line,
 .arcana-created-line,
 .arcana-replace-line {
-    margin-top: 12px;
+    margin-top: 10px;
     color: #f9f3ff;
     font-size: 15px;
     line-height: 1.7;
@@ -237,7 +321,21 @@ button.arcana-replace-btn {
     color: #fff;
 }
 
-.arcana-candidate-preview,
+.arcana-candidate-btn {
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+}
+
+.arcana-candidate-top {
+    width: 100%;
+    align-items: center;
+}
+
+.arcana-candidate-name {
+    font-size: 16px;
+}
+
 .arcana-replace-meta {
     margin-top: 10px;
     color: rgba(255, 255, 255, 0.82);
@@ -255,51 +353,54 @@ button.arcana-replace-btn {
         inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
+.arcana-card-face.is-battle-link {
+    cursor: pointer;
+}
+
+.arcana-card-face.is-battle-link:focus-visible {
+    outline: 2px solid rgba(212, 177, 255, 0.9);
+    outline-offset: 2px;
+}
+
 .arcana-card-frame {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 18px 16px;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 16px 14px 14px;
     border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.arcana-card-top-face {
-    align-items: flex-start;
+.arcana-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.arcana-card-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: auto;
+.arcana-card-name {
+    margin-top: 2px;
+}
+
+.arcana-card-line {
+    flex: 1 1 auto;
+    min-height: 110px;
 }
 
 .arcana-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 28px;
-    padding: 6px 10px;
+    min-height: 26px;
+    padding: 4px 10px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.84);
     font-size: 12px;
     font-weight: 700;
-}
-
-.arcana-badge.is-equipped {
-    border-color: rgba(162, 109, 255, 0.55);
-    background: rgba(98, 55, 150, 0.34);
-    color: #fff;
-}
-
-.arcana-badge.is-unequipped {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
 }
 
 .arcana-badge.is-expired {
@@ -314,13 +415,15 @@ button.arcana-replace-btn {
 }
 
 .arcana-card-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    padding-top: 2px;
 }
 
 .arcana-card-subbtn {
-    min-height: 38px;
+    width: 82%;
+    min-height: 36px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.06);
@@ -373,6 +476,31 @@ button.arcana-replace-btn {
     background: var(--skeleton-card-bg);
 }
 
+.arcana-skeleton-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.skeleton-pill,
+.skeleton-star {
+    border-radius: 999px;
+    background: var(--skeleton-block-bg);
+    background-size: 200% 100%;
+    animation: skeletonMove 1.2s infinite linear;
+}
+
+.skeleton-pill {
+    width: 48px;
+    height: 24px;
+}
+
+.skeleton-star {
+    width: 22px;
+    height: 22px;
+}
+
 .arcana-skeleton-block {
     height: 92px;
     border-radius: 14px;
@@ -395,8 +523,12 @@ button.arcana-replace-btn {
         width: 100%;
     }
 
-    .arcana-card-actions {
-        grid-template-columns: 1fr;
+    .arcana-summary-box {
+        grid-template-columns: 1fr auto;
+    }
+
+    .arcana-card-subbtn {
+        width: 88%;
     }
 }
 
