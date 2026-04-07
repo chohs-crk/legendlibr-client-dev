@@ -1,4 +1,9 @@
-﻿export function openConfirm(text, { onConfirm, onCancel } = {}) {
+﻿function setConfirmBackgroundState(isOpen) {
+    const app = document.querySelector(".app");
+    if (app) app.classList.toggle("confirm-open", !!isOpen);
+}
+
+export function openConfirm(text, { onConfirm, onCancel } = {}) {
     document.getElementById("confirmText").textContent = text;
 
     const actions = document.getElementById("confirmActions");
@@ -22,12 +27,12 @@
     };
     actions.appendChild(ok);
 
-    document.getElementById("confirmOverlay").style.display = "block";
-    document.body.classList.add("dialog-open");
-}
+       document.getElementById("confirmOverlay").style.display = "flex";
+        setConfirmBackgroundState(true);
+    }
 
-export function closeConfirm() {
-    document.getElementById("confirmOverlay").style.display = "none";
-    document.body.classList.remove("dialog-open");
-}
+    export function closeConfirm() {
+        document.getElementById("confirmOverlay").style.display = "none";
+        setConfirmBackgroundState(false);
+    }
 //🟢

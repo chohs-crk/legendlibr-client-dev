@@ -4,17 +4,16 @@
 .ui-confirm-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(6px);
+    background: rgba(6, 4, 12, 0.42);
     z-index: 8500;
     display: none;
+    align-items: center;
+    justify-content: center;
 }
 
 .ui-confirm {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    transform: none;
     width: 70%;
     max-width: 320px;
     background: linear-gradient(180deg, #15101D 0%, #0D0A12 100%);
@@ -82,3 +81,14 @@
         .ui-confirm-actions button:last-child {
             grid-column: 4;
         }
+.app.confirm-open #chrome-root,
+.app.confirm-open #pages-root {
+    filter: blur(4px) saturate(0.92);
+    opacity: 0.92;
+    transition: filter 0.18s ease, opacity 0.18s ease;
+}
+
+#chrome-root,
+#pages-root {
+    transition: filter 0.18s ease, opacity 0.18s ease;
+}
