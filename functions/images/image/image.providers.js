@@ -222,8 +222,66 @@ async function generateImageWithTogether(
     throw new Error("TOGETHER_IMAGE_FAILED: No image data returned.");
 }
 
+async function generateBattleImageWithTogether(
+    { model, prompt, width, height, steps, guidance, seed, referenceImages = [] },
+    togetherKey
+) {
+    const refs = Array.isArray(referenceImages)
+        ? referenceImages.map((v) => (typeof v === "string" ? v.trim() : "")).filter(Boolean)
+        : [];
+
+    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+        throw new Error("TOGETHER_BATTLE_INPUT_EMPTY");
+    }
+
+    if (refs.length < 2) {
+        throw new Error("TOGETHER_BATTLE_REFERENCE_EMPTY");
+    }
+
+    const body = {
+        model,
+        prompt,
+        width: width ?? DEFAULT_WIDTH,
+        height: height ?? DEFAULT_HEIGHT,
+        response_format: "base64",
+        output_format: "png",
+        n: 1,
+        reference_images: refs
+    };
+
+    if (typeof steps === "number") body.steps = steps;
+    if (typeof guidance === "number") body.guidance_scale = guidance;
+    if (typeof seed === "number") body.seed = seed;
+
+    const res = await fetch("https://api.together.xyz/v1/images/generations", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${togetherKey}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error?.message || json?.message || "TOGETHER_BATTLE_IMAGE_FAILED");
+
+    const b64 = json?.data?.[0]?.b64_json;
+    if (b64) return Buffer.from(b64, "base64");
+
+    const url = json?.data?.[0]?.url;
+    if (url) {
+        const imgRes = await fetch(url);
+        if (!imgRes.ok) throw new Error("TOGETHER_BATTLE_IMAGE_URL_FETCH_FAILED");
+        const arr = await imgRes.arrayBuffer();
+        return Buffer.from(arr);
+    }
+
+    throw new Error("TOGETHER_BATTLE_IMAGE_FAILED: No image data returned.");
+}
+
 module.exports = {
     generateImageWithGemini,
     generateBattleImageWithGemini,
-    generateImageWithTogether
+    generateImageWithTogether,
+    generateBattleImageWithTogether
 };

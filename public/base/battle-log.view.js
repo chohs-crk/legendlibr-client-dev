@@ -19,9 +19,11 @@ import {
     buildErrorBattleImageState,
     buildPendingBattleImageState,
     canRequestBattleImage,
+    getSelectedBattleImageModelKey,
     mergeBattleImageStatusIntoBattle,
     requestBattleImageQueue,
     requestBattleImageStatus,
+    setSelectedBattleImageModelKey,
     shouldPollBattleImage,
 } from "./log/battle-image-section.js";
 
@@ -138,15 +140,20 @@ function persistBattleImageState(battle) {
     });
 }
 
-async function handleBattleImageRequest(battle) {
+async function handleBattleImageRequest(battle, modelKey) {
     if (!battle?.id || !canRequestBattleImage(battle)) return;
 
-    const pendingBattle = buildPendingBattleImageState(battle);
+    const selectedModelKey = modelKey || getSelectedBattleImageModelKey(battle);
+    if (battle?.id) {
+        setSelectedBattleImageModelKey(battle.id, selectedModelKey);
+    }
+
+    const pendingBattle = buildPendingBattleImageState(battle, { modelKey: selectedModelKey });
     persistBattleImageState(pendingBattle);
     renderBattle(pendingBattle);
 
     try {
-        const queued = await requestBattleImageQueue(battle.id);
+        const queued = await requestBattleImageQueue(battle.id, { modelKey: selectedModelKey });
         syncUserMetaCache(queued?.userMeta);
 
         const merged = mergeBattleImageStatusIntoBattle(pendingBattle, queued);
@@ -154,18 +161,36 @@ async function handleBattleImageRequest(battle) {
         renderBattle(merged);
         startBattleImagePolling(merged);
     } catch (error) {
-        const errorBattle = buildErrorBattleImageState(battle, error);
+        const errorBattle = buildErrorBattleImageState(pendingBattle, error);
         persistBattleImageState(errorBattle);
         renderBattle(errorBattle);
     }
 }
 
 function bindBattleImageEvents(container, battle) {
+    container.querySelectorAll('[data-action="battle-image-model-select"]').forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+            const modelKey = toggle.dataset.modelKey;
+            if (!battle?.id || !modelKey) return;
+            setSelectedBattleImageModelKey(battle.id, modelKey);
+
+            const nextBattle = {
+                ...battle,
+                battleImage: {
+                    ...(battle?.battleImage || {}),
+                    modelKey,
+                },
+            };
+            persistBattleImageState(nextBattle);
+            renderBattle(nextBattle);
+        });
+    });
+
     const trigger = container.querySelector('[data-action="battle-image-request"]');
     if (!trigger) return;
 
     trigger.addEventListener("click", () => {
-        handleBattleImageRequest(battle);
+        handleBattleImageRequest(battle, getSelectedBattleImageModelKey(battle));
     });
 }
 

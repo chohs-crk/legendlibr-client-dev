@@ -1,5 +1,23 @@
 import { apiFetch } from "/base/api.js";
 
+const BATTLE_IMAGE_MODEL_OPTIONS = {
+    together_flux2_dev: {
+        tier: "general",
+        label: "일반",
+        shortStatus: "일반 모드",
+        costFrames: 35,
+    },
+    gemini: {
+        tier: "advanced",
+        label: "고급",
+        shortStatus: "고급 모드",
+        costFrames: 105,
+    },
+};
+
+const DEFAULT_BATTLE_IMAGE_MODEL_KEY = "together_flux2_dev";
+const BATTLE_IMAGE_SELECTION_STORAGE_KEY = "battleImageModelSelection";
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -9,31 +27,108 @@ function escapeHtml(value) {
         .replaceAll("'", "&#39;");
 }
 
-function getOwnedCharacterIds() {
-    const raw = sessionStorage.getItem("homeCharacters");
-    if (!raw) return new Set();
-
+function readSelectionMap() {
     try {
-        const list = JSON.parse(raw);
-        if (!Array.isArray(list)) return new Set();
-
-        return new Set(
-            list
-                .map((item) => item?.id)
-                .filter((id) => typeof id === "string" && id)
-        );
+        const raw = sessionStorage.getItem(BATTLE_IMAGE_SELECTION_STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
     } catch {
-        return new Set();
+        return {};
     }
 }
 
-export function isBattleImageOwnerView(battle) {
-    if (!battle) return false;
+function writeSelectionMap(map) {
+    try {
+        sessionStorage.setItem(BATTLE_IMAGE_SELECTION_STORAGE_KEY, JSON.stringify(map || {}));
+    } catch {
+        // noop
+    }
+}
 
-    const ownedIds = getOwnedCharacterIds();
-    if (!ownedIds.size) return false;
+export function getBattleImageModelOption(modelKey) {
+    return BATTLE_IMAGE_MODEL_OPTIONS[modelKey] || BATTLE_IMAGE_MODEL_OPTIONS[DEFAULT_BATTLE_IMAGE_MODEL_KEY];
+}
 
-    return ownedIds.has(battle.myId) || ownedIds.has(battle.enemyId);
+export function getSelectedBattleImageModelKey(battle) {
+    const status = getBattleImageState(battle);
+    const lockedModelKey = battle?.battleImage?.modelKey || battle?.modelKey || null;
+
+    if (lockedModelKey && status !== "idle" && status !== "error") {
+        return BATTLE_IMAGE_MODEL_OPTIONS[lockedModelKey] ? lockedModelKey : DEFAULT_BATTLE_IMAGE_MODEL_KEY;
+    }
+
+    const battleId = battle?.id;
+    if (battleId) {
+        const map = readSelectionMap();
+        const stored = map?.[battleId];
+        if (stored && BATTLE_IMAGE_MODEL_OPTIONS[stored]) {
+            return stored;
+        }
+    }
+
+    if (lockedModelKey && BATTLE_IMAGE_MODEL_OPTIONS[lockedModelKey]) {
+        return lockedModelKey;
+    }
+
+    return DEFAULT_BATTLE_IMAGE_MODEL_KEY;
+}
+
+export function setSelectedBattleImageModelKey(battleId, modelKey) {
+    if (!battleId || !BATTLE_IMAGE_MODEL_OPTIONS[modelKey]) return;
+    const map = readSelectionMap();
+    map[battleId] = modelKey;
+    writeSelectionMap(map);
+}
+
+function isModelSelectionLocked(battle) {
+    const state = getBattleImageState(battle);
+    return state !== "idle";
+}
+
+function buildModelToggleMarkup(battle) {
+    const selectedModelKey = getSelectedBattleImageModelKey(battle);
+    const locked = isModelSelectionLocked(battle);
+
+    return `
+        <div class="battle-image-slot__model-picker" aria-label="배틀 이미지 모델 선택">
+            ${Object.entries(BATTLE_IMAGE_MODEL_OPTIONS).map(([modelKey, option]) => `
+                <button
+                    type="button"
+                    class="battle-image-slot__model-toggle ${selectedModelKey === modelKey ? "is-active" : ""}"
+                    data-action="battle-image-model-select"
+                    data-model-key="${escapeHtml(modelKey)}"
+                    ${locked ? "disabled" : ""}
+                >
+                    ${escapeHtml(option.label)}
+                </button>
+            `).join("")}
+        </div>
+    `;
+}
+
+function buildSelectionStatusText(battle, rawState) {
+    const modelKey = getSelectedBattleImageModelKey(battle);
+    const option = getBattleImageModelOption(modelKey);
+    const costFrames = Number(battle?.battleImage?.costFrames || battle?.costFrames || option.costFrames || 0);
+
+    if (rawState === "queued") {
+        return `현재 ${option.shortStatus}로 생성 대기 중 · ${costFrames}프레임`;
+    }
+
+    if (rawState === "processing" || rawState === "called") {
+        return `현재 ${option.shortStatus}로 생성 중 · ${costFrames}프레임`;
+    }
+
+    if (rawState === "done") {
+        return `현재 ${option.shortStatus}로 생성 완료`;
+    }
+
+    if (rawState === "error") {
+        return `현재 ${option.shortStatus}로 생성 실패`;
+    }
+
+    return `현재 ${option.shortStatus} 선택됨 · ${option.costFrames}프레임`;
 }
 
 export function getBattleImageState(battle) {
@@ -58,10 +153,8 @@ export function getBattleImageUiState(battle) {
 
 export function canRequestBattleImage(battle) {
     if (!battle || battle.status !== "done") return false;
-    if (!isBattleImageOwnerView(battle)) return false;
-
     const uiState = getBattleImageUiState(battle);
-    return uiState === "idle" || uiState === "error";
+    return uiState === "idle";
 }
 
 export function shouldPollBattleImage(battle) {
@@ -77,6 +170,7 @@ function getBattleImageCopy(battle) {
         battle?.battleImage?.error?.message ||
         battle?.battleImage?.error?.code ||
         "배틀 이미지 생성에 실패했습니다.";
+    const selectionStatus = buildSelectionStatusText(battle, rawState);
 
     if (uiState === "idle") {
         return {
@@ -85,23 +179,17 @@ function getBattleImageCopy(battle) {
             eyebrow: "배틀 이미지",
             title: "전투 장면 생성",
             description: "배틀 로그를 바탕으로 전투 이미지를 생성합니다.",
-            buttonLabel: isBattleImageOwnerView(battle) ? "배틀 이미지 생성" : "",
+            selectionStatus,
+            buttonLabel: "배틀 이미지 생성",
         };
     }
 
     if (uiState === "pending") {
-        const title =
-            rawState === "queued"
-                ? "생성 대기 중"
-                : rawState === "called"
-                    ? "로드 중"
-                    : "생성 중";
+        const title = rawState === "queued" ? "생성 대기 중" : "생성 중";
         const description =
             rawState === "queued"
                 ? "생성 작업을 준비하고 있습니다."
-                : rawState === "called"
-                    ? "생성된 배틀 이미지를 불러오고 있습니다."
-                    : "전투 이미지를 만들고 있습니다.";
+                : "전투 이미지를 만들고 있습니다.";
 
         return {
             rawState,
@@ -109,6 +197,7 @@ function getBattleImageCopy(battle) {
             eyebrow: "배틀 이미지",
             title,
             description,
+            selectionStatus,
             buttonLabel: "",
         };
     }
@@ -120,7 +209,8 @@ function getBattleImageCopy(battle) {
             eyebrow: "배틀 이미지",
             title: "생성 실패",
             description: errorMessage,
-            buttonLabel: isBattleImageOwnerView(battle) ? "다시 생성하기" : "",
+            selectionStatus,
+            buttonLabel: "",
         };
     }
 
@@ -130,22 +220,9 @@ function getBattleImageCopy(battle) {
         eyebrow: "배틀 이미지",
         title: "생성 완료",
         description: "",
+        selectionStatus,
         buttonLabel: "",
     };
-}
-
-function buildBattleImagePreviewSkeleton(uiState) {
-    const isStatic = uiState === "idle" || uiState === "pending";
-
-    return `
-        <div class="battle-image-slot__preview ${isStatic ? "battle-image-slot__preview--static" : ""}" aria-hidden="true">
-            <div class="battle-image-slot__preview-glow"></div>
-            <div class="battle-image-slot__preview-card battle-image-slot__preview-card--left"></div>
-            <div class="battle-image-slot__preview-slash"></div>
-            <div class="battle-image-slot__preview-card battle-image-slot__preview-card--right"></div>
-            <div class="battle-image-slot__preview-caption"></div>
-        </div>
-    `;
 }
 
 export function buildBattleImageSection(battle) {
@@ -169,11 +246,17 @@ export function buildBattleImageSection(battle) {
         <section class="battle-image-slot battle-image-slot--${copy.uiState}" data-battle-image-state="${copy.rawState}">
             <div class="battle-image-slot__inner">
                 <div class="battle-image-slot__skeleton" aria-hidden="true"></div>
-                ${buildBattleImagePreviewSkeleton(copy.uiState)}
+                ${buildModelToggleMarkup(battle)}
                 <div class="battle-image-slot__content">
                     <div class="battle-image-slot__eyebrow">${escapeHtml(copy.eyebrow)}</div>
+                    <p class="battle-image-slot__mode-status">${escapeHtml(copy.selectionStatus)}</p>
                     <h3 class="battle-image-slot__title">${escapeHtml(copy.title)}</h3>
                     <p class="battle-image-slot__desc">${escapeHtml(copy.description)}</p>
+                    ${copy.uiState === "pending" ? `
+                        <div class="battle-image-slot__loading" aria-hidden="true">
+                            <span class="battle-image-slot__spinner"></span>
+                        </div>
+                    ` : ""}
                     ${copy.buttonLabel ? `
                         <button
                             type="button"
@@ -190,7 +273,10 @@ export function buildBattleImageSection(battle) {
     `;
 }
 
-export function buildPendingBattleImageState(battle) {
+export function buildPendingBattleImageState(battle, options = {}) {
+    const modelKey = options?.modelKey || getSelectedBattleImageModelKey(battle);
+    const modelOption = getBattleImageModelOption(modelKey);
+
     return {
         ...battle,
         image: "called",
@@ -201,6 +287,8 @@ export function buildPendingBattleImageState(battle) {
             status: "queued",
             url: battle?.battleImage?.url || null,
             error: null,
+            modelKey,
+            costFrames: modelOption.costFrames,
             updatedAt: Date.now(),
         },
     };
@@ -209,8 +297,8 @@ export function buildPendingBattleImageState(battle) {
 export function buildErrorBattleImageState(battle, error) {
     return {
         ...battle,
-        image: null,
-        imageCalled: false,
+        image: battle?.image,
+        imageCalled: battle?.imageCalled,
         battleImage: {
             ...(battle?.battleImage || {}),
             status: "error",
@@ -223,11 +311,12 @@ export function buildErrorBattleImageState(battle, error) {
     };
 }
 
-export async function requestBattleImageQueue(battleId) {
+export async function requestBattleImageQueue(battleId, options = {}) {
+    const modelKey = options?.modelKey;
     const res = await apiFetch("/base/battle-image-queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ battleId }),
+        body: JSON.stringify({ battleId, modelKey }),
     });
 
     let json = null;
@@ -291,8 +380,8 @@ export function mergeBattleImageStatusIntoBattle(battle, statusRes) {
             battle?.imageJobId ||
             null,
         status:
-            statusRes?.status ||
             statusRes?.battleImage?.status ||
+            statusRes?.status ||
             battle?.battleImage?.status ||
             "called",
         url:
@@ -305,6 +394,16 @@ export function mergeBattleImageStatusIntoBattle(battle, statusRes) {
             statusRes?.error ||
             battle?.battleImage?.error ||
             null,
+        modelKey:
+            statusRes?.battleImage?.modelKey ||
+            statusRes?.modelKey ||
+            battle?.battleImage?.modelKey ||
+            null,
+        costFrames:
+            Number(statusRes?.battleImage?.costFrames || statusRes?.costFrames || battle?.battleImage?.costFrames || 0) ||
+            getBattleImageModelOption(
+                statusRes?.battleImage?.modelKey || statusRes?.modelKey || battle?.battleImage?.modelKey || DEFAULT_BATTLE_IMAGE_MODEL_KEY
+            ).costFrames,
         updatedAt:
             statusRes?.battleImage?.updatedAt ||
             battle?.battleImage?.updatedAt ||
