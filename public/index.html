@@ -1,11 +1,96 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>Redirecting...</title>
-    <meta http-equiv="refresh" content="0; url=/base/index.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LoreFlood</title>
+
+    <link rel="stylesheet" href="/stylesheet/base/common.css">
+    <link rel="stylesheet" href="/stylesheet/base/chrome.css">
+    <link rel="stylesheet" href="/stylesheet/base/home.css">
+    <link rel="stylesheet" href="/stylesheet/base/rank.css">
+    <link rel="stylesheet" href="/stylesheet/base/shop.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-view.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-arcana.css">
+    <link rel="stylesheet" href="/stylesheet/base/character-image.css">
+    <link rel="stylesheet" href="/stylesheet/base/journey.css">
+    <link rel="stylesheet" href="/stylesheet/base/battle-log.css">
+    <link rel="stylesheet" href="/stylesheet/base/confirm.css">
+    <link rel="stylesheet" href="/stylesheet/base/dialog.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-origin.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-region.css">
+    <link rel="stylesheet" href="/stylesheet/create/create-prompt.css">
+    <link rel="stylesheet" href="/stylesheet/base/wrapping.css">
+    <!-- 기존 link들 사이 아무 곳이나 OK -->
+    <link rel="stylesheet" href="/stylesheet/battle/battle.css">
+    <style>
+        /* page는 partial(section) 단위로 로드되며, router가 active만 토글 */
+        .page {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+            .page.active {
+                display: flex;
+            }
+    </style>
 </head>
+
 <body>
-    이동 중입니다...
+  <div class="bg-root">
+    <div class="bg-frame"></div>
+
+    <div class="app">
+      <!-- 전역 로딩 -->
+      <div id="globalLoading" class="loading-overlay" style="display:none;">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <p>처리 중입니다…</p>
+        </div>
+      </div>
+
+      <!-- 🔒 chrome는 단 한 번 -->
+      <div id="chrome-root"></div>
+
+      <!-- ✅ 모든 page section은 여기로 partial 마운트 -->
+      <div id="pages-root"></div>
+    </div>
+  </div>
+
+  <!-- 전역 confirm -->
+  <div id="confirmOverlay" class="ui-confirm-overlay">
+    <div class="ui-confirm">
+      <div id="confirmText"></div>
+      <div class="ui-confirm-actions" id="confirmActions"></div>
+    </div>
+  </div>
+
+  <!-- 전역 dialog (부모가 display:none 이 되면 dialog가 안 뜨는 이슈 방지용으로 page 밖에 둠) -->
+  <dialog id="detailDialog" class="plain-dialog">
+    <div class="top-bar dialog-topbar">
+      <button class="back-btn icon-only" id="dialogBack" aria-label="뒤로가기">
+        <svg class="stroke-icon" viewBox="0 0 24 24">
+          <path d="M14 6l-6 6 6 6" />
+        </svg>
+      </button>
+      <div class="top-spacer"></div>
+    </div>
+
+    <div class="dlg">
+      <div class="dlg-body story-box text-flow" id="detailBody"></div>
+    </div>
+  </dialog>
+
+  <!-- 전역 wrap overlay -->
+  <div id="wrapOverlay" class="ui-wrap-overlay" style="display:none;">
+    <div class="ui-wrap">
+      <div class="ui-wrap-body" id="wrapBody"></div>
+      <button class="ui-wrap-close" id="wrapClose">닫기</button>
+    </div>
+  </div>
+
+  <!-- ✅ 부트스트랩 (chrome 로드, auth, partial 마운트, 초기 라우팅) -->
+  <script type="module" src="/base/router/bootstrap.js"></script>
 </body>
 </html>

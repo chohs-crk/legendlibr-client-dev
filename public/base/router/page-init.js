@@ -10,12 +10,14 @@ import { initCharacterArcanaPage } from "../char-view/character-arcana.view.js";
 import { initCreatePromptPage } from "/create/create-prompt.js";
 import { initCreateRegionPage } from "/create/create-region.js";
 import { initRankingPage } from "/rank/ranking-view.js";
+import { initShopPage } from "/base/shop.js";
 
 export async function initPage(name, { charId = null, battleId = null } = {}) {
   if (name === "home") return initHomePage();
   if (name === "journey") return initJourneyPage();
   if (name === "setting") return initSettingPage();
   if (name === "ranking") return initRankingPage();
+  if (name === "shop") return initShopPage();
 
   if (name === "battle") {
     const m = await import("/nbattle/battle.js");

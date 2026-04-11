@@ -40,6 +40,7 @@ function bindGlobalUI() {
           "journey",
           "ranking",
           "setting",
+          "shop",
           "character-view",
           "battle-log"
       ]);
@@ -56,8 +57,6 @@ function bindGlobalUI() {
 
     // ✅ 기존 index.html처럼 "모든 page DOM은 존재"하게 만든다 (안전/호환성 우선)
     await mountAllPages();
-
-   
 
     window.showPage(route.name, {
       type: "tab",

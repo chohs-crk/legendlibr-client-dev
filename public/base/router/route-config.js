@@ -6,6 +6,7 @@ export const PAGES = [
   "journey",
   "battle",
   "setting",
+  "shop",
   "create",
   "create-region",
   "create-prompt",
@@ -18,19 +19,23 @@ export const PAGES = [
 
 export const PAGE_OPTIONS = {
     home: { reinitOnBack: true, scrollTopOnBack: true },
+    journey: { reinitOnBack: true, scrollTopOnBack: true },
     ranking: { reinitOnBack: false, scrollTopOnBack: true },
+    setting: { reinitOnBack: true, scrollTopOnBack: true },
+    shop: { reinitOnBack: false, scrollTopOnBack: true },
     battle: { reinitOnBack: true, scrollTopOnBack: true },
     "character-view": { reinitOnBack: false, scrollTopOnBack: false },
     "character-arcana": { reinitOnBack: true, scrollTopOnBack: true },
     "battle-log": { reinitOnBack: false, scrollTopOnBack: false },
 };
 
-export const ANCHOR_PAGES = new Set(["home", "journey", "ranking", "setting"]);
+export const ANCHOR_PAGES = new Set(["home", "journey", "ranking", "setting", "shop"]);
 export const PUBLIC_PAGES = new Set([
     "home",
     "journey",
     "ranking",
     "setting",
+    "shop",
     "character-view",
     "battle-log"
 ]);
@@ -50,6 +55,7 @@ export function buildPath(name, options = {}) {
     if (name === "journey") return "/journey";
     if (name === "ranking") return "/ranking";
     if (name === "setting") return "/setting";
+    if (name === "shop") return "/shop";
 
     if (name === "create") return "/create";
     if (name === "create-region") return "/create-region";
@@ -94,6 +100,7 @@ export function parseInitialRoute(pathname = location.pathname) {
     if (path === "/journey") return { name: "journey" };
     if (path === "/ranking") return { name: "ranking" };
     if (path === "/setting") return { name: "setting" };
+    if (path === "/shop") return { name: "shop" };
 
     if (path === "/create") return { name: "create" };
     if (path === "/create-region") return { name: "create-region" };

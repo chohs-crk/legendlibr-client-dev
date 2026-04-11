@@ -1,4 +1,4 @@
-﻿import { apiFetch } from "/base/api.js";
+import { apiFetch } from "/base/api.js";
 
 import { handleBackAction } from "/base/back-handler.js";
 //✅
@@ -25,8 +25,8 @@ async function ensureUserMeta() {
 /* =========================
    BACK BUTTON VISIBILITY
    - 앱 스택이 1이면 숨김 (루트)
-   - footer로 home/ranking/journey/setting 오면 stack reset -> 숨김 (요구사항 5)
-   - 새탭으로 battle/character/ranking 들어오면 stack 1 -> 숨김 (요구사항 2/5)
+   - footer로 home/ranking/journey/setting/shop 오면 stack reset -> 숨김
+   - 새탭으로 battle/character/ranking/shop 들어오면 stack 1 -> 숨김
 ========================= */
 function getAppStackLen() {
     try {
@@ -90,11 +90,11 @@ function renderTopBar(meta, mode) {
    FOOTER CONFIG
 ========================= */
 const TAB_CONFIG = {
+    tabShop: { page: "shop" },
+    tabRank: { page: "ranking" },
     tabHome: { page: "home" },
     tabJourney: { page: "journey" },
-    tabRank: { page: "ranking" },
-    tabSetting: { page: "setting" },
-    tabShop: { page: null }
+    tabSetting: { page: "setting" }
 };
 
 /* =========================
@@ -125,12 +125,7 @@ function initFooter() {
 
         btn.dataset.bound = "1";
         btn.addEventListener("click", () => {
-            if (cfg.page) {
-                // ✅ footer는 tab 이동(=앱 스택 리셋)
-                window.showPage?.(cfg.page, { type: "tab" });
-            } else {
-                alert("상점은 아직 준비 중입니다!");
-            }
+            window.showPage?.(cfg.page, { type: "tab" });
         });
     });
 }
@@ -140,12 +135,15 @@ function initFooter() {
 ========================= */
 function applyFooterSafePadding() {
     const footer = document.querySelector(".tab-footer");
-    const scrollArea = document.querySelector(".scroll-area");
-    if (!footer || !scrollArea) return;
+    if (!footer) return;
 
     const footerHeight = footer.offsetHeight;
     const buffer = Math.max(40, window.innerHeight * 0.08);
-    scrollArea.style.paddingBottom = `${footerHeight + buffer}px`;
+    const padding = `${footerHeight + buffer}px`;
+
+    document.querySelectorAll(".scroll-area").forEach((scrollArea) => {
+        scrollArea.style.paddingBottom = padding;
+    });
 }
 
 window.addEventListener("resize", applyFooterSafePadding);
@@ -179,4 +177,5 @@ export function initChrome(options = {}) {
 
     initFooter();
     updateBackButtonVisibility();
+    requestAnimationFrame(applyFooterSafePadding);
 }
